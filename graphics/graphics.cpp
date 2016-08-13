@@ -1,9 +1,10 @@
-#include <limits.h>
 #include <cairo.h>
 #include <gtk/gtk.h>
 #include <list>
 
 using namespace std;
+
+#define UNUSED __attribute__ ((unused))
 
 class Point;
 
@@ -144,6 +145,19 @@ private:
     Canvas &_canvas;
 };
 
+// Command to be executed in order to display an output image
+class DisplayCommand
+{
+private:
+
+};
+
+// List of commands to be executed in order to display an output image
+class DisplayFile
+{
+private:
+    list<Point> _vertices;
+};
 
 static cairo_surface_t *surface = NULL;
 
@@ -174,7 +188,7 @@ static void do_drawing()
     cairo_destroy (cr);
 }
 
-static gboolean clicked(GtkWidget *widget, GdkEventButton *event, gpointer __unused user_data)
+static gboolean clicked(GtkWidget *widget, GdkEventButton *event, gpointer UNUSED user_data)
 {
     glob.x[glob.count] = event->x;
     glob.y[glob.count++] = event->y;
@@ -203,7 +217,7 @@ static void clear_surface()
     cairo_destroy(cr);
 }
 
-static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure __unused *event, gpointer __unused data)
+static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer UNUSED data)
 {
     if (surface) cairo_surface_destroy(surface);
 
@@ -222,7 +236,7 @@ static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure __un
     return true;
 }
 
-static gboolean canvas_draw(GtkWidget __unused *widget, cairo_t *cr, gpointer __unused data)
+static gboolean canvas_draw(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUSED data)
 {
     cairo_set_source_surface(cr, surface, 0, 0);
     cairo_paint(cr);
