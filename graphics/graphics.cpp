@@ -31,7 +31,7 @@ public:
 };
 
 // Two-dimensional points
-class Point: Drawable
+class Point: public Drawable
 {
 public:
     Point(double x, double y): _x(x), _y(y) {}
@@ -57,11 +57,11 @@ private:
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: Drawable
+class Line: public Drawable
 {
 public:
 
-    Line(Point &a, Point &b): _a(a), _b(b) {}
+    Line(Point a, Point b): _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas &canvas)
@@ -75,7 +75,7 @@ private:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: Drawable
+class Polygon: public Drawable
 {
 public:
 
@@ -113,7 +113,7 @@ private:
 };
 
 // Area on a screen to execute display commands
-class Viewport: Canvas
+class Viewport: public Canvas
 {
 public:
 
@@ -148,15 +148,46 @@ private:
 // Command to be executed in order to display an output image
 class DisplayCommand
 {
-private:
+public:
+
+    // Applies an object (image or figure) to the viewport.
+    virtual void render(Viewport &viewport) = 0;
 
 };
 
 // List of commands to be executed in order to display an output image
 class DisplayFile
 {
+public:
+
+    DisplayFile(initializer_list<shared_ptr<DisplayCommand>> commands): _commands(commands) {}
+
+
+    void render(Viewport &viewport)
+    {
+        for (auto &c: _commands) c->render(viewport);
+    }
+
 private:
-    list<Point> _vertices;
+    // Commands to be executed
+    list<shared_ptr<DisplayCommand>> _commands;
+};
+
+// Commands to draw objects
+class DrawCommand: public DisplayCommand
+{
+public:
+
+    DrawCommand(Drawable &drawable): _drawable(drawable) {}
+
+    // Applies drawable to the viewport.
+    virtual void render(Viewport &viewport)
+    {
+        _drawable.draw(viewport);
+    }
+
+private:
+    Drawable &_drawable;
 };
 
 static cairo_surface_t *surface = NULL;
@@ -246,6 +277,10 @@ static gboolean canvas_draw(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUS
 
 int main(int argc, char *argv[])
 {
+//    DisplayFile displayFile({
+//        make_shared<DisplayCommand>(Line(Point(10, 10), Point(100, 100)))
+//    });
+
     glob.count = 0;
 
     gtk_init(&argc, &argv);
