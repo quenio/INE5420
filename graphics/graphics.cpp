@@ -277,10 +277,6 @@ static gboolean canvas_draw(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUS
 
 int main(int argc, char *argv[])
 {
-//    DisplayFile displayFile({
-//        make_shared<DisplayCommand>(Line(Point(10, 10), Point(100, 100)))
-//    });
-
     glob.count = 0;
 
     gtk_init(&argc, &argv);

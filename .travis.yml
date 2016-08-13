@@ -1,4 +1,4 @@
 language: cpp
 compiler: clang++
 
-script: make
+script: cd graphics && make
