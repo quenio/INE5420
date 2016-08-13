@@ -1,6 +1,149 @@
 #include <limits.h>
 #include <cairo.h>
 #include <gtk/gtk.h>
+#include <list>
+
+using namespace std;
+
+class Point;
+
+// Drawable area of the screen
+class Canvas
+{
+public:
+
+    // Move to destination.
+    virtual void move(Point destination) = 0;
+
+    // Draw line from current position to destination.
+    virtual void draw_line(Point destination) = 0;
+
+};
+
+// Drawable objects
+class Drawable {
+public:
+
+    // Draw something in canvas.
+    virtual void draw(Canvas &canvas) = 0;
+
+};
+
+// Two-dimensional points
+class Point: Drawable
+{
+public:
+    Point(double x, double y): _x(x), _y(y) {}
+
+    double x() { return _x; }
+    double y() { return _y; }
+
+    // Scale x by factor fx, y by factor fy.
+    Point scale(double fx, double fy)
+    {
+        return Point(_x *= fx, _y *= fy);
+    }
+
+    // Draw a point in canvas at position (x, y).
+    void draw(Canvas &canvas)
+    {
+        canvas.move(*this);
+        canvas.draw_line(*this);
+    }
+
+private:
+    double _x, _y;
+};
+
+// Straight one-dimensional figure delimited by two points
+class Line: Drawable
+{
+public:
+
+    Line(Point &a, Point &b): _a(a), _b(b) {}
+
+    // Draw line in canvas.
+    void draw(Canvas &canvas)
+    {
+        canvas.move(_a);
+        canvas.draw_line(_b);
+    }
+
+private:
+    Point _a, _b;
+};
+
+// Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
+class Polygon: Drawable
+{
+public:
+
+    Polygon(initializer_list<Point> vertices): _vertices(vertices) {}
+
+    void draw(Canvas &canvas)
+    {
+        canvas.move(*_vertices.begin());
+        for (const auto &p: _vertices) canvas.draw_line(p);
+    }
+
+private:
+    list<Point> _vertices;
+};
+
+
+// Visible area of the world
+class Window
+{
+public:
+
+    Window(double left, double right, double top, double bottom)
+        :_left(left), _right(right), _top(top), _bottom(bottom) {}
+
+    Point normalize(Point point)
+    {
+        return Point(
+            (point.x() - _left) / (_right - _left),
+            1.0 - ((point.y() - _bottom) / (_top - _bottom))
+        );
+    }
+
+private:
+    double _left, _right, _top, _bottom;
+};
+
+// Area on a screen to execute display commands
+class Viewport: Canvas
+{
+public:
+
+    Viewport(double width, double height, Window window, Canvas &canvas)
+        : _width(width), _height(height), _window(window), _canvas(canvas) {}
+
+    // Translate p from window to canvas.
+    Point translate(Point p)
+    {
+        return _window.normalize(p).scale(_width, _height);
+    }
+
+
+    // Move to destination.
+    virtual void move(Point destination)
+    {
+        _canvas.move(translate(destination));
+    }
+
+    // Draw line from current position to destination.
+    virtual void draw_line(Point destination)
+    {
+        _canvas.draw_line(translate(destination));
+    }
+
+private:
+    double _width, _height;
+    Window _window;
+    Canvas &_canvas;
+};
+
 
 static cairo_surface_t *surface = NULL;
 
