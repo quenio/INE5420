@@ -1,6 +1,7 @@
 #include <cairo.h>
 #include <gtk/gtk.h>
 #include <list>
+#include <memory>
 
 using namespace std;
 
