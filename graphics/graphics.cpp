@@ -1,7 +1,7 @@
 #include <cairo.h>
 #include <gtk/gtk.h>
-#include <list>
 #include <memory>
+#include <list>
 
 using namespace std;
 
@@ -285,12 +285,6 @@ static DisplayFile displayFile({
 
 static Window window(0, 0, 100, 100);
 
-static gboolean clicked(GtkWidget UNUSED *widget, GdkEventButton *event, gpointer UNUSED user_data)
-{
-    printf("clicked (%f, %f)\n", event->x, event->y);
-    return true;
-}
-
 static cairo_surface_t *surface = NULL;
 
 static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer UNUSED data)
@@ -322,22 +316,42 @@ static gboolean canvas_draw(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUS
     return false;
 }
 
+static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer UNUSED data)
+{
+    printf("zoom in clicked\n");
+}
+
+static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer UNUSED data)
+{
+    printf("zoom out clicked\n");
+}
+
 int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
-    g_signal_connect(window, "button-press-event", G_CALLBACK(clicked), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+    GtkWidget *grid = gtk_grid_new();
+    gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
+    gtk_container_add(GTK_CONTAINER(window), grid);
+
+    GtkWidget *zoom_in = gtk_button_new_with_label ("Zoom In");
+    g_signal_connect(zoom_in, "clicked", G_CALLBACK(zoom_in_clicked), NULL);
+    gtk_grid_attach(GTK_GRID(grid), zoom_in, 0, 0, 1, 1);
+
+    GtkWidget *zoom_out = gtk_button_new_with_label ("Zoom Out");
+    g_signal_connect(zoom_out, "clicked", G_CALLBACK(zoom_out_clicked), NULL);
+    gtk_grid_attach(GTK_GRID(grid), zoom_out, 1, 0, 1, 1);
+
     GtkWidget *canvas = gtk_drawing_area_new();
-    gtk_container_add(GTK_CONTAINER(window), canvas);
+    gtk_grid_attach(GTK_GRID(grid), canvas, 0, 1, 10, 10);
     g_signal_connect(canvas, "configure-event", G_CALLBACK(canvas_configure_event), NULL);
     g_signal_connect(canvas, "draw", G_CALLBACK(canvas_draw), NULL);
 
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-    gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
     gtk_window_set_title(GTK_WINDOW(window), "Lines");
 
     gtk_widget_show_all(window);
