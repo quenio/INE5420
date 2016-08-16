@@ -1,9 +1,11 @@
-#include <limits.h>
 #include <cairo.h>
 #include <gtk/gtk.h>
 #include <list>
+#include <memory>
 
 using namespace std;
+
+#define UNUSED __attribute__ ((unused))
 
 class Point;
 
@@ -30,7 +32,7 @@ public:
 };
 
 // Two-dimensional points
-class Point: Drawable
+class Point: public Drawable
 {
 public:
     Point(double x, double y): _x(x), _y(y) {}
@@ -44,11 +46,34 @@ public:
         return Point(_x *= fx, _y *= fy);
     }
 
+    // Move by dx horizontally, dy vertically.
+    Point translate(double dx, double dy)
+    {
+        return Point(_x += dx, _y += dy);
+    }
+
     // Draw a point in canvas at position (x, y).
     void draw(Canvas &canvas)
     {
-        canvas.move(*this);
-        canvas.draw_line(*this);
+        const double thickness = 0.3;
+
+        Point current = *this;
+        canvas.move(current);
+
+        current = current.translate(0, thickness);
+        canvas.draw_line(current);
+        canvas.move(current);
+
+        current = current.translate(thickness, 0);
+        canvas.draw_line(current);
+        canvas.move(current);
+
+        current = current.translate(0, -thickness);
+        canvas.draw_line(current);
+        canvas.move(current);
+
+        current = current.translate(-thickness, 0);
+        canvas.draw_line(current);
     }
 
 private:
@@ -56,11 +81,11 @@ private:
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: Drawable
+class Line: public Drawable
 {
 public:
 
-    Line(Point &a, Point &b): _a(a), _b(b) {}
+    Line(Point a, Point b): _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas &canvas)
@@ -74,7 +99,7 @@ private:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: Drawable
+class Polygon: public Drawable
 {
 public:
 
@@ -82,8 +107,13 @@ public:
 
     void draw(Canvas &canvas)
     {
-        canvas.move(*_vertices.begin());
-        for (const auto &p: _vertices) canvas.draw_line(p);
+        Point previous = _vertices.back();
+        for (auto &current: _vertices)
+        {
+            canvas.move(previous);
+            canvas.draw_line(current);
+            previous = current;
+        }
     }
 
 private:
@@ -96,8 +126,8 @@ class Window
 {
 public:
 
-    Window(double left, double right, double top, double bottom)
-        :_left(left), _right(right), _top(top), _bottom(bottom) {}
+    Window(double left, double bottom, double right, double top)
+        :_left(left), _bottom(bottom), _right(right), _top(top) {}
 
     Point normalize(Point point)
     {
@@ -108,11 +138,11 @@ public:
     }
 
 private:
-    double _left, _right, _top, _bottom;
+    double _left, _bottom, _right, _top;
 };
 
 // Area on a screen to execute display commands
-class Viewport: Canvas
+class Viewport: public Canvas
 {
 public:
 
@@ -144,85 +174,147 @@ private:
     Canvas &_canvas;
 };
 
+// Command to be executed in order to display an output image
+class DisplayCommand
+{
+public:
+
+    // Applies an object (image or figure) to the viewport.
+    virtual void render(Viewport &viewport) = 0;
+
+};
+
+// List of commands to be executed in order to display an output image
+class DisplayFile
+{
+public:
+
+    DisplayFile(initializer_list<shared_ptr<DisplayCommand>> commands): _commands(commands) {}
+
+
+    void render(Viewport &viewport)
+    {
+        for (auto &c: _commands) c->render(viewport);
+    }
+
+private:
+    // Commands to be executed
+    list<shared_ptr<DisplayCommand>> _commands;
+};
+
+// Commands to draw objects
+class DrawCommand: public DisplayCommand
+{
+public:
+
+    DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
+
+    // Applies drawable to the viewport.
+    virtual void render(Viewport &viewport)
+    {
+        _drawable->draw(viewport);
+    }
+
+private:
+    shared_ptr<Drawable> _drawable;
+};
+
+// Canvas for GTK surface
+class SurfaceCanvas: public Canvas
+{
+public:
+
+    SurfaceCanvas(cairo_surface_t *surface)
+    {
+        cr = cairo_create(surface);
+    }
+
+    ~SurfaceCanvas()
+    {
+        cairo_destroy(cr);
+    }
+
+    // Paint the whole canvas with the white color.
+    void clear()
+    {
+        cairo_set_source_rgb(cr, 1, 1, 1);
+        cairo_paint(cr);
+    }
+
+    // Move to destination.
+    virtual void move(Point destination)
+    {
+        cairo_move_to(cr, destination.x(), destination.y());
+    }
+
+    // Draw line from current position to destination.
+    virtual void draw_line(Point destination)
+    {
+        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_set_line_width(cr, 1);
+        cairo_line_to(cr, destination.x(), destination.y());
+        cairo_stroke(cr);
+    }
+
+private:
+    cairo_t *cr;
+};
+
+
+inline shared_ptr<DrawCommand> draw_point(Point a)
+{
+    return make_shared<DrawCommand>(make_shared<Point>(a));
+}
+
+inline shared_ptr<DrawCommand> draw_line(Point a, Point b)
+{
+    return make_shared<DrawCommand>(make_shared<Line>(a, b));
+}
+
+inline shared_ptr<DrawCommand> draw_square(Point a, Point b, Point c, Point d)
+{
+    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon { a, b, c, d }));
+}
+
+static DisplayFile displayFile({
+    draw_point(Point(25, 50)),
+    draw_point(Point(75, 50)),
+    draw_line(Point(10, 10), Point(90, 90)),
+    draw_square(Point(10, 10), Point(10, 90), Point(90, 90), Point(90, 10))
+});
+
+static Window window(0, 0, 100, 100);
+
+static gboolean clicked(GtkWidget UNUSED *widget, GdkEventButton *event, gpointer UNUSED user_data)
+{
+    printf("clicked (%f, %f)\n", event->x, event->y);
+    return true;
+}
 
 static cairo_surface_t *surface = NULL;
 
-struct {
-    int count;
-    double x[100];
-    double y[100];
-} glob;
-
-static void do_drawing()
-{
-    if (surface == NULL) return;
-
-    cairo_t *cr;
-    cr = cairo_create(surface);
-
-    cairo_set_line_width(cr, 1);
-
-    int i, j;
-    for (i = 0; i <= glob.count - 1; i++ ) {
-        for (j = 0; j <= glob.count - 1; j++ ) {
-            cairo_move_to(cr, glob.x[i], glob.y[i]);
-            cairo_line_to(cr, glob.x[j], glob.y[j]);
-        }
-    }
-
-    cairo_stroke(cr);
-    cairo_destroy (cr);
-}
-
-static gboolean clicked(GtkWidget *widget, GdkEventButton *event, gpointer __unused user_data)
-{
-    glob.x[glob.count] = event->x;
-    glob.y[glob.count++] = event->y;
-
-    printf("clicked (%f, %f)\n", event->x, event->y);
-
-    do_drawing();
-    gtk_widget_queue_draw_area(
-        widget,
-        0, 0,
-        gtk_widget_get_allocated_width(widget),
-        gtk_widget_get_allocated_height(widget));
-
-    return true;
-}
-
-static void clear_surface()
-{
-    cairo_t *cr;
-
-    cr = cairo_create(surface);
-
-    cairo_set_source_rgb(cr, 1, 1, 1);
-    cairo_paint(cr);
-
-    cairo_destroy(cr);
-}
-
-static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure __unused *event, gpointer __unused data)
+static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer UNUSED data)
 {
     if (surface) cairo_surface_destroy(surface);
 
-    surface = gdk_window_create_similar_surface(
-            gtk_widget_get_window(widget),
-            CAIRO_CONTENT_COLOR,
-            gtk_widget_get_allocated_width(widget),
-            gtk_widget_get_allocated_height(widget));
+    const int width = gtk_widget_get_allocated_width(widget);
+    const int height = gtk_widget_get_allocated_height(widget);
 
-    clear_surface();
+    surface = gdk_window_create_similar_surface(gtk_widget_get_window(widget), CAIRO_CONTENT_COLOR, width, height);
 
-    glob.count = 0;
+    SurfaceCanvas canvas(surface);
+    canvas.clear();
 
-    printf("canvas_configure_event\n");
+    Viewport viewport(width, height, window, canvas);
+    displayFile.render(viewport);
+
+    // Invalidate drawable area.
+    gtk_widget_queue_draw_area(widget, 0, 0, width, height);
 
     return true;
 }
 
-static gboolean canvas_draw(GtkWidget __unused *widget, cairo_t *cr, gpointer __unused data)
+static gboolean canvas_draw(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUSED data)
 {
     cairo_set_source_surface(cr, surface, 0, 0);
     cairo_paint(cr);
@@ -232,8 +324,6 @@ static gboolean canvas_draw(GtkWidget __unused *widget, cairo_t *cr, gpointer __
 
 int main(int argc, char *argv[])
 {
-    glob.count = 0;
-
     gtk_init(&argc, &argv);
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
