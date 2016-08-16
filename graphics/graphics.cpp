@@ -127,18 +127,37 @@ class Window
 public:
 
     Window(double left, double bottom, double right, double top)
-        :_left(left), _bottom(bottom), _right(right), _top(top) {}
+        :_leftBottom(left, bottom), _rightTop(right, top) {}
 
+    double left() { return _leftBottom.x(); }
+    double bottom() { return _leftBottom.y(); }
+    double right() { return _rightTop.x(); }
+    double top() { return _rightTop.y(); }
+
+    double width() { return right() - left(); }
+    double height() { return top() - bottom(); }
+
+    // Normalize point to window dimensions
     Point normalize(Point point)
     {
         return Point(
-            (point.x() - _left) / (_right - _left),
-            1.0 - ((point.y() - _bottom) / (_top - _bottom))
+            (point.x() - left()) / width(),
+            1.0 - ((point.y() - bottom()) / height())
         );
     }
 
+    // Zoom by factor
+    void zoom(double factor)
+    {
+        double tx = width() * factor;
+        double ty = height() * factor;
+
+        _leftBottom = _leftBottom.translate(+tx, +ty);
+        _rightTop = _rightTop.translate(-tx, -ty);
+    }
+
 private:
-    double _left, _bottom, _right, _top;
+    Point _leftBottom, _rightTop;
 };
 
 // Area on a screen to execute display commands
@@ -287,7 +306,16 @@ static Window window(0, 0, 100, 100);
 
 static cairo_surface_t *surface = NULL;
 
-static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer UNUSED data)
+static void refresh(GtkWidget *widget)
+{
+    gtk_widget_queue_draw_area(
+        widget,
+        0, 0,
+        gtk_widget_get_allocated_width(widget),
+        gtk_widget_get_allocated_height(widget));
+}
+
+static gboolean refresh_canvas(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer UNUSED data)
 {
     if (surface) cairo_surface_destroy(surface);
 
@@ -302,8 +330,7 @@ static gboolean canvas_configure_event(GtkWidget *widget, GdkEventConfigure UNUS
     Viewport viewport(width, height, window, canvas);
     displayFile.render(viewport);
 
-    // Invalidate drawable area.
-    gtk_widget_queue_draw_area(widget, 0, 0, width, height);
+    refresh(widget);
 
     return true;
 }
@@ -316,15 +343,20 @@ static gboolean canvas_draw(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUS
     return false;
 }
 
-static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer UNUSED data)
+static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    printf("zoom in clicked\n");
+    window.zoom(0.9);
+    refresh_canvas(GTK_WIDGET(canvas), nullptr, nullptr);
 }
 
-static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer UNUSED data)
+static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    printf("zoom out clicked\n");
+    window.zoom(1.1);
+    refresh_canvas(GTK_WIDGET(canvas), nullptr, nullptr);
 }
+
+static const gint max_column_span = 6;
+static const gint max_row_span = 6;
 
 int main(int argc, char *argv[])
 {
@@ -335,21 +367,26 @@ int main(int argc, char *argv[])
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     GtkWidget *grid = gtk_grid_new();
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
     gtk_container_add(GTK_CONTAINER(window), grid);
 
-    GtkWidget *zoom_in = gtk_button_new_with_label ("Zoom In");
-    g_signal_connect(zoom_in, "clicked", G_CALLBACK(zoom_in_clicked), NULL);
+    GtkWidget *zoom_in = gtk_button_new_with_label("Zoom In");
     gtk_grid_attach(GTK_GRID(grid), zoom_in, 0, 0, 1, 1);
 
-    GtkWidget *zoom_out = gtk_button_new_with_label ("Zoom Out");
-    g_signal_connect(zoom_out, "clicked", G_CALLBACK(zoom_out_clicked), NULL);
+    GtkWidget *zoom_out = gtk_button_new_with_label("Zoom Out");
     gtk_grid_attach(GTK_GRID(grid), zoom_out, 1, 0, 1, 1);
 
+    GtkWidget *extra = gtk_button_new_with_label("");
+    gtk_grid_attach(GTK_GRID(grid), extra, 2, 0, max_column_span - 2, 1);
+
     GtkWidget *canvas = gtk_drawing_area_new();
-    gtk_grid_attach(GTK_GRID(grid), canvas, 0, 1, 10, 10);
-    g_signal_connect(canvas, "configure-event", G_CALLBACK(canvas_configure_event), NULL);
+    gtk_grid_attach(GTK_GRID(grid), canvas, 0, 1, max_column_span, max_row_span);
+    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_canvas), NULL);
     g_signal_connect(canvas, "draw", G_CALLBACK(canvas_draw), NULL);
+
+    g_signal_connect(zoom_in, "clicked", G_CALLBACK(zoom_in_clicked), canvas);
+    g_signal_connect(zoom_out, "clicked", G_CALLBACK(zoom_out_clicked), canvas);
 
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_window_set_title(GTK_WINDOW(window), "Lines");
