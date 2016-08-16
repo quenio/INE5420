@@ -9,7 +9,7 @@ This repository contains the exercises and projects developed during the INE5420
 - Daniel Felipe Schröder (@mrdanielfsch)
 - Quenio Cesar Machado dos Santos (@quenio)
 
-### Compilation instructions
+### Usage
 
 On Ubuntu 14.04 you'll need to install the following packages:
 - pkg-config
@@ -27,3 +27,6 @@ cd graphics
 make
 ```
 
+### History
+
+- 1.0: Initial setup with display file rendered on viewport.
