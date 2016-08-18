@@ -502,6 +502,7 @@ int main(int argc, char *argv[])
 
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_window_set_title(GTK_WINDOW(window), "Lines");
+    gtk_window_set_default_size(GTK_WINDOW(window), 600, 480);
 
     gtk_widget_show_all(window);
 
