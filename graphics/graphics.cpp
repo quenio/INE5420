@@ -466,8 +466,13 @@ int main(int argc, char *argv[])
     GtkWidget *span_down = gtk_button_new_with_label(" Down ");
     gtk_grid_attach(GTK_GRID(grid), span_down, 5, 0, 1, 1);
 
+
+    GtkWidget *listbox = gtk_list_box_new();
+    gtk_grid_attach(GTK_GRID(grid), listbox, 0, 1, 2, 5);
+
+
     GtkWidget *canvas = gtk_drawing_area_new();
-    gtk_grid_attach(GTK_GRID(grid), canvas, 0, 1, max_column_span, max_row_span);
+    gtk_grid_attach(GTK_GRID(grid), canvas, 2, 1, max_column_span, max_row_span);
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), NULL);
     g_signal_connect(canvas, "draw", G_CALLBACK(canvas_draw), NULL);
 
