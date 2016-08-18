@@ -1,8 +1,16 @@
 ## INE5420
 
-[![Build Status](https://travis-ci.org/quenio/INE5420.svg?branch=feature/object_list)](https://travis-ci.org/quenio/INE5420)
-
 This repository contains the exercises and projects developed during the INE5420 course towards the BCC degree at the Federal University of Santa Catarina.
+
+### Branches
+
+Master
+
+[![Build Status](https://travis-ci.org/quenio/INE5420.svg?branch=master)](https://travis-ci.org/quenio/INE5420)
+
+Develop
+
+[![Build Status](https://travis-ci.org/quenio/INE5420.svg?branch=develop)](https://travis-ci.org/quenio/INE5420)
 
 ### Team
 
@@ -30,4 +38,4 @@ make
 ### History
 
 - 1.0: Initial setup with display file rendered on viewport.
-- 1.1: Basic system with window navigation and zoom. (IN PROGRESS) 
+- 1.1: Basic system with window navigation and zoom.
