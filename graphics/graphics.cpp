@@ -3,7 +3,6 @@
 #include <memory>
 #include <list>
 #include <sstream>
-#include <map>
 
 using namespace std;
 
@@ -327,14 +326,14 @@ public:
 
     void render(Viewport &viewport)
     {
-        for (auto &c: _commands) c->render(viewport);
+        for (auto &command: _commands) command->render(viewport);
     }
 
     // Objects from command list
     list<shared_ptr<Object>> objects() {
         list<shared_ptr<Object>> list;
 
-        for (shared_ptr<DisplayCommand> command: _commands)
+        for (auto &command: _commands)
         {
             shared_ptr<DrawCommand> drawCommand = dynamic_pointer_cast<DrawCommand>(command);
             if (drawCommand && drawCommand->object())
@@ -501,7 +500,7 @@ static void span_down_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
 }
 
 static void add_objects_to_list_box(GtkListBox *list_box) {
-    for (shared_ptr<Object> object: displayFile.objects()) {
+    for (auto &object: displayFile.objects()) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
         gtk_list_box_prepend(list_box, label);
     }
