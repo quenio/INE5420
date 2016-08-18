@@ -3,6 +3,7 @@
 #include <memory>
 #include <list>
 #include <sstream>
+#include <map>
 
 using namespace std;
 
@@ -24,7 +25,8 @@ public:
 };
 
 // Drawable objects
-class Drawable {
+class Drawable
+{
 public:
 
     // Draw something in canvas.
@@ -32,8 +34,35 @@ public:
 
 };
 
+// World objects
+class Object
+{
+public:
+
+    Object()
+    {
+        _id = ++_count;
+    }
+
+    virtual string type() = 0;
+
+    virtual string name()
+    {
+        stringstream ss;
+        ss << type() << _id;
+        return ss.str();
+    }
+
+private:
+    int _id;
+
+    static int _count;
+};
+
+int Object::_count = 0;
+
 // Two-dimensional points
-class Point: public Drawable
+class Point: public Drawable, public Object
 {
 public:
     Point(double x, double y): _x(x), _y(y) {}
@@ -77,12 +106,17 @@ public:
         canvas.draw_line(current);
     }
 
+    virtual string type()
+    {
+        return "Point";
+    }
+
 private:
     double _x, _y;
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: public Drawable
+class Line: public Drawable, public Object
 {
 public:
 
@@ -95,12 +129,18 @@ public:
         canvas.draw_line(_b);
     }
 
+    virtual string type()
+    {
+        return "Line";
+    }
+
+
 private:
     Point _a, _b;
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Drawable
+class Polygon: public Drawable, public Object
 {
 public:
 
@@ -115,6 +155,11 @@ public:
             canvas.draw_line(current);
             previous = current;
         }
+    }
+
+    virtual string type()
+    {
+        return "Polygon";
     }
 
 private:
@@ -250,6 +295,28 @@ public:
 
 };
 
+// Commands to draw objects
+class DrawCommand: public DisplayCommand
+{
+public:
+
+    DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
+
+    // Applies drawable to the viewport.
+    virtual void render(Viewport &viewport)
+    {
+        _drawable->draw(viewport);
+    }
+
+    shared_ptr<Object> object()
+    {
+        return dynamic_pointer_cast<Object>(_drawable);
+    }
+
+private:
+    shared_ptr<Drawable> _drawable;
+};
+
 // List of commands to be executed in order to display an output image
 class DisplayFile
 {
@@ -263,29 +330,25 @@ public:
         for (auto &c: _commands) c->render(viewport);
     }
 
-    list<shared_ptr<DisplayCommand>> commands() {
-        return _commands;
+    // Objects from command list
+    list<shared_ptr<Object>> objects() {
+        list<shared_ptr<Object>> list;
+
+        for (shared_ptr<DisplayCommand> command: _commands)
+        {
+            shared_ptr<DrawCommand> drawCommand = dynamic_pointer_cast<DrawCommand>(command);
+            if (drawCommand && drawCommand->object())
+            {
+                list.push_back(drawCommand->object());
+            }
+        }
+
+        return list;
     }
 
 private:
     // Commands to be executed
     list<shared_ptr<DisplayCommand>> _commands;
-};
-
-// Commands to draw objects
-class DrawCommand: public DisplayCommand
-{
-public:
-
-    DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
-
-    // Applies drawable to the viewport.
-    virtual void render(Viewport &viewport) {
-        _drawable->draw(viewport);
-    }
-
-private:
-    shared_ptr<Drawable> _drawable;
 };
 
 // Canvas for GTK surface
@@ -437,13 +500,9 @@ static void span_down_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
-static void add_object_to_list(GtkListBox* list_box) {
-    int count = 0;
-    for (shared_ptr<DisplayCommand> ptr: displayFile.commands()) {
-        stringstream ss;
-        ss << "Object" << count++;
-
-        GtkWidget *label = gtk_label_new(ss.str().c_str());
+static void add_objects_to_list_box(GtkListBox *list_box) {
+    for (shared_ptr<Object> object: displayFile.objects()) {
+        GtkWidget *label = gtk_label_new(object->name().c_str());
         gtk_list_box_prepend(list_box, label);
     }
 }
@@ -485,7 +544,7 @@ int main(int argc, char *argv[])
 
     GtkWidget *listbox = gtk_list_box_new();
     gtk_grid_attach(GTK_GRID(grid), listbox, 0, 1, 2, 5);
-    add_object_to_list(GTK_LIST_BOX(listbox));
+    add_objects_to_list_box(GTK_LIST_BOX(listbox));
 
 
     GtkWidget *canvas = gtk_drawing_area_new();
