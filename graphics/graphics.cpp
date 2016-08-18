@@ -2,6 +2,7 @@
 #include <gtk/gtk.h>
 #include <memory>
 #include <list>
+#include <sstream>
 
 using namespace std;
 
@@ -262,6 +263,10 @@ public:
         for (auto &c: _commands) c->render(viewport);
     }
 
+    list<shared_ptr<DisplayCommand>> commands() {
+        return _commands;
+    }
+
 private:
     // Commands to be executed
     list<shared_ptr<DisplayCommand>> _commands;
@@ -275,8 +280,7 @@ public:
     DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
 
     // Applies drawable to the viewport.
-    virtual void render(Viewport &viewport)
-    {
+    virtual void render(Viewport &viewport) {
         _drawable->draw(viewport);
     }
 
@@ -347,6 +351,7 @@ static DisplayFile displayFile({
     draw_line(Point(10, 10), Point(90, 90)),
     draw_square(Point(10, 10), Point(10, 90), Point(90, 90), Point(90, 10))
 });
+
 
 static Window window(0, 0, 100, 100);
 
@@ -432,6 +437,17 @@ static void span_down_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
+static void add_object_to_list(GtkListBox* list_box) {
+    int count = 0;
+    for (shared_ptr<DisplayCommand> ptr: displayFile.commands()) {
+        stringstream ss;
+        ss << "Object" << count++;
+
+        GtkWidget *label = gtk_label_new(ss.str().c_str());
+        gtk_list_box_prepend(list_box, label);
+    }
+}
+
 static const gint max_column_span = 6;
 static const gint max_row_span = 6;
 
@@ -469,6 +485,7 @@ int main(int argc, char *argv[])
 
     GtkWidget *listbox = gtk_list_box_new();
     gtk_grid_attach(GTK_GRID(grid), listbox, 0, 1, 2, 5);
+    add_object_to_list(GTK_LIST_BOX(listbox));
 
 
     GtkWidget *canvas = gtk_drawing_area_new();
