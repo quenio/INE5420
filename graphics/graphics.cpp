@@ -506,8 +506,8 @@ static void add_objects_to_list_box(GtkListBox *list_box) {
     }
 }
 
-static const int gtk_window_width = 600;
-static const int gtk_window_height = 480;
+static const int gtk_window__width = 600;
+static const int gtk_window__height = 480;
 
 static const gint span_column__canvas = 6;
 static const gint span_column__list_box = 2;
@@ -534,7 +534,7 @@ static void new_gtk_window(const gchar *title)
     gtk_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_position(GTK_WINDOW(gtk_window), GTK_WIN_POS_CENTER);
     gtk_window_set_title(GTK_WINDOW(gtk_window), title);
-    gtk_window_set_default_size(GTK_WINDOW(gtk_window), gtk_window_width, gtk_window_height);
+    gtk_window_set_default_size(GTK_WINDOW(gtk_window), gtk_window__width, gtk_window__height);
     g_signal_connect(gtk_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 }
 
