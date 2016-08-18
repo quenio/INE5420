@@ -506,6 +506,9 @@ static void add_objects_to_list_box(GtkListBox *list_box) {
     }
 }
 
+static const int gtk_window_width = 600;
+static const int gtk_window_height = 480;
+
 static const gint span_column__canvas = 6;
 static const gint span_column__list_box = 2;
 static const gint span_column__button = 1;
@@ -526,7 +529,43 @@ static GtkWidget *gtk_window;
 static GtkWidget *grid;
 static GtkWidget *canvas;
 
-static void button(const gchar *label, GCallback callback)
+static void new_gtk_window(const gchar *title)
+{
+    gtk_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_position(GTK_WINDOW(gtk_window), GTK_WIN_POS_CENTER);
+    gtk_window_set_title(GTK_WINDOW(gtk_window), title);
+    gtk_window_set_default_size(GTK_WINDOW(gtk_window), gtk_window_width, gtk_window_height);
+    g_signal_connect(gtk_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+}
+
+static void new_grid()
+{
+    grid = gtk_grid_new();
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
+    gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
+    gtk_container_add(GTK_CONTAINER(gtk_window), grid);
+}
+
+static void new_canvas()
+{
+    canvas = gtk_drawing_area_new();
+    gtk_grid_attach(GTK_GRID(grid), canvas,
+                    column_canvas, row_canvas,
+                    span_column__canvas, span_row__canvas);
+    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), NULL);
+    g_signal_connect(canvas, "draw", G_CALLBACK(canvas_draw), NULL);
+}
+
+static void new_list_box()
+{
+    GtkWidget *list_box = gtk_list_box_new();
+    add_objects_to_list_box(GTK_LIST_BOX(list_box));
+    gtk_grid_attach(GTK_GRID(grid), list_box,
+                    column__list_box, row__list_box,
+                    span_column__list_box, span_row__list_box);
+}
+
+static void new_button(const gchar *label, GCallback callback)
 {
     static gint button_count = 0;
     GtkWidget *button_with_label = gtk_button_new_with_label(label);
@@ -540,36 +579,19 @@ int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
 
-    gtk_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_position(GTK_WINDOW(gtk_window), GTK_WIN_POS_CENTER);
-    gtk_window_set_title(GTK_WINDOW(gtk_window), "Lines");
-    gtk_window_set_default_size(GTK_WINDOW(gtk_window), 600, 480);
-    g_signal_connect(gtk_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    new_gtk_window("Graphics");
+    new_grid();
+    new_canvas();
+    new_list_box();
 
-    grid = gtk_grid_new();
-    gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
-    gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
-    gtk_container_add(GTK_CONTAINER(gtk_window), grid);
-
-    canvas = gtk_drawing_area_new();
-    gtk_grid_attach(GTK_GRID(grid), canvas, column_canvas, row_canvas, span_column__canvas, span_row__canvas);
-    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), NULL);
-    g_signal_connect(canvas, "draw", G_CALLBACK(canvas_draw), NULL);
-
-    button("Zoom In", G_CALLBACK(zoom_in_clicked));
-    button("Zoom Out", G_CALLBACK(zoom_out_clicked));
-    button(" < ", G_CALLBACK(span_left_clicked));
-    button(" > ", G_CALLBACK(span_right_clicked));
-    button(" Up ", G_CALLBACK(span_up_clicked));
-    button(" Down ", G_CALLBACK(span_down_clicked));
-
-    GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box));
-    gtk_grid_attach(GTK_GRID(grid), list_box, column__list_box, row__list_box, span_column__list_box, span_row__list_box);
-
+    new_button("Zoom In", G_CALLBACK(zoom_in_clicked));
+    new_button("Zoom Out", G_CALLBACK(zoom_out_clicked));
+    new_button(" < ", G_CALLBACK(span_left_clicked));
+    new_button(" > ", G_CALLBACK(span_right_clicked));
+    new_button(" Up ", G_CALLBACK(span_up_clicked));
+    new_button(" Down ", G_CALLBACK(span_down_clicked));
 
     gtk_widget_show_all(gtk_window);
-
     gtk_main();
 
     return 0;
