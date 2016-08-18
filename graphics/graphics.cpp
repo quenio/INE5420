@@ -415,9 +415,7 @@ static DisplayFile displayFile({
 });
 
 
-static Window window(0, 0, 100, 100);
-
-static cairo_surface_t *surface = NULL;
+static Window world_window(0, 0, 100, 100);
 
 static void refresh(GtkWidget *widget)
 {
@@ -428,19 +426,23 @@ static void refresh(GtkWidget *widget)
         gtk_widget_get_allocated_height(widget));
 }
 
+static cairo_surface_t *surface = NULL;
+
 static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer UNUSED data)
 {
     if (surface) cairo_surface_destroy(surface);
 
-    const int width = gtk_widget_get_allocated_width(widget);
-    const int height = gtk_widget_get_allocated_height(widget);
+    const int widget_width = gtk_widget_get_allocated_width(widget);
+    const int widget_height = gtk_widget_get_allocated_height(widget);
 
-    surface = gdk_window_create_similar_surface(gtk_widget_get_window(widget), CAIRO_CONTENT_COLOR, width, height);
+    surface = gdk_window_create_similar_surface(gtk_widget_get_window(widget),
+                                                CAIRO_CONTENT_COLOR,
+                                                widget_width, widget_height);
 
     SurfaceCanvas canvas(surface);
     canvas.clear();
 
-    Viewport viewport(width, height, window, canvas);
+    Viewport viewport(widget_width, widget_height, world_window, canvas);
     displayFile.render(viewport);
 
     refresh(widget);
@@ -453,7 +455,7 @@ static void refresh_canvas(GtkWidget *canvas)
     refresh_surface(GTK_WIDGET(canvas), nullptr, nullptr);
 }
 
-static gboolean canvas_draw(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUSED data)
+static gboolean draw_canvas(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUSED data)
 {
     cairo_set_source_surface(cr, surface, 0, 0);
     cairo_paint(cr);
@@ -465,37 +467,37 @@ static const double step = 0.1; // 10 percent
 
 static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    window.zoom_out(step);
+    world_window.zoom_out(step);
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
 static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    window.zoom_in(step);
+    world_window.zoom_in(step);
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
 static void span_left_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
 {
-    window.span_left(step);
+    world_window.span_left(step);
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
 static void span_right_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
 {
-    window.span_right(step);
+    world_window.span_right(step);
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
 static void span_up_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
 {
-    window.span_up(step);
+    world_window.span_up(step);
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
 static void span_down_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
 {
-    window.span_down(step);
+    world_window.span_down(step);
     refresh_canvas(GTK_WIDGET(canvas));
 }
 
@@ -519,11 +521,11 @@ static const gint span_row__button = 1;
 
 static const gint column__tool_bar = 0;
 static const gint column__list_box = column__tool_bar;
-static const gint column_canvas = column__list_box + span_column__list_box;
+static const gint column__canvas = column__list_box + span_column__list_box;
 
 static const gint row__tool_bar = 0;
 static const gint row__list_box = 1;
-static const gint row_canvas = row__list_box;
+static const gint row__canvas = row__list_box;
 
 static GtkWidget *gtk_window;
 static GtkWidget *grid;
@@ -550,10 +552,10 @@ static void new_canvas()
 {
     canvas = gtk_drawing_area_new();
     gtk_grid_attach(GTK_GRID(grid), canvas,
-                    column_canvas, row_canvas,
+                    column__canvas, row__canvas,
                     span_column__canvas, span_row__canvas);
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), NULL);
-    g_signal_connect(canvas, "draw", G_CALLBACK(canvas_draw), NULL);
+    g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), NULL);
 }
 
 static void new_list_box()
