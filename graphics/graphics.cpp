@@ -60,19 +60,32 @@ private:
 
 int Object::_count = 0;
 
+class Coord {
+public:
+    Coord (Coord &coord): _x(coord.x()), _y(coord.y()) {}
+    Coord (double x, double y): _x(x), _y(y) {}
+
+    virtual double x() { return _x; }
+    virtual double y() { return _y; }
+
+private:
+    double _x;
+    double _y;
+};
+
 // Two-dimensional points
-class Point: public Drawable, public Object
+class Point: public Drawable, public Object, public Coord
 {
 public:
-    Point(double x, double y): _x(x), _y(y) {}
+    Point(Coord &coord): _coord(coord) {}
 
-    double x() { return _x; }
-    double y() { return _y; }
+    virtual double x() { return _coord.x(); }
+    virtual double y() { return _coord.y(); }
 
     // Scale x by factor fx, y by factor fy.
     Point scale(double fx, double fy)
     {
-        return Point(_x *= fx, _y *= fy);
+        return Point(Coord(_coord.x() *= fx, _coord.y() *= fy));
     }
 
     // Move by dx horizontally, dy vertically.
@@ -111,7 +124,7 @@ public:
     }
 
 private:
-    double _x, _y;
+    Coord _coord;
 };
 
 // Straight one-dimensional figure delimited by two points
