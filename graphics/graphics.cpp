@@ -83,17 +83,17 @@ private:
 int Object::_count = 0;
 
 // Two-dimensional points
-class Point: public Drawable, public Object, public Coord
+class Point: public Drawable, public Object
 {
 public:
-    Point(double x, double y): Coord(x, y) {}
+    Point(Coord coord): _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
     void draw(Canvas &canvas)
     {
         const double thickness = 0.3;
 
-        Coord current = *this;
+        Coord current = _coord;
         canvas.move(current);
 
         current = current.translate(0, thickness);
@@ -116,6 +116,9 @@ public:
     {
         return "Point";
     }
+
+private:
+    Coord _coord;
 };
 
 // Straight one-dimensional figure delimited by two points
@@ -123,7 +126,7 @@ class Line: public Drawable, public Object
 {
 public:
 
-    Line(Point a, Point b): _a(a), _b(b) {}
+    Line(Coord a, Coord b): _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas &canvas)
@@ -139,7 +142,7 @@ public:
 
 
 private:
-    Point _a, _b;
+    Coord _a, _b;
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
@@ -147,11 +150,11 @@ class Polygon: public Drawable, public Object
 {
 public:
 
-    Polygon(initializer_list<Point> vertices): _vertices(vertices) {}
+    Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
 
     void draw(Canvas &canvas)
     {
-        Point previous = _vertices.back();
+        Coord previous = _vertices.back();
         for (auto &current: _vertices)
         {
             canvas.move(previous);
@@ -166,7 +169,7 @@ public:
     }
 
 private:
-    list<Point> _vertices;
+    list<Coord> _vertices;
 };
 
 
@@ -395,26 +398,26 @@ private:
 };
 
 
-inline shared_ptr<DrawCommand> draw_point(Point a)
+inline shared_ptr<DrawCommand> draw_point(Coord a)
 {
     return make_shared<DrawCommand>(make_shared<Point>(a));
 }
 
-inline shared_ptr<DrawCommand> draw_line(Point a, Point b)
+inline shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
 {
     return make_shared<DrawCommand>(make_shared<Line>(a, b));
 }
 
-inline shared_ptr<DrawCommand> draw_square(Point a, Point b, Point c, Point d)
+inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 {
     return make_shared<DrawCommand>(make_shared<Polygon>(Polygon { a, b, c, d }));
 }
 
 static DisplayFile displayFile({
-    draw_point(Point(25, 50)),
-    draw_point(Point(75, 50)),
-    draw_line(Point(10, 10), Point(90, 90)),
-    draw_square(Point(10, 10), Point(10, 90), Point(90, 90), Point(90, 10))
+    draw_point(Coord(25, 50)),
+    draw_point(Coord(75, 50)),
+    draw_line(Coord(10, 10), Coord(90, 90)),
+    draw_square(Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10))
 });
 
 
