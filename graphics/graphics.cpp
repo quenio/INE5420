@@ -12,8 +12,8 @@ class Coord {
 public:
     Coord (double x, double y): _x(x), _y(y) {}
 
-    virtual double x() { return _x; }
-    virtual double y() { return _y; }
+    virtual double x() const { return _x; }
+    virtual double y() const { return _y; }
 
     // Scale x by factor fx, y by factor fy.
     Coord scale(double fx, double fy)
@@ -38,10 +38,10 @@ class Canvas
 public:
 
     // Move to destination.
-    virtual void move(Coord destination) = 0;
+    virtual void move(const Coord &destination) = 0;
 
     // Draw line from current position to destination.
-    virtual void draw_line(Coord destination) = 0;
+    virtual void draw_line(const Coord &destination) = 0;
 
 };
 
@@ -178,16 +178,16 @@ public:
     Window(double left, double bottom, double right, double top)
         :_leftBottom(left, bottom), _rightTop(right, top) {}
 
-    double left() { return _leftBottom.x(); }
-    double bottom() { return _leftBottom.y(); }
-    double right() { return _rightTop.x(); }
-    double top() { return _rightTop.y(); }
+    double left() const { return _leftBottom.x(); }
+    double bottom() const { return _leftBottom.y(); }
+    double right() const { return _rightTop.x(); }
+    double top() const { return _rightTop.y(); }
 
-    double width() { return right() - left(); }
-    double height() { return top() - bottom(); }
+    double width() const { return right() - left(); }
+    double height() const { return top() - bottom(); }
 
     // Normalize point to window dimensions
-    Coord normalize(Coord point)
+    Coord normalize(const Coord &point) const
     {
         return Coord(
             (point.x() - left()) / width(),
@@ -264,20 +264,19 @@ public:
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
     // Translate p from window to canvas.
-    Coord translate(Coord p)
+    Coord translate(const Coord &p) const
     {
         return _window.normalize(p).scale(_width, _height);
     }
 
-
     // Move to destination.
-    virtual void move(Coord destination)
+    virtual void move(const Coord &destination)
     {
         _canvas.move(translate(destination));
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(Coord destination)
+    virtual void draw_line(const Coord &destination)
     {
         _canvas.draw_line(translate(destination));
     }
@@ -377,13 +376,13 @@ public:
     }
 
     // Move to destination.
-    virtual void move(Coord destination)
+    virtual void move(const Coord &destination)
     {
         cairo_move_to(cr, destination.x(), destination.y());
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(Coord destination)
+    virtual void draw_line(const Coord &destination)
     {
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_set_line_width(cr, 1);
