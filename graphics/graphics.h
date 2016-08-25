@@ -354,48 +354,6 @@ private:
     list<shared_ptr<DisplayCommand>> _commands;
 };
 
-// Canvas for GTK surface
-class SurfaceCanvas: public Canvas
-{
-public:
-
-    SurfaceCanvas(cairo_surface_t *surface)
-    {
-        cr = cairo_create(surface);
-    }
-
-    ~SurfaceCanvas()
-    {
-        cairo_destroy(cr);
-    }
-
-    // Paint the whole canvas with the white color.
-    void clear()
-    {
-        cairo_set_source_rgb(cr, 1, 1, 1);
-        cairo_paint(cr);
-    }
-
-    // Move to destination.
-    virtual void move(const Coord &destination)
-    {
-        cairo_move_to(cr, destination.x(), destination.y());
-    }
-
-    // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination)
-    {
-        cairo_set_source_rgb(cr, 0, 0, 0);
-        cairo_set_line_width(cr, 1);
-        cairo_line_to(cr, destination.x(), destination.y());
-        cairo_stroke(cr);
-    }
-
-private:
-    cairo_t *cr;
-};
-
-
 inline shared_ptr<DrawCommand> draw_point(Coord a)
 {
     return make_shared<DrawCommand>(make_shared<Point>(a));
