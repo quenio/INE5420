@@ -8,7 +8,29 @@ using namespace std;
 
 #define UNUSED __attribute__ ((unused))
 
-class Point;
+class Coord {
+public:
+    Coord (double x, double y): _x(x), _y(y) {}
+
+    virtual double x() { return _x; }
+    virtual double y() { return _y; }
+
+    // Scale x by factor fx, y by factor fy.
+    Coord scale(double fx, double fy)
+    {
+        return Coord(x() * fx, y() * fy);
+    }
+
+    // Move by dx horizontally, dy vertically.
+    Coord translate(double dx, double dy)
+    {
+        return Coord(x() + dx, y() + dy);
+    }
+
+private:
+    double _x;
+    double _y;
+};
 
 // Drawable area of the screen
 class Canvas
@@ -16,10 +38,10 @@ class Canvas
 public:
 
     // Move to destination.
-    virtual void move(Point destination) = 0;
+    virtual void move(Coord destination) = 0;
 
     // Draw line from current position to destination.
-    virtual void draw_line(Point destination) = 0;
+    virtual void draw_line(Coord destination) = 0;
 
 };
 
@@ -60,42 +82,18 @@ private:
 
 int Object::_count = 0;
 
-class Coord {
-public:
-    Coord (double x, double y): _x(x), _y(y) {}
-
-    virtual double x() { return _x; }
-    virtual double y() { return _y; }
-
-private:
-    double _x;
-    double _y;
-};
-
 // Two-dimensional points
 class Point: public Drawable, public Object, public Coord
 {
 public:
     Point(double x, double y): Coord(x, y) {}
 
-    // Scale x by factor fx, y by factor fy.
-    Point scale(double fx, double fy)
-    {
-        return Point(x() * fx, y() * fy);
-    }
-
-    // Move by dx horizontally, dy vertically.
-    Point translate(double dx, double dy)
-    {
-        return Point(x() + dx, y() + dy);
-    }
-
     // Draw a point in canvas at position (x, y).
     void draw(Canvas &canvas)
     {
         const double thickness = 0.3;
 
-        Point current = *this;
+        Coord current = *this;
         canvas.move(current);
 
         current = current.translate(0, thickness);
@@ -189,9 +187,9 @@ public:
     double height() { return top() - bottom(); }
 
     // Normalize point to window dimensions
-    Point normalize(Point point)
+    Coord normalize(Coord point)
     {
-        return Point(
+        return Coord(
             (point.x() - left()) / width(),
             1.0 - ((point.y() - bottom()) / height())
         );
@@ -254,7 +252,7 @@ public:
     }
 
 private:
-    Point _leftBottom, _rightTop;
+    Coord _leftBottom, _rightTop;
 };
 
 // Area on a screen to execute display commands
@@ -266,20 +264,20 @@ public:
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
     // Translate p from window to canvas.
-    Point translate(Point p)
+    Coord translate(Coord p)
     {
         return _window.normalize(p).scale(_width, _height);
     }
 
 
     // Move to destination.
-    virtual void move(Point destination)
+    virtual void move(Coord destination)
     {
         _canvas.move(translate(destination));
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(Point destination)
+    virtual void draw_line(Coord destination)
     {
         _canvas.draw_line(translate(destination));
     }
@@ -379,13 +377,13 @@ public:
     }
 
     // Move to destination.
-    virtual void move(Point destination)
+    virtual void move(Coord destination)
     {
         cairo_move_to(cr, destination.x(), destination.y());
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(Point destination)
+    virtual void draw_line(Coord destination)
     {
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_set_line_width(cr, 1);
