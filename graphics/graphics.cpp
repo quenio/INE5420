@@ -8,7 +8,8 @@ using namespace std;
 
 #define UNUSED __attribute__ ((unused))
 
-class Coord {
+class Coord
+{
 public:
     Coord (double x, double y): _x(x), _y(y) {}
 
