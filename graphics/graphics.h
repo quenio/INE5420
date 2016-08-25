@@ -261,7 +261,7 @@ class Viewport: public Canvas
 {
 public:
 
-    Viewport(double width, double height, Window window, Canvas &canvas)
+    Viewport(double width, double height, Window &window, Canvas &canvas)
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
     // Translate p from window to canvas.
@@ -284,7 +284,7 @@ public:
 
 private:
     double _width, _height;
-    Window _window;
+    Window &_window;
     Canvas &_canvas;
 };
 
@@ -327,17 +327,34 @@ public:
 
     DisplayFile(initializer_list<shared_ptr<DisplayCommand>> commands): _commands(commands) {}
 
+    // Commands to be executed
+    list<shared_ptr<DisplayCommand>> commands()
+    {
+        return _commands;
+    }
 
     void render(Viewport &viewport)
     {
         for (auto &command: _commands) command->render(viewport);
     }
 
+private:
+    // Commands to be executed
+    list<shared_ptr<DisplayCommand>> _commands;
+};
+
+class World
+{
+public:
+    World(Window window, DisplayFile display_file): _window(window), _display_file(display_file) {}
+
+    Window& window() { return _window; }
+
     // Objects from command list
     list<shared_ptr<Object>> objects() {
         list<shared_ptr<Object>> list;
 
-        for (auto &command: _commands)
+        for (auto &command: _display_file.commands())
         {
             shared_ptr<DrawCommand> drawCommand = dynamic_pointer_cast<DrawCommand>(command);
             if (drawCommand && drawCommand->object())
@@ -349,34 +366,27 @@ public:
         return list;
     }
 
+    void render(Viewport &viewport)
+    {
+        _display_file.render(viewport);
+    }
+
 private:
-    // Commands to be executed
-    list<shared_ptr<DisplayCommand>> _commands;
+    Window _window;
+    DisplayFile _display_file;
 };
 
-inline shared_ptr<DrawCommand> draw_point(Coord a)
+shared_ptr<DrawCommand> draw_point(Coord a)
 {
     return make_shared<DrawCommand>(make_shared<Point>(a));
 }
 
-inline shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
+shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
 {
     return make_shared<DrawCommand>(make_shared<Line>(a, b));
 }
 
-inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
+shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 {
     return make_shared<DrawCommand>(make_shared<Polygon>(Polygon { a, b, c, d }));
 }
-
-static DisplayFile displayFile({
-    draw_point(Coord(25, 50)),
-    draw_point(Coord(75, 50)),
-    draw_line(Coord(10, 10), Coord(90, 90)),
-    draw_square(Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10))
-});
-
-
-static Window world_window(0, 0, 100, 100);
-
-

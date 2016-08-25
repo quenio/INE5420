@@ -59,7 +59,7 @@ static void refresh(GtkWidget *widget)
 
 static cairo_surface_t *surface = NULL;
 
-static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer UNUSED data)
+static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *event, gpointer data)
 {
     if (surface) cairo_surface_destroy(surface);
 
@@ -73,17 +73,18 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
     SurfaceCanvas canvas(surface);
     canvas.clear();
 
-    Viewport viewport(widget_width, widget_height, world_window, canvas);
-    displayFile.render(viewport);
+    World &world = *(World*)data;
+    Viewport viewport(widget_width, widget_height, world.window(), canvas);
+    world.render(viewport);
 
     refresh(widget);
 
     return true;
 }
 
-static void refresh_canvas(GtkWidget *canvas)
+static void refresh_canvas(GtkWidget *canvas, World &world)
 {
-    refresh_surface(GTK_WIDGET(canvas), nullptr, nullptr);
+    refresh_surface(GTK_WIDGET(canvas), nullptr, &world);
 }
 
 static gboolean draw_canvas(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUSED data)
@@ -96,44 +97,8 @@ static gboolean draw_canvas(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUS
 
 static const double step = 0.1; // 10 percent
 
-static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer canvas)
-{
-    world_window.zoom_out(step);
-    refresh_canvas(GTK_WIDGET(canvas));
-}
-
-static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer canvas)
-{
-    world_window.zoom_in(step);
-    refresh_canvas(GTK_WIDGET(canvas));
-}
-
-static void span_left_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
-{
-    world_window.span_left(step);
-    refresh_canvas(GTK_WIDGET(canvas));
-}
-
-static void span_right_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
-{
-    world_window.span_right(step);
-    refresh_canvas(GTK_WIDGET(canvas));
-}
-
-static void span_up_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
-{
-    world_window.span_up(step);
-    refresh_canvas(GTK_WIDGET(canvas));
-}
-
-static void span_down_clicked(GtkWidget UNUSED *widget, gpointer UNUSED canvas)
-{
-    world_window.span_down(step);
-    refresh_canvas(GTK_WIDGET(canvas));
-}
-
-static void add_objects_to_list_box(GtkListBox *list_box) {
-    for (auto &object: displayFile.objects()) {
+static void add_objects_to_list_box(GtkListBox *list_box, list<shared_ptr<Object>> objects) {
+    for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
         gtk_list_box_prepend(list_box, label);
     }
@@ -179,20 +144,20 @@ static void new_grid()
     gtk_container_add(GTK_CONTAINER(gtk_window), grid);
 }
 
-static void new_canvas()
+static void new_canvas(World &world)
 {
     canvas = gtk_drawing_area_new();
     gtk_grid_attach(GTK_GRID(grid), canvas,
                     column__canvas, row__canvas,
                     span_column__canvas, span_row__canvas);
-    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), NULL);
-    g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), NULL);
+    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
+    g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
 }
 
-static void new_list_box()
+static void new_list_box(list<shared_ptr<Object>> objects)
 {
     GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box));
+    add_objects_to_list_box(GTK_LIST_BOX(list_box), objects);
     gtk_grid_attach(GTK_GRID(grid), list_box,
                     column__list_box, row__list_box,
                     span_column__list_box, span_row__list_box);
