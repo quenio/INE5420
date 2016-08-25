@@ -52,17 +52,17 @@ int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
 
-    new_gtk_window("Graphics");
-    new_grid();
-    new_canvas(world);
-    new_list_box(world.objects());
+    GtkWidget *gtk_window = new_gtk_window("Graphics");
+    GtkWidget *grid = new_grid(gtk_window);
+    GtkWidget *canvas = new_canvas(grid, world);
+    new_list_box(grid, world.objects());
 
-    new_button("Zoom In", G_CALLBACK(zoom_in_clicked));
-    new_button("Zoom Out", G_CALLBACK(zoom_out_clicked));
-    new_button(" < ", G_CALLBACK(span_left_clicked));
-    new_button(" > ", G_CALLBACK(span_right_clicked));
-    new_button(" Up ", G_CALLBACK(span_up_clicked));
-    new_button(" Down ", G_CALLBACK(span_down_clicked));
+    new_button(grid, canvas, "Zoom In", G_CALLBACK(zoom_in_clicked));
+    new_button(grid, canvas, "Zoom Out", G_CALLBACK(zoom_out_clicked));
+    new_button(grid, canvas, " < ", G_CALLBACK(span_left_clicked));
+    new_button(grid, canvas, " > ", G_CALLBACK(span_right_clicked));
+    new_button(grid, canvas, " Up ", G_CALLBACK(span_up_clicked));
+    new_button(grid, canvas, " Down ", G_CALLBACK(span_down_clicked));
 
     gtk_widget_show_all(gtk_window);
     gtk_main();

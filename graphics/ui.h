@@ -123,38 +123,43 @@ static const gint row__tool_bar = 0;
 static const gint row__list_box = 1;
 static const gint row__canvas = row__list_box;
 
-static GtkWidget *gtk_window;
-static GtkWidget *grid;
-static GtkWidget *canvas;
-
-static void new_gtk_window(const gchar *title)
+static GtkWidget * new_gtk_window(const gchar *title)
 {
-    gtk_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    GtkWidget *gtk_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
     gtk_window_set_position(GTK_WINDOW(gtk_window), GTK_WIN_POS_CENTER);
     gtk_window_set_title(GTK_WINDOW(gtk_window), title);
     gtk_window_set_default_size(GTK_WINDOW(gtk_window), gtk_window__width, gtk_window__height);
     g_signal_connect(gtk_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    return gtk_window;
 }
 
-static void new_grid()
+static GtkWidget * new_grid(GtkWidget *gtk_window)
 {
-    grid = gtk_grid_new();
+    GtkWidget *grid = gtk_grid_new();
+
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
     gtk_container_add(GTK_CONTAINER(gtk_window), grid);
+
+    return grid;
 }
 
-static void new_canvas(World &world)
+static GtkWidget * new_canvas(GtkWidget *grid, World &world)
 {
-    canvas = gtk_drawing_area_new();
+    GtkWidget *canvas = gtk_drawing_area_new();
+
     gtk_grid_attach(GTK_GRID(grid), canvas,
                     column__canvas, row__canvas,
                     span_column__canvas, span_row__canvas);
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
+
+    return canvas;
 }
 
-static void new_list_box(list<shared_ptr<Object>> objects)
+static void new_list_box(GtkWidget *grid, list<shared_ptr<Object>> objects)
 {
     GtkWidget *list_box = gtk_list_box_new();
     add_objects_to_list_box(GTK_LIST_BOX(list_box), objects);
@@ -163,9 +168,10 @@ static void new_list_box(list<shared_ptr<Object>> objects)
                     span_column__list_box, span_row__list_box);
 }
 
-static void new_button(const gchar *label, GCallback callback)
+static void new_button(GtkWidget *grid, GtkWidget *canvas, const gchar *label, GCallback callback)
 {
     static gint button_count = 0;
+
     GtkWidget *button_with_label = gtk_button_new_with_label(label);
     g_signal_connect(button_with_label, "clicked", G_CALLBACK(callback), canvas);
     gtk_grid_attach(GTK_GRID(grid), button_with_label,
