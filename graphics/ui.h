@@ -3,6 +3,7 @@
 #pragma once
 
 #include "graphics.h"
+#include <cairo.h>
 #include <gtk/gtk.h>
 
 #define UNUSED __attribute__ ((unused))
