@@ -37,7 +37,7 @@ public:
     typedef tuple<double, double, double> Column;
 
     TransformMatrix(Column column1, Column column2)
-        : TransformMatrix(column1, column2, { 0.0, 0.0, 1.0 }) {}
+        : _column1(column1), _column2(column2), _column3({ 0.0, 0.0, 1.0 }) {}
 
     TransformMatrix(Column column1, Column column2, Column column3)
         : _column1(column1), _column2(column2), _column3(column3) {}
