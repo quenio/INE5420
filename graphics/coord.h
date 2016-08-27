@@ -111,11 +111,14 @@ TransformMatrix scaling(double sx, double sy)
     return TransformMatrix({ sx, 0.0, 0.0 }, { 0.0, sy, 0.0 }, { 0.0, 0.0, 1.0 });
 }
 
-// 2D rotation as a matrix: rotate by angle; clockwise if angle positive; counter-clockwise if negative.
-TransformMatrix rotation(double angle)
+constexpr double PI = 3.14159265;
+
+// 2D rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+TransformMatrix rotation(double degrees)
 {
-    const double c = cos(angle);
-    const double s = sin(angle);
+    const double rad = degrees * PI / 180.0;
+    const double c = cos(rad);
+    const double s = sin(rad);
     return TransformMatrix({ c, s, 0.0 }, { -s, c, 0.0 }, { 0.0, 0.0, 1.0 });
 }
 
@@ -131,4 +134,22 @@ Coord& operator *= (Coord &lhs, TransformMatrix matrix)
 {
     lhs = lhs * matrix;
     return lhs;
+}
+
+// Move coord by dx horizontally, dy vertically.
+void move(Coord &coord, double dx, double dy)
+{
+    coord *= translation(dx, dy);
+}
+
+// Scale coord by factor.
+void scale(Coord &coord, double factor)
+{
+    coord *= scaling(factor, factor);
+}
+
+// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+void rotate(Coord & coord, double degrees)
+{
+    coord *= rotation(degrees);
 }

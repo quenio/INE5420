@@ -49,6 +49,15 @@ public:
         return ss.str();
     }
 
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy) = 0;
+
+    // Scale by factor.
+    virtual void scale(double factor) = 0;
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees) = 0;
+
 private:
     int _id;
 
@@ -92,6 +101,24 @@ public:
         return "Point";
     }
 
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        ::move(_coord, dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        ::scale(_coord, factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        ::rotate(_coord, degrees);
+    }
+
 private:
     Coord _coord;
 };
@@ -115,6 +142,26 @@ public:
         return "Line";
     }
 
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        ::move(_a, dx, dy);
+        ::move(_b, dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        ::scale(_a, factor);
+        ::scale(_b, factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        ::rotate(_a, degrees);
+        ::rotate(_b, degrees);
+    }
 
 private:
     Coord _a, _b;
@@ -141,6 +188,27 @@ public:
     virtual string type()
     {
         return "Polygon";
+    }
+
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        for (Coord &coord: _vertices)
+            ::move(coord, dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        for (Coord &coord: _vertices)
+            ::scale(coord, factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        for (Coord &coord: _vertices)
+            ::rotate(coord, degrees);
     }
 
 private:
@@ -346,6 +414,27 @@ public:
     void render(Viewport &viewport)
     {
         _display_file.render(viewport);
+    }
+
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        for (shared_ptr<Object> object: objects())
+            object->move(dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        for (shared_ptr<Object> object: objects())
+            object->scale(factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        for (shared_ptr<Object> object: objects())
+            object->rotate(degrees);
     }
 
 private:
