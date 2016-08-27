@@ -99,12 +99,9 @@ static const double step = 0.1; // 10 percent
 
 static void add_objects_to_list_box(GtkListBox *list_box, list<shared_ptr<Object>> objects) {
     for (auto &object: objects) {
-        GtkWidget *list_box_row = gtk_list_box_row_new();
         GtkWidget *label = gtk_label_new(object->name().c_str());
 
-        gtk_container_add(GTK_CONTAINER(list_box_row), label);
-
-        gtk_list_box_prepend(list_box, list_box_row);
+        gtk_container_add(GTK_CONTAINER(list_box), label);
     }
 }
 
@@ -163,6 +160,11 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world)
     return canvas;
 }
 
+static void select_object(GtkListBox *list_box, GtkListBoxRow *row, gpointer user_data)
+{
+    g_print("Row selected\n");
+}
+
 static void new_list_box(GtkWidget *grid, list<shared_ptr<Object>> objects)
 {
     GtkWidget *list_box = gtk_list_box_new();
@@ -170,6 +172,8 @@ static void new_list_box(GtkWidget *grid, list<shared_ptr<Object>> objects)
     gtk_grid_attach(GTK_GRID(grid), list_box,
                     column__list_box, row__list_box,
                     span_column__list_box, span_row__list_box);
+
+    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", G_CALLBACK(select_object), nullptr);
 }
 
 static void new_button(GtkWidget *grid, GtkWidget *canvas, const gchar *label, GCallback callback)
