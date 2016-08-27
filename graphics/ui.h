@@ -160,9 +160,13 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world)
     return canvas;
 }
 
-static void select_object(GtkListBox *list_box, GtkListBoxRow *row, gpointer user_data)
+static int select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, UNUSED gpointer user_data)
 {
-    g_print("Row selected\n");
+    gint i = gtk_list_box_row_get_index(row);
+
+    printf("Selected row = %i\n", i);
+
+    return i;
 }
 
 static void new_list_box(GtkWidget *grid, list<shared_ptr<Object>> objects)
