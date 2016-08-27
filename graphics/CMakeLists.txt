@@ -11,7 +11,7 @@ link_directories(${GTK3_LIBRARY_DIRS} ${GTKMM3_LIBRARY_DIRS})
 add_definitions(${GTK3_CFLAGS_OTHER} ${GTKMM3_CFLAGS_OTHER})
 
 # CMake Target
-set(SOURCE_FILES main.cpp ui.h graphics.h)
+set(SOURCE_FILES main.cpp ui.h graphics.h coord.h)
 add_executable(graphics ${SOURCE_FILES})
 target_link_libraries(graphics ${GTK3_LIBRARIES})
 
