@@ -413,6 +413,7 @@ public:
 
     void render(Viewport &viewport)
     {
+        render_axis(viewport);
         _display_file.render(viewport);
     }
 
@@ -438,6 +439,18 @@ public:
     }
 
 private:
+
+    void render_axis(Viewport &viewport)
+    {
+        // x axis
+        viewport.move(Coord(-1000, 0));
+        viewport.draw_line(Coord(+1000, 0));
+
+        // y axis
+        viewport.move(Coord(0, -1000));
+        viewport.draw_line(Coord(0, +1000));
+    }
+
     Window _window;
     DisplayFile _display_file;
 };
