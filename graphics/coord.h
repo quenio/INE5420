@@ -54,17 +54,49 @@ private:
 class TransformMatrix
 {
 public:
+    constexpr static int column_count = TransformVector::count;
+    constexpr static int row_count = TransformVector::count;
+
     TransformMatrix(initializer_list<double> column1, initializer_list<double> column2, initializer_list<double> column3)
-        : _column1(column1), _column2(column2), _column3(column3) {}
+    : _column { column1, column2, column3 } {}
 
     // Transform vector using transformation matrix.
     friend TransformVector operator * (TransformVector vector, TransformMatrix matrix)
     {
-        return TransformVector({ vector * matrix._column1, vector * matrix._column2, vector * matrix._column3 });
+        return TransformVector({ vector * matrix.column(0), vector * matrix.column(1), vector * matrix.column(2) });
+    }
+
+    // Multiply this matrix by other
+    TransformMatrix operator * (TransformMatrix other)
+    {
+        double m[column_count][row_count];
+
+        for (int c = 0; c < column_count; c++)
+            for (int r = 0; r < row_count; r++)
+                m[c][r] = row(r) * other.column(c);
+
+        return TransformMatrix(
+           { m[0][0], m[0][1], m[0][2] },
+           { m[1][0], m[1][1], m[1][2] },
+           { m[2][0], m[2][1], m[2][2] }
+        );
     }
 
 private:
-    TransformVector _column1, _column2, _column3;
+
+    // Vector representing row at the i'th position
+    TransformVector row(int i)
+    {
+        return TransformVector({ _column[0][i], _column[1][i], _column[2][i] });
+    }
+
+    // Vector representing column at the i'th position
+    TransformVector column(int i)
+    {
+        return _column[i];
+    }
+
+    TransformVector _column[column_count];
 };
 
 // 2D translation as a matrix: move by dx horizontally, dy vertically.
@@ -94,6 +126,7 @@ Coord operator * (const Coord &coord, TransformMatrix matrix)
     return Coord(vector[0], vector[1]);
 }
 
+// Transform coord using transformation matrix, and assigns to lhs.
 Coord& operator *= (Coord &lhs, TransformMatrix matrix)
 {
     lhs = lhs * matrix;
