@@ -392,7 +392,7 @@ private:
 class World
 {
 public:
-    World(Window window, DisplayFile display_file): _window(window), _display_file(display_file) {}
+    World(Window window, DisplayFile display_file): _window(window), _display_file(display_file), _currentObj(-1) {}
 
     Window& window() { return _window; }
 
@@ -410,6 +410,12 @@ public:
         }
 
         return vector;
+    }
+
+    // Sets the index of the current selected object. -1 represents the world.
+    void currentObj(int index)
+    {
+        _currentObj = index;
     }
 
     void render(Viewport &viewport)
@@ -440,7 +446,6 @@ public:
     }
 
 private:
-
     void render_axis(Viewport &viewport)
     {
         // x axis
@@ -454,6 +459,7 @@ private:
 
     Window _window;
     DisplayFile _display_file;
+    int _currentObj;
 };
 
 shared_ptr<DrawCommand> draw_point(Coord a)
