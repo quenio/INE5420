@@ -31,18 +31,42 @@ private:
     double _x, _y;
 };
 
-// Transformations as a matrix
+// Columns of TransformMatrix and representation of homogeneous coordinates
+class TransformVector
+{
+public:
+    constexpr static int count = 3;
+
+    TransformVector(initializer_list<double> vector): _vector(vector)
+    {
+        assert(_vector.size() == count);
+    }
+
+    double operator * (TransformVector &other)
+    {
+        double sum = 0;
+        for (int i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
+        return sum;
+    }
+
+private:
+    vector<double> _vector;
+};
+
+// 2D transformations as a matrix
 class TransformMatrix
 {
 public:
     TransformMatrix(initializer_list<double> column1, initializer_list<double> column2, initializer_list<double> column3)
-        : _column1(column1), _column2(column2), _column3(column3)
+        : _column1(column1), _column2(column2), _column3(column3) {}
+
+    friend TransformVector operator * (TransformVector &vector, TransformMatrix &other)
     {
-        assert(column1.size() == column2.size() == column3.size());
+        return TransformVector({ vector * other._column1, vector * other._column2, vector * other._column3 });
     }
 
 private:
-    vector<double> _column1, _column2, _column3;
+    TransformVector _column1, _column2, _column3;
 };
 
 // 2D translation as a matrix
