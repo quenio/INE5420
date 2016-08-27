@@ -71,19 +71,19 @@ public:
         Coord current = _coord;
         canvas.move(current);
 
-        current = current.translate(0, thickness);
+        current *= translation(0, thickness);
         canvas.draw_line(current);
         canvas.move(current);
 
-        current = current.translate(thickness, 0);
+        current *= translation(thickness, 0);
         canvas.draw_line(current);
         canvas.move(current);
 
-        current = current.translate(0, -thickness);
+        current *= translation(0, -thickness);
         canvas.draw_line(current);
         canvas.move(current);
 
-        current = current.translate(-thickness, 0);
+        current *= translation(-thickness, 0);
         canvas.draw_line(current);
     }
 
@@ -179,8 +179,8 @@ public:
         double tx = width() * factor;
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(+tx, +ty);
-        _rightTop = _rightTop.translate(-tx, -ty);
+        _leftBottom *= translation(+tx, +ty);
+        _rightTop *= translation(-tx, -ty);
     }
 
     // Zoom in by factor
@@ -189,8 +189,8 @@ public:
         double tx = width() * factor;
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(-tx, -ty);
-        _rightTop = _rightTop.translate(+tx, +ty);
+        _leftBottom *= translation(-tx, -ty);
+        _rightTop *= translation(+tx, +ty);
     }
 
     // Span left by factor
@@ -198,8 +198,8 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom = _leftBottom.translate(-tx, 0);
-        _rightTop = _rightTop.translate(-tx, 0);
+        _leftBottom *= translation(-tx, 0);
+        _rightTop *= translation(-tx, 0);
     }
 
     // Span right by factor
@@ -207,8 +207,8 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom = _leftBottom.translate(+tx, 0);
-        _rightTop = _rightTop.translate(+tx, 0);
+        _leftBottom *= translation(+tx, 0);
+        _rightTop *= translation(+tx, 0);
     }
 
     // Span up by factor
@@ -216,8 +216,8 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(0, +ty);
-        _rightTop = _rightTop.translate(0, +ty);
+        _leftBottom *= translation(0, +ty);
+        _rightTop *= translation(0, +ty);
     }
 
     // Span down by factor
@@ -225,8 +225,8 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(0, -ty);
-        _rightTop = _rightTop.translate(0, -ty);
+        _leftBottom *= translation(0, -ty);
+        _rightTop *= translation(0, -ty);
     }
 
 private:
@@ -244,7 +244,7 @@ public:
     // Translate p from window to canvas.
     Coord translate(const Coord &p) const
     {
-        return _window.normalize(p).scale(_width, _height);
+        return _window.normalize(p) * scaling(_width, _height);
     }
 
     // Move to destination.
