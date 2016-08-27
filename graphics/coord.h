@@ -148,7 +148,7 @@ void scale(Coord &coord, double factor)
     coord *= scaling(factor, factor);
 }
 
-// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+// Rotate coord by degrees at the world center; clockwise if angle positive; counter-clockwise if negative.
 void rotate(Coord & coord, double degrees)
 {
     coord *= rotation(degrees);
