@@ -1,35 +1,12 @@
-#include <cairo.h>
+#pragma once
+
 #include <memory>
 #include <vector>
 #include <list>
 #include <sstream>
+#include "coord.h"
 
 using namespace std;
-
-class Coord
-{
-public:
-    Coord (double x, double y): _x(x), _y(y) {}
-
-    virtual double x() const { return _x; }
-    virtual double y() const { return _y; }
-
-    // Scale x by factor fx, y by factor fy.
-    Coord scale(double fx, double fy)
-    {
-        return Coord(x() * fx, y() * fy);
-    }
-
-    // Move by dx horizontally, dy vertically.
-    Coord translate(double dx, double dy)
-    {
-        return Coord(x() + dx, y() + dy);
-    }
-
-private:
-    double _x;
-    double _y;
-};
 
 // Drawable area of the screen
 class Canvas
@@ -73,6 +50,15 @@ public:
         return ss.str();
     }
 
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy) = 0;
+
+    // Scale by factor.
+    virtual void scale(double factor) = 0;
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees) = 0;
+
 private:
     int _id;
 
@@ -95,25 +81,43 @@ public:
         Coord current = _coord;
         canvas.move(current);
 
-        current = current.translate(0, thickness);
+        current *= translation(0, thickness);
         canvas.draw_line(current);
         canvas.move(current);
 
-        current = current.translate(thickness, 0);
+        current *= translation(thickness, 0);
         canvas.draw_line(current);
         canvas.move(current);
 
-        current = current.translate(0, -thickness);
+        current *= translation(0, -thickness);
         canvas.draw_line(current);
         canvas.move(current);
 
-        current = current.translate(-thickness, 0);
+        current *= translation(-thickness, 0);
         canvas.draw_line(current);
     }
 
     virtual string type()
     {
         return "Point";
+    }
+
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        ::move(_coord, dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        ::scale(_coord, factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        ::rotate(_coord, degrees);
     }
 
 private:
@@ -139,6 +143,26 @@ public:
         return "Line";
     }
 
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        ::move(_a, dx, dy);
+        ::move(_b, dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        ::scale(_a, factor);
+        ::scale(_b, factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        ::rotate(_a, degrees);
+        ::rotate(_b, degrees);
+    }
 
 private:
     Coord _a, _b;
@@ -165,6 +189,27 @@ public:
     virtual string type()
     {
         return "Polygon";
+    }
+
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        for (Coord &coord: _vertices)
+            ::move(coord, dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        for (Coord &coord: _vertices)
+            ::scale(coord, factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        for (Coord &coord: _vertices)
+            ::rotate(coord, degrees);
     }
 
 private:
@@ -203,8 +248,8 @@ public:
         double tx = width() * factor;
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(+tx, +ty);
-        _rightTop = _rightTop.translate(-tx, -ty);
+        _leftBottom *= translation(+tx, +ty);
+        _rightTop *= translation(-tx, -ty);
     }
 
     // Zoom in by factor
@@ -213,8 +258,8 @@ public:
         double tx = width() * factor;
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(-tx, -ty);
-        _rightTop = _rightTop.translate(+tx, +ty);
+        _leftBottom *= translation(-tx, -ty);
+        _rightTop *= translation(+tx, +ty);
     }
 
     // Span left by factor
@@ -222,8 +267,8 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom = _leftBottom.translate(-tx, 0);
-        _rightTop = _rightTop.translate(-tx, 0);
+        _leftBottom *= translation(-tx, 0);
+        _rightTop *= translation(-tx, 0);
     }
 
     // Span right by factor
@@ -231,8 +276,8 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom = _leftBottom.translate(+tx, 0);
-        _rightTop = _rightTop.translate(+tx, 0);
+        _leftBottom *= translation(+tx, 0);
+        _rightTop *= translation(+tx, 0);
     }
 
     // Span up by factor
@@ -240,8 +285,8 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(0, +ty);
-        _rightTop = _rightTop.translate(0, +ty);
+        _leftBottom *= translation(0, +ty);
+        _rightTop *= translation(0, +ty);
     }
 
     // Span down by factor
@@ -249,8 +294,8 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom = _leftBottom.translate(0, -ty);
-        _rightTop = _rightTop.translate(0, -ty);
+        _leftBottom *= translation(0, -ty);
+        _rightTop *= translation(0, -ty);
     }
 
 private:
@@ -268,7 +313,7 @@ public:
     // Translate p from window to canvas.
     Coord translate(const Coord &p) const
     {
-        return _window.normalize(p).scale(_width, _height);
+        return _window.normalize(p) * scaling(_width, _height);
     }
 
     // Move to destination.
@@ -369,10 +414,44 @@ public:
 
     void render(Viewport &viewport)
     {
+        render_axis(viewport);
         _display_file.render(viewport);
     }
 
+    // Move by dx horizontally, dy vertically.
+    virtual void move(double dx, double dy)
+    {
+        for (shared_ptr<Object> object: objects())
+            object->move(dx, dy);
+    }
+
+    // Scale by factor.
+    virtual void scale(double factor)
+    {
+        for (shared_ptr<Object> object: objects())
+            object->scale(factor);
+    }
+
+    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees)
+    {
+        for (shared_ptr<Object> object: objects())
+            object->rotate(degrees);
+    }
+
 private:
+
+    void render_axis(Viewport &viewport)
+    {
+        // x axis
+        viewport.move(Coord(-1000, 0));
+        viewport.draw_line(Coord(+1000, 0));
+
+        // y axis
+        viewport.move(Coord(0, -1000));
+        viewport.draw_line(Coord(0, +1000));
+    }
+
     Window _window;
     DisplayFile _display_file;
 };

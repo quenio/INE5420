@@ -1,9 +1,9 @@
-// Copyright (c) 2016 Quenio Cesar Machado dos Santos. All rights reserved.
-
 #pragma once
 
 #include "graphics.h"
+#include <cairo.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 
 #define UNUSED __attribute__ ((unused))
 
@@ -87,12 +87,30 @@ static void refresh_canvas(GtkWidget *canvas, World &world)
     refresh_surface(GTK_WIDGET(canvas), nullptr, &world);
 }
 
-static gboolean draw_canvas(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUSED data)
+constexpr double PADDING = 5;
+
+static gboolean draw_canvas(GtkWidget *widget, cairo_t *cr, gpointer UNUSED data)
 {
     cairo_set_source_surface(cr, surface, 0, 0);
     cairo_paint(cr);
 
+    if (gtk_widget_has_focus(widget))
+        gtk_render_focus(
+            gtk_widget_get_style_context(widget),
+            cr,
+            PADDING, PADDING,
+            gtk_widget_get_allocated_width(widget) - 2 * PADDING,
+            gtk_widget_get_allocated_height(widget) - 2 * PADDING);
+
     return false;
+}
+
+static gboolean canvas_button_press_event(GtkWidget *widget, GdkEventButton *event)
+{
+    if (event->button == 1)
+        gtk_widget_grab_focus(widget);
+
+    return true;
 }
 
 static const double step = 0.1; // 10 percent
@@ -108,7 +126,7 @@ static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Obje
 static const int gtk_window__width = 600;
 static const int gtk_window__height = 480;
 
-static const gint span_column__canvas = 6;
+static const gint span_column__canvas = 7;
 static const gint span_column__list_box = 2;
 static const gint span_column__button = 1;
 
@@ -147,7 +165,7 @@ static GtkWidget * new_grid(GtkWidget *gtk_window)
     return grid;
 }
 
-static GtkWidget * new_canvas(GtkWidget *grid, World &world)
+static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_press)
 {
     GtkWidget *canvas = gtk_drawing_area_new();
 
@@ -156,6 +174,11 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world)
                     span_column__canvas, span_row__canvas);
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
+    g_signal_connect(canvas, "button_press_event", G_CALLBACK(canvas_button_press_event), nullptr);
+    g_signal_connect(canvas, "key_press_event", on_key_press, &world);
+
+    gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
+    gtk_widget_set_can_focus(canvas, true);
 
     return canvas;
 }
