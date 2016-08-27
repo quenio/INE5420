@@ -99,8 +99,12 @@ static const double step = 0.1; // 10 percent
 
 static void add_objects_to_list_box(GtkListBox *list_box, list<shared_ptr<Object>> objects) {
     for (auto &object: objects) {
+        GtkWidget *list_box_row = gtk_list_box_row_new();
         GtkWidget *label = gtk_label_new(object->name().c_str());
-        gtk_list_box_prepend(list_box, label);
+
+        gtk_container_add(GTK_CONTAINER(list_box_row), label);
+
+        gtk_list_box_prepend(list_box, list_box_row);
     }
 }
 
