@@ -1,5 +1,6 @@
 #include <cairo.h>
 #include <memory>
+#include <vector>
 #include <list>
 #include <sstream>
 
@@ -351,19 +352,19 @@ public:
     Window& window() { return _window; }
 
     // Objects from command list
-    list<shared_ptr<Object>> objects() {
-        list<shared_ptr<Object>> list;
+    vector<shared_ptr<Object>> objects() {
+        vector<shared_ptr<Object>> vector;
 
         for (auto &command: _display_file.commands())
         {
             shared_ptr<DrawCommand> drawCommand = dynamic_pointer_cast<DrawCommand>(command);
             if (drawCommand && drawCommand->object())
             {
-                list.push_back(drawCommand->object());
+                vector.push_back(drawCommand->object());
             }
         }
 
-        return list;
+        return vector;
     }
 
     void render(Viewport &viewport)

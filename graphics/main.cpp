@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
     GtkWidget *canvas = new_canvas(grid, world);
-    new_list_box(grid, world.objects());
+    new_list_box(grid, world);
 
     new_button(grid, canvas, "Zoom In", G_CALLBACK(zoom_in_clicked));
     new_button(grid, canvas, "Zoom Out", G_CALLBACK(zoom_out_clicked));

@@ -97,7 +97,7 @@ static gboolean draw_canvas(GtkWidget UNUSED *widget, cairo_t *cr, gpointer UNUS
 
 static const double step = 0.1; // 10 percent
 
-static void add_objects_to_list_box(GtkListBox *list_box, list<shared_ptr<Object>> objects) {
+static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object>> objects) {
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
 
@@ -160,24 +160,28 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world)
     return canvas;
 }
 
-static int select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, UNUSED gpointer user_data)
+static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpointer data)
 {
-    gint i = gtk_list_box_row_get_index(row);
+    if (row == NULL) {
+        return;
+    }
 
-    printf("Selected row = %i\n", i);
+    gint selected_row = gtk_list_box_row_get_index(row);
+    World &world = *(World*)data;
+    Object &object = *world.objects().at((unsigned long) selected_row);
 
-    return i;
+    //TODO Redraw object in red.
 }
 
-static void new_list_box(GtkWidget *grid, list<shared_ptr<Object>> objects)
+static void new_list_box(GtkWidget *grid, World &world)
 {
     GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box), objects);
+    add_objects_to_list_box(GTK_LIST_BOX(list_box), world.objects());
     gtk_grid_attach(GTK_GRID(grid), list_box,
                     column__list_box, row__list_box,
                     span_column__list_box, span_row__list_box);
 
-    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", G_CALLBACK(select_object), nullptr);
+    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", G_CALLBACK(select_object), &world);
 }
 
 static void new_button(GtkWidget *grid, GtkWidget *canvas, const gchar *label, GCallback callback)
