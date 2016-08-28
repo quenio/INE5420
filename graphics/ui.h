@@ -183,18 +183,7 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
     return canvas;
 }
 
-static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpointer data)
-{
-    World &world = *(World*)data;
-
-    if (row == NULL) {
-        world.currentObj(-1);
-    } else {
-        world.currentObj(gtk_list_box_row_get_index(row));
-    }
-}
-
-static void new_list_box(GtkWidget *grid, World &world)
+static void new_list_box(GtkWidget *grid, GtkWidget *canvas, World &world, GCallback select_object)
 {
     GtkWidget *list_box = gtk_list_box_new();
     add_objects_to_list_box(GTK_LIST_BOX(list_box), world.objects());
@@ -202,16 +191,21 @@ static void new_list_box(GtkWidget *grid, World &world)
                     column__list_box, row__list_box,
                     span_column__list_box, span_row__list_box);
 
-    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", G_CALLBACK(select_object), &world);
+    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", select_object, canvas);
 }
 
-static void new_button(GtkWidget *grid, GtkWidget *canvas, const gchar *label, GCallback callback)
+static GtkWidget * new_button(
+    GtkWidget *grid, GtkWidget *canvas, const gchar *label, bool enabled, GCallback callback, string tooltip)
 {
     static gint button_count = 0;
 
     GtkWidget *button_with_label = gtk_button_new_with_label(label);
+    gtk_widget_set_sensitive(GTK_WIDGET(button_with_label), enabled);
+    gtk_widget_set_tooltip_text(GTK_WIDGET(button_with_label), tooltip.c_str());
     g_signal_connect(button_with_label, "clicked", G_CALLBACK(callback), canvas);
     gtk_grid_attach(GTK_GRID(grid), button_with_label,
                     column__tool_bar + (button_count++), row__tool_bar,
                     span_column__button, span_row__button);
+
+    return button_with_label;
 }

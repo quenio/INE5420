@@ -24,6 +24,10 @@ private:
 
 };
 
+const Color BLACK = Color(0, 0, 0);
+const Color RED = Color(1, 0, 0);
+const Color BLUE = Color(0, 0, 1);
+
 // Drawable area of the screen
 class Canvas
 {
@@ -52,7 +56,7 @@ class Object: public Drawable
 {
 public:
 
-    Object(): _color(Color(0, 0, 0))
+    Object(): _color(BLACK)
     {
         _id = ++_count;
     }
@@ -68,14 +72,14 @@ public:
         return ss.str();
     }
 
-    void hightlight_on()
+    void highlight_on()
     {
-        _color = Color(1, 0, 0);
+        _color = RED;
     }
 
-    void hightlight_off()
+    void highlight_off()
     {
-        _color = Color(1, 1, 1);
+        _color = BLACK;
     }
 
     Color color()
@@ -418,6 +422,7 @@ public:
         return _commands;
     }
 
+    // Apply all commands to the viewport.
     void render(Viewport &viewport)
     {
         for (auto &command: _commands) command->render(viewport);
@@ -431,7 +436,7 @@ private:
 class World
 {
 public:
-    World(Window window, DisplayFile display_file): _window(window), _display_file(display_file), _currentObj(-1) {}
+    World(Window window, DisplayFile display_file): _window(window), _display_file(display_file) {}
 
     Window& window() { return _window; }
 
@@ -451,62 +456,75 @@ public:
         return vector;
     }
 
-    // Sets the index of the current selected object. -1 represents the world.
-    void currentObj(int index)
-    {
-        _currentObj = index;
-
-        if (index < 0) {
-            //TODO Clean the canvas and repaint all objects in black.
-        } else {
-            Object &object = *objects().at((unsigned long) index);
-            //TODO Paint object in red.
-        }
-
-    }
-
+    // Render DisplayFile to viewport, and the x axis and y axis.
     void render(Viewport &viewport)
     {
         render_axis(viewport);
         _display_file.render(viewport);
     }
 
-    // Move by dx horizontally, dy vertically.
-    virtual void move(double dx, double dy)
+    // Select the object at index.
+    void select_object_at(int index)
     {
-        for (shared_ptr<Object> object: objects())
+        assert(index >= 0 && index < objects().size());
+
+        shared_ptr<Object> object = objects().at(index);
+        object->highlight_on();
+        _selected_objects.push_back(object);
+    }
+
+    // Remove all from the list of selected objects.
+    void clear_selection()
+    {
+        for(auto &object: _selected_objects) object->highlight_off();
+        _selected_objects.clear();
+    }
+
+    // True if any objects are selected.
+    bool has_selected_objects()
+    {
+        return _selected_objects.size() > 0;
+    }
+
+    // Move the selected objects by dx horizontally, dy vertically.
+    virtual void move_selected(double dx, double dy)
+    {
+        for (shared_ptr<Object> object: _selected_objects)
             object->move(dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
+    // Scale the selected objects by factor.
+    virtual void scale_selected(double factor)
     {
-        for (shared_ptr<Object> object: objects())
+        for (shared_ptr<Object> object: _selected_objects)
             object->scale(factor);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
+    // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate_selected(double degrees)
     {
-        for (shared_ptr<Object> object: objects())
+        for (shared_ptr<Object> object: _selected_objects)
             object->rotate(degrees);
     }
 
 private:
+
+    // Render the x axis and y axis.
     void render_axis(Viewport &viewport)
     {
         // x axis
         viewport.move(Coord(-1000, 0));
-        viewport.draw_line(Coord(+1000, 0), Color(0, 0, 1));
+        viewport.draw_line(Coord(+1000, 0), BLUE);
 
         // y axis
         viewport.move(Coord(0, -1000));
-        viewport.draw_line(Coord(0, +1000), Color(0, 0, 1));
+        viewport.draw_line(Coord(0, +1000), BLUE);
     }
 
     Window _window;
     DisplayFile _display_file;
-    int _currentObj;
+    list<shared_ptr<Object>> _selected_objects;
+
 };
 
 shared_ptr<DrawCommand> draw_point(Coord a)
