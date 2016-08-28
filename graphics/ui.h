@@ -185,15 +185,13 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
 
 static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpointer data)
 {
-    if (row == NULL) {
-        return;
-    }
-
-    gint selected_row = gtk_list_box_row_get_index(row);
     World &world = *(World*)data;
-    Object &object = *world.objects().at((unsigned long) selected_row);
 
-    //TODO Redraw object in red.
+    if (row == NULL) {
+        world.currentObj(-1);
+    } else {
+        world.currentObj(gtk_list_box_row_get_index(row));
+    }
 }
 
 static void new_list_box(GtkWidget *grid, World &world)

@@ -416,6 +416,14 @@ public:
     void currentObj(int index)
     {
         _currentObj = index;
+
+        if (index < 0) {
+            //TODO Clean the canvas and repaint all objects in black.
+        } else {
+            Object &object = *objects().at((unsigned long) index);
+            //TODO Paint object in red.
+        }
+
     }
 
     void render(Viewport &viewport)
