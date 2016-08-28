@@ -480,7 +480,7 @@ public:
         _selected_objects.clear();
     }
 
-    // True if any objects are selected.
+    // True if any objects is selected.
     bool has_selected_objects()
     {
         return _selected_objects.size() > 0;
