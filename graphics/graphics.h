@@ -76,6 +76,11 @@ public:
         return ss.str();
     }
 
+    virtual Color color()
+    {
+        return _color;
+    }
+
     // Move by dx horizontally, dy vertically.
     virtual void move(double dx, double dy) = 0;
 
@@ -109,19 +114,19 @@ public:
         canvas.move(current);
 
         current *= translation(0, thickness);
-        canvas.draw_line(current, Color(0, 0, 0));
+        canvas.draw_line(current, color());
         canvas.move(current);
 
         current *= translation(thickness, 0);
-        canvas.draw_line(current, Color(0, 0, 0));
+        canvas.draw_line(current, color());
         canvas.move(current);
 
         current *= translation(0, -thickness);
-        canvas.draw_line(current, Color(0, 0, 0));
+        canvas.draw_line(current, color());
         canvas.move(current);
 
         current *= translation(-thickness, 0);
-        canvas.draw_line(current, Color(0, 0, 0));
+        canvas.draw_line(current, color());
     }
 
     virtual string type()
@@ -162,7 +167,7 @@ public:
     void draw(Canvas &canvas)
     {
         canvas.move(_a);
-        canvas.draw_line(_b, Color(0, 0, 0));
+        canvas.draw_line(_b, color());
     }
 
     virtual string type()
@@ -208,7 +213,7 @@ public:
         for (auto &current: _vertices)
         {
             canvas.move(previous);
-            canvas.draw_line(current, Color(0, 0, 0));
+            canvas.draw_line(current, color());
             previous = current;
         }
     }
