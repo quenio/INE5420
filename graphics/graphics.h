@@ -8,6 +8,30 @@
 
 using namespace std;
 
+class Color
+{
+public:
+    Color(double red, double green, double blue): _red(red), _green(green), _blue(blue) {}
+
+    double const red() const
+    {
+        return _red;
+    }
+
+    double const green() const
+    {
+        return _green;
+    }
+
+    double const blue() const
+    {
+        return _blue;
+    }
+
+private:
+    double _red, _green, _blue;
+};
+
 // Drawable area of the screen
 class Canvas
 {
@@ -17,7 +41,7 @@ public:
     virtual void move(const Coord &destination) = 0;
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination) = 0;
+    virtual void draw_line(const Coord &destination, const Color &color) = 0;
 
 };
 
@@ -32,7 +56,7 @@ public:
 };
 
 // World objects
-class Object
+class Object: public Drawable
 {
 public:
 
@@ -40,6 +64,8 @@ public:
     {
         _id = ++_count;
     }
+
+    virtual void draw(Canvas &canvas) = 0;
 
     virtual string type() = 0;
 
@@ -68,7 +94,7 @@ private:
 int Object::_count = 0;
 
 // Two-dimensional points
-class Point: public Drawable, public Object
+class Point: public Object
 {
 public:
     Point(Coord coord): _coord(coord) {}
@@ -82,19 +108,19 @@ public:
         canvas.move(current);
 
         current *= translation(0, thickness);
-        canvas.draw_line(current);
+        canvas.draw_line(current, Color(0, 0, 0));
         canvas.move(current);
 
         current *= translation(thickness, 0);
-        canvas.draw_line(current);
+        canvas.draw_line(current, Color(0, 0, 0));
         canvas.move(current);
 
         current *= translation(0, -thickness);
-        canvas.draw_line(current);
+        canvas.draw_line(current, Color(0, 0, 0));
         canvas.move(current);
 
         current *= translation(-thickness, 0);
-        canvas.draw_line(current);
+        canvas.draw_line(current, Color(0, 0, 0));
     }
 
     virtual string type()
@@ -125,7 +151,7 @@ private:
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: public Drawable, public Object
+class Line: public Object
 {
 public:
 
@@ -135,7 +161,7 @@ public:
     void draw(Canvas &canvas)
     {
         canvas.move(_a);
-        canvas.draw_line(_b);
+        canvas.draw_line(_b, Color(0, 0, 0));
     }
 
     virtual string type()
@@ -169,7 +195,7 @@ private:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Drawable, public Object
+class Polygon: public Object
 {
 public:
 
@@ -181,7 +207,7 @@ public:
         for (auto &current: _vertices)
         {
             canvas.move(previous);
-            canvas.draw_line(current);
+            canvas.draw_line(current, Color(0, 0, 0));
             previous = current;
         }
     }
@@ -323,9 +349,9 @@ public:
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination)
+    virtual void draw_line(const Coord &destination, const Color &color)
     {
-        _canvas.draw_line(translate(destination));
+        _canvas.draw_line(translate(destination), color);
     }
 
 private:
@@ -458,11 +484,11 @@ private:
     {
         // x axis
         viewport.move(Coord(-1000, 0));
-        viewport.draw_line(Coord(+1000, 0));
+        viewport.draw_line(Coord(+1000, 0), Color(0, 0, 1));
 
         // y axis
         viewport.move(Coord(0, -1000));
-        viewport.draw_line(Coord(0, +1000));
+        viewport.draw_line(Coord(0, +1000), Color(0, 0, 1));
     }
 
     Window _window;

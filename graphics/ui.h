@@ -23,9 +23,9 @@ public:
     }
 
     // Paint the whole canvas with the white color.
-    void clear()
+    void clear(const Color &color)
     {
-        cairo_set_source_rgb(cr, 1, 1, 1);
+        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_paint(cr);
     }
 
@@ -36,9 +36,9 @@ public:
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination)
+    virtual void draw_line(const Coord &destination, const Color &color)
     {
-        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
         cairo_line_to(cr, destination.x(), destination.y());
         cairo_stroke(cr);
@@ -71,7 +71,7 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
                                                 widget_width, widget_height);
 
     SurfaceCanvas canvas(surface);
-    canvas.clear();
+    canvas.clear(Color(1, 1, 1));
 
     World &world = *(World*)data;
     Viewport viewport(widget_width, widget_height, world.window(), canvas);
