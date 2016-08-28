@@ -120,12 +120,12 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             switch (event->keyval)
             {
                 case GDK_KEY_Right:
-                case GDK_KEY_Up:
+                case GDK_KEY_Down:
                     world.rotate_selected(+1);
                     break;
 
                 case GDK_KEY_Left:
-                case GDK_KEY_Down:
+                case GDK_KEY_Up:
                     world.rotate_selected(-1);
                     break;
 
