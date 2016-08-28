@@ -60,7 +60,7 @@ class Object: public Drawable
 {
 public:
 
-    Object()
+    Object(Color &color): _color(color)
     {
         _id = ++_count;
     }
@@ -87,6 +87,7 @@ public:
 
 private:
     int _id;
+    Color _color;
 
     static int _count;
 };
@@ -97,7 +98,7 @@ int Object::_count = 0;
 class Point: public Object
 {
 public:
-    Point(Coord coord): _coord(coord) {}
+    Point(Color &color, Coord coord): Object(color), _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
     void draw(Canvas &canvas)
@@ -155,7 +156,7 @@ class Line: public Object
 {
 public:
 
-    Line(Coord a, Coord b): _a(a), _b(b) {}
+    Line(Color &color, Coord a, Coord b): Object(color), _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas &canvas)
@@ -199,7 +200,7 @@ class Polygon: public Object
 {
 public:
 
-    Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
+    Polygon(Color &color, initializer_list<Coord> vertices): Object(color), _vertices(vertices) {}
 
     void draw(Canvas &canvas)
     {
@@ -496,17 +497,17 @@ private:
     int _currentObj;
 };
 
-shared_ptr<DrawCommand> draw_point(Coord a)
+shared_ptr<DrawCommand> draw_point(Color color, Coord a)
 {
-    return make_shared<DrawCommand>(make_shared<Point>(a));
+    return make_shared<DrawCommand>(make_shared<Point>(color, a));
 }
 
-shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
+shared_ptr<DrawCommand> draw_line(Color color, Coord a, Coord b)
 {
-    return make_shared<DrawCommand>(make_shared<Line>(a, b));
+    return make_shared<DrawCommand>(make_shared<Line>(color, a, b));
 }
 
-shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
+shared_ptr<DrawCommand> draw_square(Color color, Coord a, Coord b, Coord c, Coord d)
 {
-    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon { a, b, c, d }));
+    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon(color, { a, b, c, d })));
 }

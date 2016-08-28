@@ -3,10 +3,10 @@
 static World world(
     Window(0, 0, 100, 100),
     DisplayFile({
-        draw_point(Coord(25, 50)),
-        draw_point(Coord(75, 50)),
-        draw_line(Coord(10, 10), Coord(90, 90)),
-        draw_square(Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10))
+        draw_point(Color(0, 0, 0), Coord(25, 50)),
+        draw_point(Color(0, 0, 0), Coord(75, 50)),
+        draw_line(Color(0, 0, 0), Coord(10, 10), Coord(90, 90)),
+        draw_square(Color(0, 0, 0), Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10))
     })
 );
 
