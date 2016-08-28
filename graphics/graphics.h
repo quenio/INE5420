@@ -11,25 +11,17 @@ using namespace std;
 class Color
 {
 public:
+
     Color(double red, double green, double blue): _red(red), _green(green), _blue(blue) {}
 
-    double const red() const
-    {
-        return _red;
-    }
-
-    double const green() const
-    {
-        return _green;
-    }
-
-    double const blue() const
-    {
-        return _blue;
-    }
+    double const red() const { return _red; }
+    double const green() const { return _green; }
+    double const blue() const { return _blue; }
 
 private:
+
     double _red, _green, _blue;
+
 };
 
 // Drawable area of the screen
@@ -60,7 +52,7 @@ class Object: public Drawable
 {
 public:
 
-    Object(Color &color): _color(color)
+    Object(): _color(Color(0, 0, 0))
     {
         _id = ++_count;
     }
@@ -76,7 +68,17 @@ public:
         return ss.str();
     }
 
-    virtual Color color()
+    void hightlight_on()
+    {
+        _color = Color(1, 0, 0);
+    }
+
+    void hightlight_off()
+    {
+        _color = Color(1, 1, 1);
+    }
+
+    Color color()
     {
         return _color;
     }
@@ -91,10 +93,12 @@ public:
     virtual void rotate(double degrees) = 0;
 
 private:
+
     int _id;
     Color _color;
 
     static int _count;
+
 };
 
 int Object::_count = 0;
@@ -103,7 +107,8 @@ int Object::_count = 0;
 class Point: public Object
 {
 public:
-    Point(Color &color, Coord coord): Object(color), _coord(coord) {}
+
+    Point(Coord coord): _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
     void draw(Canvas &canvas)
@@ -153,7 +158,9 @@ public:
     }
 
 private:
+
     Coord _coord;
+
 };
 
 // Straight one-dimensional figure delimited by two points
@@ -161,7 +168,7 @@ class Line: public Object
 {
 public:
 
-    Line(Color &color, Coord a, Coord b): Object(color), _a(a), _b(b) {}
+    Line(Coord a, Coord b): _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas &canvas)
@@ -205,7 +212,7 @@ class Polygon: public Object
 {
 public:
 
-    Polygon(Color &color, initializer_list<Coord> vertices): Object(color), _vertices(vertices) {}
+    Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
 
     void draw(Canvas &canvas)
     {
@@ -502,17 +509,17 @@ private:
     int _currentObj;
 };
 
-shared_ptr<DrawCommand> draw_point(Color color, Coord a)
+shared_ptr<DrawCommand> draw_point(Coord a)
 {
-    return make_shared<DrawCommand>(make_shared<Point>(color, a));
+    return make_shared<DrawCommand>(make_shared<Point>(a));
 }
 
-shared_ptr<DrawCommand> draw_line(Color color, Coord a, Coord b)
+shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
 {
-    return make_shared<DrawCommand>(make_shared<Line>(color, a, b));
+    return make_shared<DrawCommand>(make_shared<Line>(a, b));
 }
 
-shared_ptr<DrawCommand> draw_square(Color color, Coord a, Coord b, Coord c, Coord d)
+shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 {
-    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon(color, { a, b, c, d })));
+    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
 }
