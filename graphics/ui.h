@@ -23,9 +23,9 @@ public:
     }
 
     // Paint the whole canvas with the white color.
-    void clear()
+    void clear(const Color &color)
     {
-        cairo_set_source_rgb(cr, 1, 1, 1);
+        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_paint(cr);
     }
 
@@ -36,9 +36,9 @@ public:
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination)
+    virtual void draw_line(const Coord &destination, const Color &color)
     {
-        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
         cairo_line_to(cr, destination.x(), destination.y());
         cairo_stroke(cr);
@@ -71,7 +71,7 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
                                                 widget_width, widget_height);
 
     SurfaceCanvas canvas(surface);
-    canvas.clear();
+    canvas.clear(Color(1, 1, 1));
 
     World &world = *(World*)data;
     Viewport viewport(widget_width, widget_height, world.window(), canvas);
@@ -115,10 +115,11 @@ static gboolean canvas_button_press_event(GtkWidget *widget, GdkEventButton *eve
 
 static const double step = 0.1; // 10 percent
 
-static void add_objects_to_list_box(GtkListBox *list_box, list<shared_ptr<Object>> objects) {
+static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object>> objects) {
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
-        gtk_list_box_prepend(list_box, label);
+
+        gtk_container_add(GTK_CONTAINER(list_box), label);
     }
 }
 
@@ -182,22 +183,29 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
     return canvas;
 }
 
-static void new_list_box(GtkWidget *grid, list<shared_ptr<Object>> objects)
+static void new_list_box(GtkWidget *grid, GtkWidget *canvas, World &world, GCallback select_object)
 {
     GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box), objects);
+    add_objects_to_list_box(GTK_LIST_BOX(list_box), world.objects());
     gtk_grid_attach(GTK_GRID(grid), list_box,
                     column__list_box, row__list_box,
                     span_column__list_box, span_row__list_box);
+
+    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", select_object, canvas);
 }
 
-static void new_button(GtkWidget *grid, GtkWidget *canvas, const gchar *label, GCallback callback)
+static GtkWidget * new_button(
+    GtkWidget *grid, GtkWidget *canvas, const gchar *label, bool enabled, GCallback callback, string tooltip)
 {
     static gint button_count = 0;
 
     GtkWidget *button_with_label = gtk_button_new_with_label(label);
+    gtk_widget_set_sensitive(GTK_WIDGET(button_with_label), enabled);
+    gtk_widget_set_tooltip_text(GTK_WIDGET(button_with_label), tooltip.c_str());
     g_signal_connect(button_with_label, "clicked", G_CALLBACK(callback), canvas);
     gtk_grid_attach(GTK_GRID(grid), button_with_label,
                     column__tool_bar + (button_count++), row__tool_bar,
                     span_column__button, span_row__button);
+
+    return button_with_label;
 }

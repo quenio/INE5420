@@ -1,11 +1,32 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include <list>
 #include <sstream>
 #include "coord.h"
 
 using namespace std;
+
+class Color
+{
+public:
+
+    Color(double red, double green, double blue): _red(red), _green(green), _blue(blue) {}
+
+    double const red() const { return _red; }
+    double const green() const { return _green; }
+    double const blue() const { return _blue; }
+
+private:
+
+    double _red, _green, _blue;
+
+};
+
+const Color BLACK = Color(0, 0, 0);
+const Color RED = Color(1, 0, 0);
+const Color BLUE = Color(0, 0, 1);
 
 // Drawable area of the screen
 class Canvas
@@ -16,7 +37,7 @@ public:
     virtual void move(const Coord &destination) = 0;
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination) = 0;
+    virtual void draw_line(const Coord &destination, const Color &color) = 0;
 
 };
 
@@ -31,14 +52,16 @@ public:
 };
 
 // World objects
-class Object
+class Object: public Drawable
 {
 public:
 
-    Object()
+    Object(): _color(BLACK)
     {
         _id = ++_count;
     }
+
+    virtual void draw(Canvas &canvas) = 0;
 
     virtual string type() = 0;
 
@@ -47,6 +70,21 @@ public:
         stringstream ss;
         ss << type() << _id;
         return ss.str();
+    }
+
+    void highlight_on()
+    {
+        _color = RED;
+    }
+
+    void highlight_off()
+    {
+        _color = BLACK;
+    }
+
+    Color color()
+    {
+        return _color;
     }
 
     // Move by dx horizontally, dy vertically.
@@ -59,17 +97,21 @@ public:
     virtual void rotate(double degrees) = 0;
 
 private:
+
     int _id;
+    Color _color;
 
     static int _count;
+
 };
 
 int Object::_count = 0;
 
 // Two-dimensional points
-class Point: public Drawable, public Object
+class Point: public Object
 {
 public:
+
     Point(Coord coord): _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
@@ -81,19 +123,19 @@ public:
         canvas.move(current);
 
         current *= translation(0, thickness);
-        canvas.draw_line(current);
+        canvas.draw_line(current, color());
         canvas.move(current);
 
         current *= translation(thickness, 0);
-        canvas.draw_line(current);
+        canvas.draw_line(current, color());
         canvas.move(current);
 
         current *= translation(0, -thickness);
-        canvas.draw_line(current);
+        canvas.draw_line(current, color());
         canvas.move(current);
 
         current *= translation(-thickness, 0);
-        canvas.draw_line(current);
+        canvas.draw_line(current, color());
     }
 
     virtual string type()
@@ -120,11 +162,13 @@ public:
     }
 
 private:
+
     Coord _coord;
+
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: public Drawable, public Object
+class Line: public Object
 {
 public:
 
@@ -134,7 +178,7 @@ public:
     void draw(Canvas &canvas)
     {
         canvas.move(_a);
-        canvas.draw_line(_b);
+        canvas.draw_line(_b, color());
     }
 
     virtual string type()
@@ -168,7 +212,7 @@ private:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Drawable, public Object
+class Polygon: public Object
 {
 public:
 
@@ -180,7 +224,7 @@ public:
         for (auto &current: _vertices)
         {
             canvas.move(previous);
-            canvas.draw_line(current);
+            canvas.draw_line(current, color());
             previous = current;
         }
     }
@@ -322,9 +366,9 @@ public:
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination)
+    virtual void draw_line(const Coord &destination, const Color &color)
     {
-        _canvas.draw_line(translate(destination));
+        _canvas.draw_line(translate(destination), color);
     }
 
 private:
@@ -378,6 +422,7 @@ public:
         return _commands;
     }
 
+    // Apply all commands to the viewport.
     void render(Viewport &viewport)
     {
         for (auto &command: _commands) command->render(viewport);
@@ -396,63 +441,90 @@ public:
     Window& window() { return _window; }
 
     // Objects from command list
-    list<shared_ptr<Object>> objects() {
-        list<shared_ptr<Object>> list;
+    vector<shared_ptr<Object>> objects() {
+        vector<shared_ptr<Object>> vector;
 
         for (auto &command: _display_file.commands())
         {
             shared_ptr<DrawCommand> drawCommand = dynamic_pointer_cast<DrawCommand>(command);
             if (drawCommand && drawCommand->object())
             {
-                list.push_back(drawCommand->object());
+                vector.push_back(drawCommand->object());
             }
         }
 
-        return list;
+        return vector;
     }
 
+    // Render DisplayFile to viewport, and the x axis and y axis.
     void render(Viewport &viewport)
     {
         render_axis(viewport);
         _display_file.render(viewport);
     }
 
-    // Move by dx horizontally, dy vertically.
-    virtual void move(double dx, double dy)
+    // Select the object at index.
+    void select_object_at(int index)
     {
-        for (shared_ptr<Object> object: objects())
+        assert(index >= 0 && index < objects().size());
+
+        shared_ptr<Object> object = objects().at(index);
+        object->highlight_on();
+        _selected_objects.push_back(object);
+    }
+
+    // Remove all from the list of selected objects.
+    void clear_selection()
+    {
+        for(auto &object: _selected_objects) object->highlight_off();
+        _selected_objects.clear();
+    }
+
+    // True if any objects is selected.
+    bool has_selected_objects()
+    {
+        return _selected_objects.size() > 0;
+    }
+
+    // Move the selected objects by dx horizontally, dy vertically.
+    virtual void move_selected(double dx, double dy)
+    {
+        for (shared_ptr<Object> object: _selected_objects)
             object->move(dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
+    // Scale the selected objects by factor.
+    virtual void scale_selected(double factor)
     {
-        for (shared_ptr<Object> object: objects())
+        for (shared_ptr<Object> object: _selected_objects)
             object->scale(factor);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
+    // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate_selected(double degrees)
     {
-        for (shared_ptr<Object> object: objects())
+        for (shared_ptr<Object> object: _selected_objects)
             object->rotate(degrees);
     }
 
 private:
 
+    // Render the x axis and y axis.
     void render_axis(Viewport &viewport)
     {
         // x axis
         viewport.move(Coord(-1000, 0));
-        viewport.draw_line(Coord(+1000, 0));
+        viewport.draw_line(Coord(+1000, 0), BLUE);
 
         // y axis
         viewport.move(Coord(0, -1000));
-        viewport.draw_line(Coord(0, +1000));
+        viewport.draw_line(Coord(0, +1000), BLUE);
     }
 
     Window _window;
     DisplayFile _display_file;
+    list<shared_ptr<Object>> _selected_objects;
+
 };
 
 shared_ptr<DrawCommand> draw_point(Coord a)
@@ -467,5 +539,5 @@ shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
 
 shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 {
-    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon { a, b, c, d }));
+    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
 }
