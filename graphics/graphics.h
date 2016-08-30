@@ -351,12 +351,24 @@ public:
     double width() const { return right() - left(); }
     double height() const { return top() - bottom(); }
 
+    // Translate coord from world to viewport.
+    Coord to_viewport(Coord coord, double viewport_width, double viewport_height) const
+    {
+        return normalize(coord, _leftBottom, width(), height()) * scaling(viewport_width, viewport_height);
+    }
+
+    // Translate coord from viewport to world.
+    Coord to_world(Coord coord, double viewport_width, double viewport_height) const
+    {
+        return normalize(coord, Coord(0, 0), viewport_width, viewport_height) * scaling(width(), height()) * translation(left(), bottom());
+    }
+
     // Normalize point to window dimensions
-    Coord normalize(const Coord &point) const
+    Coord normalize(Coord point, Coord base, double width, double height) const
     {
         return Coord(
-            (point.x() - left()) / width(),
-            1.0 - ((point.y() - bottom()) / height())
+            (point.x() - base.x()) / width,
+            1.0 - ((point.y() - base.y()) / height)
         );
     }
 
@@ -428,10 +440,10 @@ public:
     Viewport(double width, double height, Window &window, Canvas &canvas)
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
-    // Translate p from window to canvas.
-    Coord translate(const Coord &p) const
+    // Translate coord from window to viewport.
+    Coord translate(const Coord &coord) const
     {
-        return _window.normalize(p) * scaling(_width, _height);
+        return _window.to_viewport(coord, _width, _height);
     }
 
     // Move to destination.
@@ -587,6 +599,12 @@ public:
     {
         for (shared_ptr<Object> object: _selected_objects)
             object->rotate(degrees, _center);
+    }
+
+    // Set the new center from viewport coordinates
+    void set_center_from_viewport(Coord center, double viewport_width, double viewport_height)
+    {
+        _center = _window.to_world(center, viewport_width, viewport_height);
     }
 
 private:
