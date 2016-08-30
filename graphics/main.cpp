@@ -46,13 +46,13 @@ static void span_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
-enum Tool { MOVE, SCALE, ROTATE };
+enum Tool { TRANSLATE, SCALE, ROTATE };
 
-Tool selected_tool = MOVE;
+Tool selected_tool = TRANSLATE;
 
-static void tool_move_clicked(GtkWidget UNUSED *widget, gpointer canvas)
+static void tool_translate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    selected_tool = MOVE;
+    selected_tool = TRANSLATE;
     gtk_widget_grab_focus(GTK_WIDGET(canvas));
 }
 
@@ -74,23 +74,23 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
 
     switch (selected_tool)
     {
-        case MOVE:
+        case TRANSLATE:
             switch (event->keyval)
             {
                 case GDK_KEY_Left:
-                    world.move_selected(-1, 0);
+                    world.translate_selected(-1, 0);
                     break;
 
                 case GDK_KEY_Right:
-                    world.move_selected(+1, 0);
+                    world.translate_selected(+1, 0);
                     break;
 
                 case GDK_KEY_Down:
-                    world.move_selected(0, -1);
+                    world.translate_selected(0, -1);
                     break;
 
                 case GDK_KEY_Up:
-                    world.move_selected(0, +1);
+                    world.translate_selected(0, +1);
                     break;
 
                 default:
@@ -193,8 +193,8 @@ int main(int argc, char *argv[])
         "Press to move down the world's window.");
 
     button_move = new_button(
-        grid, canvas, "Move", false, G_CALLBACK(tool_move_clicked),
-        "Press and use arrow keys to move selected objects.");
+        grid, canvas, "Translate", false, G_CALLBACK(tool_translate_clicked),
+        "Press and use arrow keys to translate selected objects.");
     button_scale = new_button(
         grid, canvas, "Scale", false, G_CALLBACK(tool_scale_clicked),
         "Press and use arrow keys to shrink/enlarge selected objects.");
