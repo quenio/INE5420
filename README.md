@@ -39,4 +39,4 @@ make
 
 - 1.0: Initial setup with display file rendered on viewport.
 - 1.1: Basic system with window navigation and zoom.
-- 1.2: 2D transformations and homogeneous coordinates. (IN PROGRESS)
+- 1.2: 2D transformations and homogeneous coordinates.
