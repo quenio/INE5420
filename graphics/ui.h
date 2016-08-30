@@ -105,10 +105,20 @@ static gboolean draw_canvas(GtkWidget *widget, cairo_t *cr, gpointer UNUSED data
     return false;
 }
 
-static gboolean canvas_button_press_event(GtkWidget *widget, GdkEventButton *event)
+static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *event, gpointer data)
 {
-    if (event->button == 1)
-        gtk_widget_grab_focus(widget);
+    if (event->button == 1) {
+        gtk_widget_grab_focus(canvas);
+
+        const Coord new_center = Coord(event->x, event->y);
+        const int widget_width = gtk_widget_get_allocated_width(canvas);
+        const int widget_height = gtk_widget_get_allocated_height(canvas);
+
+        World &world = *(World*)data;
+        world.set_center_from_viewport(new_center, widget_width, widget_height);
+
+        refresh_canvas(canvas, world);
+    }
 
     return true;
 }
@@ -174,8 +184,8 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
                     span_column__canvas, span_row__canvas);
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
-    g_signal_connect(canvas, "button_press_event", G_CALLBACK(canvas_button_press_event), nullptr);
-    g_signal_connect(canvas, "key_press_event", on_key_press, &world);
+    g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &world);
+    g_signal_connect(canvas, "key-press-event", on_key_press, &world);
 
     gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
     gtk_widget_set_can_focus(canvas, true);

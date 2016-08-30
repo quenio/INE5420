@@ -87,14 +87,23 @@ public:
         return _color;
     }
 
-    // Move by dx horizontally, dy vertically.
-    virtual void move(double dx, double dy) = 0;
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy) = 0;
 
     // Scale by factor.
     virtual void scale(double factor) = 0;
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center) = 0;
+
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees) = 0;
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center) = 0;
+
+    // Object's center
+    virtual Coord center() = 0;
 
 private:
 
@@ -143,10 +152,10 @@ public:
         return "Point";
     }
 
-    // Move by dx horizontally, dy vertically.
-    virtual void move(double dx, double dy)
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy)
     {
-        ::move(_coord, dx, dy);
+        ::translate(_coord, dx, dy);
     }
 
     // Scale by factor.
@@ -155,10 +164,28 @@ public:
         ::scale(_coord, factor);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center)
+    {
+        ::scale(_coord, factor, center);
+    }
+
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees)
     {
         ::rotate(_coord, degrees);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        ::rotate(_coord, degrees, center);
+    }
+
+    // Coord of the Point itself
+    virtual Coord center()
+    {
+        return _coord;
     }
 
 private:
@@ -186,11 +213,11 @@ public:
         return "Line";
     }
 
-    // Move by dx horizontally, dy vertically.
-    virtual void move(double dx, double dy)
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy)
     {
-        ::move(_a, dx, dy);
-        ::move(_b, dx, dy);
+        ::translate(_a, dx, dy);
+        ::translate(_b, dx, dy);
     }
 
     // Scale by factor.
@@ -200,11 +227,31 @@ public:
         ::scale(_b, factor);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center)
+    {
+        ::scale(_a, factor, center);
+        ::scale(_b, factor, center);
+    }
+
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees)
     {
         ::rotate(_a, degrees);
         ::rotate(_b, degrees);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        ::rotate(_a, degrees, center);
+        ::rotate(_b, degrees, center);
+    }
+
+    // Midpoint between a and b
+    virtual Coord center()
+    {
+        return Coord((_a.x() + _b.x()) / 2, (_a.y() + _b.y()) / 2);
     }
 
 private:
@@ -234,11 +281,11 @@ public:
         return "Polygon";
     }
 
-    // Move by dx horizontally, dy vertically.
-    virtual void move(double dx, double dy)
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy)
     {
         for (Coord &coord: _vertices)
-            ::move(coord, dx, dy);
+            ::translate(coord, dx, dy);
     }
 
     // Scale by factor.
@@ -248,11 +295,39 @@ public:
             ::scale(coord, factor);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center)
+    {
+        for (Coord &coord: _vertices)
+            ::scale(coord, factor, center);
+    }
+
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees)
     {
         for (Coord &coord: _vertices)
             ::rotate(coord, degrees);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        for (Coord &coord: _vertices)
+            ::rotate(coord, degrees, center);
+    }
+
+    // Midpoint between a and b
+    virtual Coord center()
+    {
+        double x = 0, y = 0;
+
+        for (Coord &coord: _vertices)
+        {
+            x += coord.x();
+            y += coord.y();
+        }
+
+        return Coord(x / _vertices.size(), y / _vertices.size());
     }
 
 private:
@@ -276,12 +351,24 @@ public:
     double width() const { return right() - left(); }
     double height() const { return top() - bottom(); }
 
+    // Translate coord from world to viewport.
+    Coord to_viewport(Coord coord, double viewport_width, double viewport_height) const
+    {
+        return normalize(coord, _leftBottom, width(), height()) * scaling(viewport_width, viewport_height);
+    }
+
+    // Translate coord from viewport to world.
+    Coord to_world(Coord coord, double viewport_width, double viewport_height) const
+    {
+        return normalize(coord, Coord(0, 0), viewport_width, viewport_height) * scaling(width(), height()) * translation(left(), bottom());
+    }
+
     // Normalize point to window dimensions
-    Coord normalize(const Coord &point) const
+    Coord normalize(Coord point, Coord base, double width, double height) const
     {
         return Coord(
-            (point.x() - left()) / width(),
-            1.0 - ((point.y() - bottom()) / height())
+            (point.x() - base.x()) / width,
+            1.0 - ((point.y() - base.y()) / height)
         );
     }
 
@@ -353,10 +440,10 @@ public:
     Viewport(double width, double height, Window &window, Canvas &canvas)
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
-    // Translate p from window to canvas.
-    Coord translate(const Coord &p) const
+    // Translate coord from window to viewport.
+    Coord translate(const Coord &coord) const
     {
-        return _window.normalize(p) * scaling(_width, _height);
+        return _window.to_viewport(coord, _width, _height);
     }
 
     // Move to destination.
@@ -436,7 +523,8 @@ private:
 class World
 {
 public:
-    World(Window window, DisplayFile display_file): _window(window), _display_file(display_file) {}
+    World(Window window, DisplayFile display_file)
+        : _window(window), _display_file(display_file), _center(0, 0) {}
 
     Window& window() { return _window; }
 
@@ -456,10 +544,11 @@ public:
         return vector;
     }
 
-    // Render DisplayFile to viewport, and the x axis and y axis.
+    // Render DisplayFile, the center, the x axis and y axis to viewport.
     void render(Viewport &viewport)
     {
         render_axis(viewport);
+        render_center(viewport);
         _display_file.render(viewport);
     }
 
@@ -471,6 +560,7 @@ public:
         shared_ptr<Object> object = objects().at(index);
         object->highlight_on();
         _selected_objects.push_back(object);
+        _center = object->center();
     }
 
     // Remove all from the list of selected objects.
@@ -478,6 +568,7 @@ public:
     {
         for(auto &object: _selected_objects) object->highlight_off();
         _selected_objects.clear();
+        _center = Coord(0, 0);
     }
 
     // True if any objects is selected.
@@ -487,24 +578,33 @@ public:
     }
 
     // Move the selected objects by dx horizontally, dy vertically.
-    virtual void move_selected(double dx, double dy)
+    virtual void translate_selected(double dx, double dy)
     {
         for (shared_ptr<Object> object: _selected_objects)
-            object->move(dx, dy);
+        {
+            object->translate(dx, dy);
+            _center = object->center();
+        }
     }
 
     // Scale the selected objects by factor.
     virtual void scale_selected(double factor)
     {
         for (shared_ptr<Object> object: _selected_objects)
-            object->scale(factor);
+            object->scale(factor, _center);
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate_selected(double degrees)
     {
         for (shared_ptr<Object> object: _selected_objects)
-            object->rotate(degrees);
+            object->rotate(degrees, _center);
+    }
+
+    // Set the new center from viewport coordinates
+    void set_center_from_viewport(Coord center, double viewport_width, double viewport_height)
+    {
+        _center = _window.to_world(center, viewport_width, viewport_height);
     }
 
 private:
@@ -512,18 +612,35 @@ private:
     // Render the x axis and y axis.
     void render_axis(Viewport &viewport)
     {
+        const double length = 10000;
+
         // x axis
-        viewport.move(Coord(-1000, 0));
-        viewport.draw_line(Coord(+1000, 0), BLUE);
+        viewport.move(Coord(-length, 0));
+        viewport.draw_line(Coord(+length, 0), BLUE);
 
         // y axis
-        viewport.move(Coord(0, -1000));
-        viewport.draw_line(Coord(0, +1000), BLUE);
+        viewport.move(Coord(0, -length));
+        viewport.draw_line(Coord(0, +length), BLUE);
+    }
+
+    // Render the center as a little cross
+    void render_center(Viewport &viewport)
+    {
+        const double radius = 2;
+
+        // Horizontal bar
+        viewport.move(_center.translate(-radius, 0));
+        viewport.draw_line(_center.translate(+radius, 0), BLUE);
+
+        // Horizontal bar
+        viewport.move(_center.translate(0, -radius));
+        viewport.draw_line(_center.translate(0, +radius), BLUE);
     }
 
     Window _window;
     DisplayFile _display_file;
     list<shared_ptr<Object>> _selected_objects;
+    Coord _center;
 
 };
 
