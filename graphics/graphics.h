@@ -96,8 +96,11 @@ public:
     // Scale by factor from center.
     virtual void scale(double factor, Coord center) = 0;
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees) = 0;
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center) = 0;
 
     // Object's center
     virtual Coord center() = 0;
@@ -167,10 +170,16 @@ public:
         ::scale(_coord, factor, center);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees)
     {
         ::rotate(_coord, degrees);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        ::rotate(_coord, degrees, center);
     }
 
     // Coord of the Point itself
@@ -225,11 +234,18 @@ public:
         ::scale(_b, factor, center);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees)
     {
         ::rotate(_a, degrees);
         ::rotate(_b, degrees);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        ::rotate(_a, degrees, center);
+        ::rotate(_b, degrees, center);
     }
 
     // Midpoint between a and b
@@ -286,11 +302,18 @@ public:
             ::scale(coord, factor, center);
     }
 
-    // Rotate by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
+    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees)
     {
         for (Coord &coord: _vertices)
             ::rotate(coord, degrees);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        for (Coord &coord: _vertices)
+            ::rotate(coord, degrees, center);
     }
 
     // Midpoint between a and b
@@ -563,7 +586,7 @@ public:
     virtual void rotate_selected(double degrees)
     {
         for (shared_ptr<Object> object: _selected_objects)
-            object->rotate(degrees);
+            object->rotate(degrees, _center);
     }
 
 private:

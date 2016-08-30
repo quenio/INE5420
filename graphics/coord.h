@@ -22,10 +22,13 @@ public:
     Coord scale(double factor);
 
     // Scale by factor from center.
-    Coord scale(double factor, Coord &center);
+    Coord scale(double factor, Coord center);
 
     // Rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
     Coord rotate(double degrees);
+
+    // Rotate by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+    Coord rotate(double degrees, Coord center);
 
 private:
     double _x, _y;
@@ -161,15 +164,21 @@ void scale(Coord &coord, double factor)
 }
 
 // Scale coord by factor from center.
-void scale(Coord &coord, double factor, Coord &center)
+void scale(Coord &coord, double factor, Coord center)
 {
     coord *= translation(-center.x(), -center.y()) * scaling(factor, factor) * translation(center.x(), center.y());
 }
 
-// Rotate coord by degrees at the world center; clockwise if angle positive; counter-clockwise if negative.
+// Rotate coord by degrees at the world origin; clockwise if angle positive; counter-clockwise if negative.
 void rotate(Coord & coord, double degrees)
 {
     coord *= rotation(degrees);
+}
+
+// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+void rotate(Coord & coord, double degrees, Coord center)
+{
+    coord *= translation(-center.x(), -center.y()) * rotation(degrees) * translation(center.x(), center.y());
 }
 
 // Translate coord by dx horizontally, dy vertically.
@@ -189,17 +198,25 @@ inline Coord Coord::scale(double factor)
 }
 
 // Scale coord by factor from center.
-inline Coord Coord::scale(double factor, Coord &center)
+inline Coord Coord::scale(double factor, Coord center)
 {
     Coord coord = *this;
     ::scale(coord, factor, center);
     return coord;
 }
 
-// Rotate coord by degrees at the world center; clockwise if angle positive; counter-clockwise if negative.
+// Rotate coord by degrees at the world origin; clockwise if angle positive; counter-clockwise if negative.
 inline Coord Coord::rotate(double degrees)
 {
     Coord coord = *this;
     ::rotate(coord, degrees);
+    return coord;
+}
+
+// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline Coord Coord::rotate(double degrees, Coord center)
+{
+    Coord coord = *this;
+    ::rotate(coord, degrees, center);
     return coord;
 }
