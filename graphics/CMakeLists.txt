@@ -18,3 +18,4 @@ target_link_libraries(graphics ${GTK3_LIBRARIES})
 # Unit Tests
 set(MIN_UNIT_FILES ./tests/min_unit.cpp ./tests/min_unit.h ./tests/timer.cpp ./tests/timer.h)
 add_executable(coord_tests ./tests/coord_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
+add_executable(graphics_tests ./tests/graphics_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
