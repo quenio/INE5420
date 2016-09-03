@@ -4,7 +4,7 @@
 
 const char * test()
 {
-    mu_assert("one" == "one");
+    mu_assert("one" == "two");
 
     return nullptr;
 }
