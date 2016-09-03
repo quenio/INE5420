@@ -5,5 +5,5 @@ main:
 
 test:
 	echo Running unit tests...
-	$(foreach test_file,$(subst .cc,,$(shell find ./tests -name \*_tests.cpp -printf "%f\n")),$(CC) `pkg-config --cflags gtk+-3.0 gtkmm-3.0` -o ./tests/$(test_file).exe ./tests/$(test_file) `pkg-config --libs gtk+-3.0 gtkmm-3.0` -rdynamic -lstdc++ -std=c++11 -lm;)
+	$(foreach test_file,$(subst .cc,,$(shell find ./tests -name \*_tests.cpp -printf "%f\n")),$(CC) `pkg-config --cflags gtk+-3.0 gtkmm-3.0` -o ./tests/$(test_file).exe ./tests/$(test_file) ./tests/min_unit.cpp ./tests/timer.cpp `pkg-config --libs gtk+-3.0 gtkmm-3.0` -rdynamic -lstdc++ -std=c++11 -lm;)
 
