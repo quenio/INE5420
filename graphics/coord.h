@@ -30,6 +30,12 @@ public:
     // Rotate by degrees at center; clockwise if angle positive; counter-clockwise if negative.
     Coord rotate(double degrees, Coord center);
 
+    // Compare a and b.
+    friend bool operator == (Coord a, Coord b)
+    {
+        return a._x == b._x && a._y == b._y;
+    }
+
 private:
     double _x, _y;
 };
@@ -220,3 +226,16 @@ inline Coord Coord::rotate(double degrees, Coord center)
     ::rotate(coord, degrees, center);
     return coord;
 }
+
+// Equidistant double between a and b.
+inline double equidistant(double a, double b)
+{
+    return min(a, b) + (abs(a - b) / 2);
+}
+
+// Equidistant coord between a and b
+inline Coord equidistant(Coord a, Coord b)
+{
+    return Coord(equidistant(a.x(), b.x()), equidistant(a.y(), b.y()));
+}
+

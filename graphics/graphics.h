@@ -339,9 +339,13 @@ private:
 class Window
 {
 public:
+    constexpr static int norm_left = -1;
+    constexpr static int norm_bottom = -1;
+    constexpr static int norm_width = 2;
+    constexpr static int norm_height = 2;
 
     Window(double left, double bottom, double right, double top)
-        :_leftBottom(left, bottom), _rightTop(right, top) {}
+        :_leftBottom(left, bottom), _rightTop(right, top), _center(equidistant(_leftBottom, _rightTop)), _up_angle(0) {}
 
     double left() const { return _leftBottom.x(); }
     double bottom() const { return _leftBottom.y(); }
@@ -351,25 +355,37 @@ public:
     double width() const { return right() - left(); }
     double height() const { return top() - bottom(); }
 
-    // Translate coord from world to viewport.
+    // Translate coord from world to window, where left-bottom is (-1, -1) and right-top is (1, 1).
+    Coord from_world(Coord coord) const
+    {
+        return coord *
+            translation(-_center.x(), -_center.y()) *
+            rotation(_up_angle) *
+            scaling(norm_width / width(), norm_height / height());
+    }
+
+    // Translate coord from window to world.
+    Coord to_world(Coord coord) const
+    {
+        return coord *
+            rotation(-_up_angle) *
+            scaling(width() / norm_width, height() / norm_height) *
+            translation(_center.x(), _center.y());
+    }
+
+    // Translate coord from viewport to window.
+    Coord from_viewport(Coord coord, double viewport_width, double viewport_height) const
+    {
+        return Coord(coord.x(), viewport_height - coord.y()) *
+               scaling(norm_width / viewport_width, norm_height / viewport_height) *
+               translation(norm_left, norm_bottom);
+    }
+
+    // Translate coord from window to viewport.
     Coord to_viewport(Coord coord, double viewport_width, double viewport_height) const
     {
-        return normalize(coord, _leftBottom, width(), height()) * scaling(viewport_width, viewport_height);
-    }
-
-    // Translate coord from viewport to world.
-    Coord to_world(Coord coord, double viewport_width, double viewport_height) const
-    {
-        return normalize(coord, Coord(0, 0), viewport_width, viewport_height) * scaling(width(), height()) * translation(left(), bottom());
-    }
-
-    // Normalize point to window dimensions
-    Coord normalize(Coord point, Coord base, double width, double height) const
-    {
-        return Coord(
-            (point.x() - base.x()) / width,
-            1.0 - ((point.y() - base.y()) / height)
-        );
+        return Coord(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
+            scaling(viewport_width / norm_width, viewport_height / norm_height);
     }
 
     // Zoom out by factor
@@ -399,6 +415,8 @@ public:
 
         _leftBottom *= translation(-tx, 0);
         _rightTop *= translation(-tx, 0);
+
+        _center = equidistant(_leftBottom, _rightTop);
     }
 
     // Span right by factor
@@ -408,6 +426,8 @@ public:
 
         _leftBottom *= translation(+tx, 0);
         _rightTop *= translation(+tx, 0);
+
+        _center = equidistant(_leftBottom, _rightTop);
     }
 
     // Span up by factor
@@ -417,6 +437,8 @@ public:
 
         _leftBottom *= translation(0, +ty);
         _rightTop *= translation(0, +ty);
+
+        _center = equidistant(_leftBottom, _rightTop);
     }
 
     // Span down by factor
@@ -426,10 +448,13 @@ public:
 
         _leftBottom *= translation(0, -ty);
         _rightTop *= translation(0, -ty);
+
+        _center = equidistant(_leftBottom, _rightTop);
     }
 
 private:
-    Coord _leftBottom, _rightTop;
+    Coord _leftBottom, _rightTop, _center;
+    double _up_angle; // degrees
 };
 
 // Area on a screen to execute display commands
@@ -440,10 +465,10 @@ public:
     Viewport(double width, double height, Window &window, Canvas &canvas)
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
-    // Translate coord from window to viewport.
+    // Translate coord from world to viewport.
     Coord translate(const Coord &coord) const
     {
-        return _window.to_viewport(coord, _width, _height);
+        return _window.to_viewport(_window.from_world(coord), _width, _height);
     }
 
     // Move to destination.
@@ -604,7 +629,7 @@ public:
     // Set the new center from viewport coordinates
     void set_center_from_viewport(Coord center, double viewport_width, double viewport_height)
     {
-        _center = _window.to_world(center, viewport_width, viewport_height);
+        _center = _window.to_world(_window.from_viewport(center, viewport_width, viewport_height));
     }
 
 private:
