@@ -93,14 +93,8 @@ public:
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy) = 0;
 
-    // Scale by factor.
-    virtual void scale(double factor) = 0;
-
     // Scale by factor from center.
     virtual void scale(double factor, Coord center) = 0;
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees) = 0;
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees, Coord center) = 0;
@@ -143,22 +137,10 @@ public:
         ::translate(_coord, dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
-    {
-        ::scale(_coord, factor);
-    }
-
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
         ::scale(_coord, factor, center);
-    }
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
-    {
-        ::rotate(_coord, degrees);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -205,25 +187,11 @@ public:
         ::translate(_b, dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
-    {
-        ::scale(_a, factor);
-        ::scale(_b, factor);
-    }
-
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
         ::scale(_a, factor, center);
         ::scale(_b, factor, center);
-    }
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
-    {
-        ::rotate(_a, degrees);
-        ::rotate(_b, degrees);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -273,25 +241,11 @@ public:
             ::translate(coord, dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
-    {
-        for (Coord &coord: _vertices)
-            ::scale(coord, factor);
-    }
-
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
         for (Coord &coord: _vertices)
             ::scale(coord, factor, center);
-    }
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
-    {
-        for (Coord &coord: _vertices)
-            ::rotate(coord, degrees);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -569,7 +523,7 @@ public:
     }
 
     // Select the object at index.
-    void select_object_at(int index)
+    void select_object_at(size_t index)
     {
         assert(index >= 0 && index < objects().size());
 
