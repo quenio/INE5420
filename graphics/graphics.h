@@ -129,25 +129,7 @@ public:
     // Draw a point in canvas at position (x, y).
     void draw(Canvas &canvas)
     {
-        const double thickness = 0.3;
-
-        Coord current = _coord;
-        canvas.move(current);
-
-        current *= translation(0, thickness);
-        canvas.draw_line(current, color());
-        canvas.move(current);
-
-        current *= translation(thickness, 0);
-        canvas.draw_line(current, color());
-        canvas.move(current);
-
-        current *= translation(0, -thickness);
-        canvas.draw_line(current, color());
-        canvas.move(current);
-
-        current *= translation(-thickness, 0);
-        canvas.draw_line(current, color());
+        canvas.draw_circle(_coord, 1.5, color());
     }
 
     virtual string type()
