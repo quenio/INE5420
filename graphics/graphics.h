@@ -26,6 +26,7 @@ private:
 
 const Color BLACK = Color(0, 0, 0);
 const Color RED = Color(1, 0, 0);
+const Color GREEN = Color(0, 1, 0);
 const Color BLUE = Color(0, 0, 1);
 
 // Drawable area of the screen
@@ -75,11 +76,12 @@ class Object: public Drawable, public Transformable
 {
 public:
 
-    Object(): _color(BLACK)
+    Object(const Color &color = BLACK): _color(color)
     {
         _id = ++_count;
     }
 
+    // Type used in the name
     virtual string type() = 0;
 
     virtual string name()
@@ -280,16 +282,20 @@ private:
 
 
 // Visible area of the world
-class Window
+class Window: public Object
 {
 public:
+
     constexpr static int norm_left = -1;
     constexpr static int norm_bottom = -1;
     constexpr static int norm_width = 2;
     constexpr static int norm_height = 2;
 
     Window(double left, double bottom, double right, double top)
-        :_leftBottom(left, bottom), _rightTop(right, top), _center(equidistant(_leftBottom, _rightTop)), _up_angle(0) {}
+        :Object(GREEN),
+         _leftBottom(left, bottom), _rightTop(right, top),
+         _center(equidistant(_leftBottom, _rightTop)),
+         _up_angle(0) {}
 
     double left() const { return _leftBottom.x(); }
     double bottom() const { return _leftBottom.y(); }
@@ -298,6 +304,11 @@ public:
 
     double width() const { return right() - left(); }
     double height() const { return top() - bottom(); }
+
+    Coord leftBottom() const { return _leftBottom; }
+    Coord leftTop() const { return Coord(left(), top()); }
+    Coord rightTop() const { return Coord(right(), top()); }
+    Coord rightBottom() const { return _rightTop; }
 
     // Translate coord from world to window, where left-bottom is (-1, -1) and right-top is (1, 1).
     Coord from_world(Coord coord) const
@@ -396,9 +407,58 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy)
+    {
+        _leftBottom.translate(dx, dy);
+        _rightTop.translate(dx, dy);
+
+        _center = equidistant(_leftBottom, _rightTop);
+    }
+
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center)
+    {
+        _leftBottom.scale(factor, center);
+        _rightTop.scale(factor, center);
+
+        _center = equidistant(_leftBottom, _rightTop);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        _leftBottom.rotate(degrees, center);
+        _rightTop.rotate(degrees, center);
+
+        _center = equidistant(_leftBottom, _rightTop);
+    }
+
+    // Window's center
+    virtual Coord center()
+    {
+        return _center;
+    }
+
+    virtual string type()
+    {
+        return "Window";
+    }
+
+    // Draw a square in canvas.
+    void draw(Canvas &canvas)
+    {
+        canvas.move(leftBottom());
+        canvas.draw_line(leftTop(), color());
+        canvas.draw_line(rightTop(), color());
+        canvas.draw_line(rightBottom(), color());
+    }
+
 private:
+
     Coord _leftBottom, _rightTop, _center;
     double _up_angle; // degrees
+
 };
 
 // Area on a screen to execute display commands
