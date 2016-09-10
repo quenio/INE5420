@@ -44,6 +44,16 @@ public:
         cairo_stroke(cr);
     }
 
+    // Draw circle with the specified center, radius and color.
+    virtual void draw_circle(const Coord &center, const double radius, const Color &color)
+    {
+        cairo_move_to(cr, center.x(), center.y());
+        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
+        cairo_set_line_width(cr, 1);
+        cairo_arc(cr, 0, 0, radius, 0, 2 * PI);
+        cairo_stroke(cr);
+    }
+
 private:
     cairo_t *cr;
 };

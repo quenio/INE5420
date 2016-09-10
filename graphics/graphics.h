@@ -39,6 +39,9 @@ public:
     // Draw line from current position to destination.
     virtual void draw_line(const Coord &destination, const Color &color) = 0;
 
+    // Draw circle with the specified center, radius and color.
+    virtual void draw_circle(const Coord &center, const double radius, const Color &color) = 0;
+
 };
 
 // Drawable objects
@@ -481,6 +484,12 @@ public:
     virtual void draw_line(const Coord &destination, const Color &color)
     {
         _canvas.draw_line(translate(destination), color);
+    }
+
+    // Draw circle with the specified center, radius and color.
+    virtual void draw_circle(const Coord &center, const double radius, const Color &color)
+    {
+        _canvas.draw_circle(translate(center), radius, color);
     }
 
 private:
