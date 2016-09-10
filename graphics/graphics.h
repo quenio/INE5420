@@ -393,8 +393,8 @@ public:
         _rightTop *= translation(+tx, +ty);
     }
 
-    // Span left by factor
-    void span_left(double factor)
+    // Pan left by factor
+    void pan_left(double factor)
     {
         double tx = width() * factor;
 
@@ -404,8 +404,8 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
-    // Span right by factor
-    void span_right(double factor)
+    // Pan right by factor
+    void pan_right(double factor)
     {
         double tx = width() * factor;
 
@@ -415,8 +415,8 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
-    // Span up by factor
-    void span_up(double factor)
+    // Pan up by factor
+    void pan_up(double factor)
     {
         double ty = height() * factor;
 
@@ -426,8 +426,8 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
-    // Span down by factor
-    void span_down(double factor)
+    // Pan down by factor
+    void pan_down(double factor)
     {
         double ty = height() * factor;
 
