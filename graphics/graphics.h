@@ -54,8 +54,24 @@ public:
 
 };
 
+// Transformable objects
+class Transformable
+{
+public:
+
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy) = 0;
+
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center) = 0;
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center) = 0;
+
+};
+
 // World objects
-class Object: public Drawable
+class Object: public Drawable, public Transformable
 {
 public:
 
@@ -63,8 +79,6 @@ public:
     {
         _id = ++_count;
     }
-
-    virtual void draw(Canvas &canvas) = 0;
 
     virtual string type() = 0;
 
@@ -89,15 +103,6 @@ public:
     {
         return _color;
     }
-
-    // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy) = 0;
-
-    // Scale by factor from center.
-    virtual void scale(double factor, Coord center) = 0;
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center) = 0;
 
     // Object's center
     virtual Coord center() = 0;
