@@ -346,21 +346,13 @@ public:
     // Zoom out by factor
     void zoom_out(double factor)
     {
-        double tx = width() * factor;
-        double ty = height() * factor;
-
-        _leftBottom *= translation(+tx, +ty);
-        _rightTop *= translation(-tx, -ty);
+        scale(1.0 + factor, center());
     }
 
     // Zoom in by factor
     void zoom_in(double factor)
     {
-        double tx = width() * factor;
-        double ty = height() * factor;
-
-        _leftBottom *= translation(-tx, -ty);
-        _rightTop *= translation(+tx, +ty);
+        scale(1.0 - factor, center());
     }
 
     // Pan left by factor
@@ -368,10 +360,7 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom *= translation(-tx, 0);
-        _rightTop *= translation(-tx, 0);
-
-        _center = equidistant(_leftBottom, _rightTop);
+        translate(-tx, 0);
     }
 
     // Pan right by factor
@@ -379,10 +368,7 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom *= translation(+tx, 0);
-        _rightTop *= translation(+tx, 0);
-
-        _center = equidistant(_leftBottom, _rightTop);
+        translate(+tx, 0);
     }
 
     // Pan up by factor
@@ -390,10 +376,7 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom *= translation(0, +ty);
-        _rightTop *= translation(0, +ty);
-
-        _center = equidistant(_leftBottom, _rightTop);
+        translate(0, +ty);
     }
 
     // Pan down by factor
@@ -401,17 +384,14 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom *= translation(0, -ty);
-        _rightTop *= translation(0, -ty);
-
-        _center = equidistant(_leftBottom, _rightTop);
+        translate(0, -ty);
     }
 
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy)
     {
-        _leftBottom.translate(dx, dy);
-        _rightTop.translate(dx, dy);
+        ::translate(_leftBottom, dx, dy);
+        ::translate(_rightTop, dx, dy);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -419,8 +399,8 @@ public:
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
-        _leftBottom.scale(factor, center);
-        _rightTop.scale(factor, center);
+        ::scale(_leftBottom, factor, center);
+        ::scale(_rightTop, factor, center);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -428,8 +408,10 @@ public:
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate(double degrees, Coord center)
     {
-        _leftBottom.rotate(degrees, center);
-        _rightTop.rotate(degrees, center);
+        _up_angle += degrees;
+
+        ::rotate(_leftBottom, degrees, center);
+        ::rotate(_rightTop, degrees, center);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
