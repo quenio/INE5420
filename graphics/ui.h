@@ -136,17 +136,17 @@ static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Obje
 static const int gtk_window__width = 600;
 static const int gtk_window__height = 480;
 
-static const gint span_column__canvas = 7;
-static const gint span_column__list_box = 2;
-static const gint span_column__button = 1;
+static const gint pan_column__canvas = 7;
+static const gint pan_column__list_box = 2;
+static const gint pan_column__button = 1;
 
-static const gint span_row__canvas = 6;
-static const gint span_row__list_box = span_row__canvas;
-static const gint span_row__button = 1;
+static const gint pan_row__canvas = 6;
+static const gint pan_row__list_box = pan_row__canvas;
+static const gint pan_row__button = 1;
 
 static const gint column__tool_bar = 0;
 static const gint column__list_box = column__tool_bar;
-static const gint column__canvas = column__list_box + span_column__list_box;
+static const gint column__canvas = column__list_box + pan_column__list_box;
 
 static const gint row__tool_bar = 0;
 static const gint row__list_box = 1;
@@ -181,7 +181,7 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
 
     gtk_grid_attach(GTK_GRID(grid), canvas,
                     column__canvas, row__canvas,
-                    span_column__canvas, span_row__canvas);
+                    pan_column__canvas, pan_row__canvas);
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
     g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &world);
@@ -199,7 +199,7 @@ static void new_list_box(GtkWidget *grid, GtkWidget *canvas, World &world, GCall
     add_objects_to_list_box(GTK_LIST_BOX(list_box), world.objects());
     gtk_grid_attach(GTK_GRID(grid), list_box,
                     column__list_box, row__list_box,
-                    span_column__list_box, span_row__list_box);
+                    pan_column__list_box, pan_row__list_box);
 
     g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", select_object, canvas);
 }
@@ -215,7 +215,7 @@ static GtkWidget * new_button(
     g_signal_connect(button_with_label, "clicked", G_CALLBACK(callback), canvas);
     gtk_grid_attach(GTK_GRID(grid), button_with_label,
                     column__tool_bar + (button_count++), row__tool_bar,
-                    span_column__button, span_row__button);
+                    pan_column__button, pan_row__button);
 
     return button_with_label;
 }

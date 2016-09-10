@@ -22,27 +22,27 @@ static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
-static void span_left_clicked(GtkWidget UNUSED *widget, gpointer canvas)
+static void pan_left_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().span_left(step);
+    world.window().pan_left(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
-static void span_right_clicked(GtkWidget UNUSED *widget, gpointer canvas)
+static void pan_right_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().span_right(step);
+    world.window().pan_right(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
-static void span_up_clicked(GtkWidget UNUSED *widget, gpointer canvas)
+static void pan_up_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().span_up(step);
+    world.window().pan_up(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
-static void span_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
+static void pan_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().span_down(step);
+    world.window().pan_down(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
@@ -180,16 +180,16 @@ int main(int argc, char *argv[])
         grid, canvas, "Zoom Out", true, G_CALLBACK(zoom_out_clicked),
         "Press to zoom out of the world.");
     new_button(
-        grid, canvas, " < ", true, G_CALLBACK(span_left_clicked),
+        grid, canvas, " < ", true, G_CALLBACK(pan_left_clicked),
         "Press to move the world's window to the left.");
     new_button(
-        grid, canvas, " > ", true, G_CALLBACK(span_right_clicked),
+        grid, canvas, " > ", true, G_CALLBACK(pan_right_clicked),
         "Press to move the world's window to the right.");
     new_button(
-        grid, canvas, "Up", true, G_CALLBACK(span_up_clicked),
+        grid, canvas, "Up", true, G_CALLBACK(pan_up_clicked),
         "Press to move up the world's window.");
     new_button(
-        grid, canvas, "Down", true, G_CALLBACK(span_down_clicked),
+        grid, canvas, "Down", true, G_CALLBACK(pan_down_clicked),
         "Press to move down the world's window.");
 
     button_move = new_button(
