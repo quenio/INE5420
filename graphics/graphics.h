@@ -55,22 +55,6 @@ public:
 
 };
 
-// Transformable objects
-class Transformable
-{
-public:
-
-    // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy) = 0;
-
-    // Scale by factor from center.
-    virtual void scale(double factor, Coord center) = 0;
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center) = 0;
-
-};
-
 // World objects
 class Object: public Drawable, public Transformable
 {
@@ -390,8 +374,8 @@ public:
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy)
     {
-        ::translate(_leftBottom, dx, dy);
-        ::translate(_rightTop, dx, dy);
+        _leftBottom.translate(dx, dy);
+        _rightTop.translate(dx, dy);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -399,8 +383,8 @@ public:
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
-        ::scale(_leftBottom, factor, center);
-        ::scale(_rightTop, factor, center);
+        _leftBottom.scale(factor, center);
+        _rightTop.scale(factor, center);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -410,8 +394,8 @@ public:
     {
         _up_angle += degrees;
 
-        ::rotate(_leftBottom, degrees, center);
-        ::rotate(_rightTop, degrees, center);
+        _leftBottom.rotate(degrees, center);
+        _rightTop.rotate(degrees, center);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -646,12 +630,12 @@ private:
         const double radius = 2;
 
         // Horizontal bar
-        viewport.move(_center.translate(-radius, 0));
-        viewport.draw_line(_center.translate(+radius, 0), BLUE);
+        viewport.move(_center.translated(-radius, 0));
+        viewport.draw_line(_center.translated(+radius, 0), BLUE);
 
         // Horizontal bar
-        viewport.move(_center.translate(0, -radius));
-        viewport.draw_line(_center.translate(0, +radius), BLUE);
+        viewport.move(_center.translated(0, -radius));
+        viewport.draw_line(_center.translated(0, +radius), BLUE);
     }
 
     Window _window;

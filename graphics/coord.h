@@ -7,7 +7,26 @@
 using namespace std;
 
 // 2D coordinates
-class Coord
+class Coord;
+
+// Transformable elements
+class Transformable
+{
+public:
+
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy) = 0;
+
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center) = 0;
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center) = 0;
+
+};
+
+// 2D coordinates
+class Coord: public Transformable
 {
 public:
     Coord (double x, double y): _x(x), _y(y) {}
@@ -16,19 +35,37 @@ public:
     double y() const { return _y; }
 
     // Translate by dx horizontally, dy vertically.
-    Coord translate(double dx, double dy);
-
-    // Scale by factor.
-    Coord scale(double factor);
+    virtual void translate(double dx, double dy);
 
     // Scale by factor from center.
-    Coord scale(double factor, Coord center);
+    virtual void scale(double factor, Coord center);
 
-    // Rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
-    Coord rotate(double degrees);
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center);
 
-    // Rotate by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-    Coord rotate(double degrees, Coord center);
+    // Translated by dx horizontally, dy vertically
+    Coord translated(double dx, double dy)
+    {
+        Coord coord = *this;
+        coord.translate(dx, dy);
+        return coord;
+    }
+
+    // Scaled by factor from center
+    Coord scaled(double factor, Coord center)
+    {
+        Coord coord = *this;
+        coord.scale(factor, center);
+        return coord;
+    }
+
+    // Rotated by degrees at center (clockwise if angle positive or counter-clockwise if negative)
+    Coord rotated(double degrees, Coord center)
+    {
+        Coord coord = *this;
+        coord.rotate(degrees, center);
+        return coord;
+    }
 
     // Compare a and b.
     friend bool operator == (Coord a, Coord b)
@@ -188,43 +225,21 @@ void rotate(Coord & coord, double degrees, Coord center)
 }
 
 // Translate coord by dx horizontally, dy vertically.
-inline Coord Coord::translate(double dx, double dy)
+inline void Coord::translate(double dx, double dy)
 {
-    Coord coord = *this;
-    ::translate(coord, dx, dy);
-    return coord;
-}
-
-// Scale coord by factor.
-inline Coord Coord::scale(double factor)
-{
-    Coord coord = *this;
-    ::scale(coord, factor);
-    return coord;
+    ::translate(*this, dx, dy);
 }
 
 // Scale coord by factor from center.
-inline Coord Coord::scale(double factor, Coord center)
+inline void Coord::scale(double factor, Coord center)
 {
-    Coord coord = *this;
-    ::scale(coord, factor, center);
-    return coord;
-}
-
-// Rotate coord by degrees at the world origin; clockwise if angle positive; counter-clockwise if negative.
-inline Coord Coord::rotate(double degrees)
-{
-    Coord coord = *this;
-    ::rotate(coord, degrees);
-    return coord;
+    ::scale(*this, factor, center);
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline Coord Coord::rotate(double degrees, Coord center)
+inline void Coord::rotate(double degrees, Coord center)
 {
-    Coord coord = *this;
-    ::rotate(coord, degrees, center);
-    return coord;
+    ::rotate(*this, degrees, center);
 }
 
 // Equidistant double between a and b.
