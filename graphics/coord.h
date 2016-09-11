@@ -34,6 +34,12 @@ public:
     double x() const { return _x; }
     double y() const { return _y; }
 
+    // Distance to coord.
+    double distance_to(Coord coord)
+    {
+        return sqrt(pow(x() - coord.x(), 2) + pow(y() - coord.y(), 2));
+    }
+
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy);
 
@@ -73,8 +79,11 @@ public:
         return a._x == b._x && a._y == b._y;
     }
 
+
 private:
+
     double _x, _y;
+
 };
 
 // Columns of TransformMatrix and representation of homogeneous coordinates

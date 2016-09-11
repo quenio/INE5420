@@ -1,7 +1,7 @@
 #include "ui.h"
 
 static World world(
-    Window(-20, -20, 120, 120),
+    make_shared<Window>(-20, -20, 120, 120),
     DisplayFile({
         draw_point(Coord(25, 50)),
         draw_point(Coord(75, 50)),
@@ -12,37 +12,37 @@ static World world(
 
 static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().zoom_in(step);
+    world.window()->zoom_in(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
 static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().zoom_out(step);
+    world.window()->zoom_out(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
 static void pan_left_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().pan_left(step);
+    world.window()->pan_left(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
 static void pan_right_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().pan_right(step);
+    world.window()->pan_right(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
 static void pan_up_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().pan_up(step);
+    world.window()->pan_up(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
 static void pan_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().pan_down(step);
+    world.window()->pan_down(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
