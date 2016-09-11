@@ -60,7 +60,7 @@ class Object: public Drawable, public Transformable
 {
 public:
 
-    Object(const Color &color = BLACK): _color(color)
+    Object(const Color &color = BLACK): _color(color), _regular_color(color)
     {
         _id = ++_count;
     }
@@ -83,7 +83,7 @@ public:
 
     void highlight_off()
     {
-        _color = BLACK;
+        _color = _regular_color;
     }
 
     Color color()
@@ -97,7 +97,7 @@ public:
 private:
 
     int _id;
-    Color _color;
+    Color _color, _regular_color;
 
     static int _count;
 
