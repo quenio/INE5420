@@ -83,45 +83,47 @@ const char * to_viewport()
     Window window(0, 0, 200, 200); // world coord not used for the window-to-viewport transform
 
     const double width = 100, height = 100;
+    const Viewport viewport(width, height);
 
-    mu_assert(window.to_viewport(left_top, width, height) == Coord(0, 0));
-    mu_assert(window.to_viewport(left_bottom, width, height) == Coord(0, 100));
-    mu_assert(window.to_viewport(right_bottom, width, height) == Coord(100, 100));
-    mu_assert(window.to_viewport(right_top, width, height) == Coord(100, 0));
-    mu_assert(window.to_viewport(center, width, height) == Coord(50, 50));
-    mu_assert(window.to_viewport(northwest, width, height) == Coord(25, 25));
-    mu_assert(window.to_viewport(northeast, width, height) == Coord(75, 25));
-    mu_assert(window.to_viewport(southeast, width, height) == Coord(75, 75));
-    mu_assert(window.to_viewport(southwest, width, height) == Coord(25, 75));
+    mu_assert(window.to_viewport(left_top, viewport) == Coord(2.5, 2.5));
+    mu_assert(window.to_viewport(left_bottom, viewport) == Coord(2.5, 97.5));
+    mu_assert(window.to_viewport(right_bottom, viewport) == Coord(97.5, 97.5));
+    mu_assert(window.to_viewport(right_top, viewport) == Coord(97.5, 2.5));
+    mu_assert(window.to_viewport(center, viewport) == Coord(50, 50));
+    mu_assert(window.to_viewport(northwest, viewport) == Coord(26.25, 26.25));
+    mu_assert(window.to_viewport(northeast, viewport) == Coord(73.75, 26.25));
+    mu_assert(window.to_viewport(southeast, viewport) == Coord(73.75, 73.75));
+    mu_assert(window.to_viewport(southwest, viewport) == Coord(26.25, 73.75));
 
     return nullptr;
 }
 
 const char * from_viewport()
 {
-    Coord left_top(0, 0);
-    Coord left_bottom(0, 100);
-    Coord right_bottom(100, 100);
-    Coord right_top(100, 0);
+    Coord left_top(2.5, 2.5);
+    Coord left_bottom(2.5, 97.5);
+    Coord right_bottom(97.5, 97.5);
+    Coord right_top(97.5, 2.5);
     Coord center = Coord(50, 50);
-    Coord northwest = Coord(25, 25);
-    Coord northeast = Coord(75, 25);
-    Coord southeast = Coord(75, 75);
-    Coord southwest = Coord(25, 75);
+    Coord northwest = Coord(26.25, 26.25);
+    Coord northeast = Coord(73.75, 26.25);
+    Coord southeast = Coord(73.75, 73.75);
+    Coord southwest = Coord(26.25, 73.75);
 
     Window window(0, 0, 200, 200); // world coord not used for the window-to-viewport transform
 
     const double width = 100, height = 100;
+    const Viewport viewport(width, height);
 
-    mu_assert(window.from_viewport(left_top, width, height) == Coord(-1, +1));
-    mu_assert(window.from_viewport(left_bottom, width, height) == Coord(-1, -1));
-    mu_assert(window.from_viewport(right_bottom, width, height) == Coord(+1, -1));
-    mu_assert(window.from_viewport(right_top, width, height) == Coord(+1, +1));
-    mu_assert(window.from_viewport(center, width, height) == Coord(0, 0));
-    mu_assert(window.from_viewport(northwest, width, height) == Coord(-0.5, +0.5));
-    mu_assert(window.from_viewport(northeast, width, height) == Coord(+0.5, +0.5));
-    mu_assert(window.from_viewport(southeast, width, height) == Coord(+0.5, -0.5));
-    mu_assert(window.from_viewport(southwest, width, height) == Coord(-0.5, -0.5));
+    mu_assert(window.from_viewport(left_top, viewport) == Coord(-1, +1));
+    mu_assert(window.from_viewport(left_bottom, viewport) == Coord(-1, -1));
+    mu_assert(window.from_viewport(right_bottom, viewport) == Coord(+1, -1));
+    mu_assert(window.from_viewport(right_top, viewport) == Coord(+1, +1));
+    mu_assert(window.from_viewport(center, viewport) == Coord(0, 0));
+    mu_assert(window.from_viewport(northwest, viewport) == Coord(-0.5, +0.5));
+    mu_assert(window.from_viewport(northeast, viewport) == Coord(+0.5, +0.5));
+    mu_assert(window.from_viewport(southeast, viewport) == Coord(+0.5, -0.5));
+    mu_assert(window.from_viewport(southwest, viewport) == Coord(-0.5, -0.5));
 
     return nullptr;
 }
