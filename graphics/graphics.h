@@ -272,22 +272,22 @@ public:
 
     constexpr static double margin_percentage = 0.025;
 
-    Viewport(double width, double height): _width(width), _height(height) {}
+    Viewport(double width, double height): _width(width), _height(height), _margin(_width * margin_percentage) {}
 
-    double top() const { return margin(); }
-    double left() const { return margin(); }
+    double top() const { return _margin; }
+    double left() const { return _margin; }
 
     double width() const { return _width; }
     double height() const { return _height; }
 
-    double content_width() const { return _width - 2 * margin(); }
-    double content_height() const { return _height - 2 * margin(); }
+    double content_width() const { return width() - 2 * margin(); }
+    double content_height() const { return height() - 2 * margin(); }
 
-    double margin() const { return _width * margin_percentage; }
+    double margin() const { return _margin; }
 
 private:
 
-    double _width, _height;
+    double _width, _height, _margin;
 
 };
 
