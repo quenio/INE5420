@@ -12,13 +12,13 @@ static World world(
 
 static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().zoom_out(step);
+    world.window().zoom_in(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
 static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    world.window().zoom_in(step);
+    world.window().zoom_out(step);
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 

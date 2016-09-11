@@ -26,6 +26,7 @@ private:
 
 const Color BLACK = Color(0, 0, 0);
 const Color RED = Color(1, 0, 0);
+const Color GREEN = Color(0, 1, 0);
 const Color BLUE = Color(0, 0, 1);
 
 // Drawable area of the screen
@@ -55,17 +56,16 @@ public:
 };
 
 // World objects
-class Object: public Drawable
+class Object: public Drawable, public Transformable
 {
 public:
 
-    Object(): _color(BLACK)
+    Object(const Color &color = BLACK): _color(color)
     {
         _id = ++_count;
     }
 
-    virtual void draw(Canvas &canvas) = 0;
-
+    // Type used in the name
     virtual string type() = 0;
 
     virtual string name()
@@ -89,21 +89,6 @@ public:
     {
         return _color;
     }
-
-    // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy) = 0;
-
-    // Scale by factor.
-    virtual void scale(double factor) = 0;
-
-    // Scale by factor from center.
-    virtual void scale(double factor, Coord center) = 0;
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees) = 0;
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center) = 0;
 
     // Object's center
     virtual Coord center() = 0;
@@ -143,22 +128,10 @@ public:
         ::translate(_coord, dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
-    {
-        ::scale(_coord, factor);
-    }
-
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
         ::scale(_coord, factor, center);
-    }
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
-    {
-        ::rotate(_coord, degrees);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -205,25 +178,11 @@ public:
         ::translate(_b, dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
-    {
-        ::scale(_a, factor);
-        ::scale(_b, factor);
-    }
-
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
         ::scale(_a, factor, center);
         ::scale(_b, factor, center);
-    }
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
-    {
-        ::rotate(_a, degrees);
-        ::rotate(_b, degrees);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -273,25 +232,11 @@ public:
             ::translate(coord, dx, dy);
     }
 
-    // Scale by factor.
-    virtual void scale(double factor)
-    {
-        for (Coord &coord: _vertices)
-            ::scale(coord, factor);
-    }
-
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
         for (Coord &coord: _vertices)
             ::scale(coord, factor, center);
-    }
-
-    // Rotate by degrees at the world origin; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees)
-    {
-        for (Coord &coord: _vertices)
-            ::rotate(coord, degrees);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -321,16 +266,20 @@ private:
 
 
 // Visible area of the world
-class Window
+class Window: public Object
 {
 public:
+
     constexpr static int norm_left = -1;
     constexpr static int norm_bottom = -1;
     constexpr static int norm_width = 2;
     constexpr static int norm_height = 2;
 
     Window(double left, double bottom, double right, double top)
-        :_leftBottom(left, bottom), _rightTop(right, top), _center(equidistant(_leftBottom, _rightTop)), _up_angle(0) {}
+        :Object(GREEN),
+         _leftBottom(left, bottom), _rightTop(right, top),
+         _center(equidistant(_leftBottom, _rightTop)),
+         _up_angle(0) {}
 
     double left() const { return _leftBottom.x(); }
     double bottom() const { return _leftBottom.y(); }
@@ -339,6 +288,11 @@ public:
 
     double width() const { return right() - left(); }
     double height() const { return top() - bottom(); }
+
+    Coord leftBottom() const { return _leftBottom; }
+    Coord leftTop() const { return Coord(left(), top()); }
+    Coord rightTop() const { return Coord(right(), top()); }
+    Coord rightBottom() const { return _rightTop; }
 
     // Translate coord from world to window, where left-bottom is (-1, -1) and right-top is (1, 1).
     Coord from_world(Coord coord) const
@@ -376,21 +330,13 @@ public:
     // Zoom out by factor
     void zoom_out(double factor)
     {
-        double tx = width() * factor;
-        double ty = height() * factor;
-
-        _leftBottom *= translation(+tx, +ty);
-        _rightTop *= translation(-tx, -ty);
+        scale(1.0 + factor, center());
     }
 
     // Zoom in by factor
     void zoom_in(double factor)
     {
-        double tx = width() * factor;
-        double ty = height() * factor;
-
-        _leftBottom *= translation(-tx, -ty);
-        _rightTop *= translation(+tx, +ty);
+        scale(1.0 - factor, center());
     }
 
     // Pan left by factor
@@ -398,10 +344,7 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom *= translation(-tx, 0);
-        _rightTop *= translation(-tx, 0);
-
-        _center = equidistant(_leftBottom, _rightTop);
+        translate(-tx, 0);
     }
 
     // Pan right by factor
@@ -409,10 +352,7 @@ public:
     {
         double tx = width() * factor;
 
-        _leftBottom *= translation(+tx, 0);
-        _rightTop *= translation(+tx, 0);
-
-        _center = equidistant(_leftBottom, _rightTop);
+        translate(+tx, 0);
     }
 
     // Pan up by factor
@@ -420,10 +360,7 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom *= translation(0, +ty);
-        _rightTop *= translation(0, +ty);
-
-        _center = equidistant(_leftBottom, _rightTop);
+        translate(0, +ty);
     }
 
     // Pan down by factor
@@ -431,15 +368,63 @@ public:
     {
         double ty = height() * factor;
 
-        _leftBottom *= translation(0, -ty);
-        _rightTop *= translation(0, -ty);
+        translate(0, -ty);
+    }
+
+    // Translate by dx horizontally, dy vertically.
+    virtual void translate(double dx, double dy)
+    {
+        _leftBottom.translate(dx, dy);
+        _rightTop.translate(dx, dy);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
 
+    // Scale by factor from center.
+    virtual void scale(double factor, Coord center)
+    {
+        _leftBottom.scale(factor, center);
+        _rightTop.scale(factor, center);
+
+        _center = equidistant(_leftBottom, _rightTop);
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate(double degrees, Coord center)
+    {
+        _up_angle += degrees;
+
+        _leftBottom.rotate(degrees, center);
+        _rightTop.rotate(degrees, center);
+
+        _center = equidistant(_leftBottom, _rightTop);
+    }
+
+    // Window's center
+    virtual Coord center()
+    {
+        return _center;
+    }
+
+    virtual string type()
+    {
+        return "Window";
+    }
+
+    // Draw a square in canvas.
+    void draw(Canvas &canvas)
+    {
+        canvas.move(leftBottom());
+        canvas.draw_line(leftTop(), color());
+        canvas.draw_line(rightTop(), color());
+        canvas.draw_line(rightBottom(), color());
+    }
+
 private:
+
     Coord _leftBottom, _rightTop, _center;
     double _up_angle; // degrees
+
 };
 
 // Area on a screen to execute display commands
@@ -569,7 +554,7 @@ public:
     }
 
     // Select the object at index.
-    void select_object_at(int index)
+    void select_object_at(size_t index)
     {
         assert(index >= 0 && index < objects().size());
 
@@ -645,12 +630,12 @@ private:
         const double radius = 2;
 
         // Horizontal bar
-        viewport.move(_center.translate(-radius, 0));
-        viewport.draw_line(_center.translate(+radius, 0), BLUE);
+        viewport.move(_center.translated(-radius, 0));
+        viewport.draw_line(_center.translated(+radius, 0), BLUE);
 
         // Horizontal bar
-        viewport.move(_center.translate(0, -radius));
-        viewport.draw_line(_center.translate(0, +radius), BLUE);
+        viewport.move(_center.translated(0, -radius));
+        viewport.draw_line(_center.translated(0, +radius), BLUE);
     }
 
     Window _window;
