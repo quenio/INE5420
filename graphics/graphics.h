@@ -68,6 +68,7 @@ public:
     // Type used in the name
     virtual string type() = 0;
 
+    // Name displayed on the UI
     virtual string name()
     {
         stringstream ss;
@@ -277,22 +278,17 @@ public:
 
     Window(double left, double bottom, double right, double top)
         :Object(GREEN),
-         _leftBottom(left, bottom), _rightTop(right, top),
+         _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
          _up_angle(0) {}
 
-    double left() const { return _leftBottom.x(); }
-    double bottom() const { return _leftBottom.y(); }
-    double right() const { return _rightTop.x(); }
-    double top() const { return _rightTop.y(); }
-
-    double width() const { return right() - left(); }
-    double height() const { return top() - bottom(); }
-
     Coord leftBottom() const { return _leftBottom; }
-    Coord leftTop() const { return Coord(left(), top()); }
-    Coord rightTop() const { return Coord(right(), top()); }
-    Coord rightBottom() const { return _rightTop; }
+    Coord leftTop() const { return _leftTop; }
+    Coord rightTop() const { return _rightTop; }
+    Coord rightBottom() const { return _rightBottom; }
+
+    double width() const { return leftBottom().distance_to(rightBottom()); }
+    double height() const { return leftBottom().distance_to(leftTop()); }
 
     // Translate coord from world to window, where left-bottom is (-1, -1) and right-top is (1, 1).
     Coord from_world(Coord coord) const
@@ -375,7 +371,9 @@ public:
     virtual void translate(double dx, double dy)
     {
         _leftBottom.translate(dx, dy);
+        _leftTop.translate(dx, dy);
         _rightTop.translate(dx, dy);
+        _rightBottom.translate(dx, dy);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -384,7 +382,9 @@ public:
     virtual void scale(double factor, Coord center)
     {
         _leftBottom.scale(factor, center);
+        _leftTop.scale(factor, center);
         _rightTop.scale(factor, center);
+        _rightBottom.scale(factor, center);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -394,8 +394,10 @@ public:
     {
         _up_angle += degrees;
 
-        _leftBottom.rotate(degrees, center);
-        _rightTop.rotate(degrees, center);
+        _leftBottom.rotate(-degrees, center);
+        _leftTop.rotate(-degrees, center);
+        _rightTop.rotate(-degrees, center);
+        _rightBottom.rotate(-degrees, center);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -406,9 +408,18 @@ public:
         return _center;
     }
 
+    // Type used in the name
     virtual string type()
     {
         return "Window";
+    }
+
+    // Name displayed on the UI
+    virtual string name()
+    {
+        stringstream ss;
+        ss << type();
+        return ss.str();
     }
 
     // Draw a square in canvas.
@@ -416,13 +427,20 @@ public:
     {
         canvas.move(leftBottom());
         canvas.draw_line(leftTop(), color());
+
+        canvas.move(leftTop());
         canvas.draw_line(rightTop(), color());
+
+        canvas.move(rightTop());
         canvas.draw_line(rightBottom(), color());
+
+        canvas.move(rightBottom());
+        canvas.draw_line(leftBottom(), color());
     }
 
 private:
 
-    Coord _leftBottom, _rightTop, _center;
+    Coord _leftBottom, _leftTop, _rightTop, _rightBottom, _center;
     double _up_angle; // degrees
 
 };
@@ -432,13 +450,21 @@ class Viewport: public Canvas
 {
 public:
 
-    Viewport(double width, double height, Window &window, Canvas &canvas)
+    constexpr static double margin_percentage = 0.025;
+
+    Viewport(double width, double height, shared_ptr<Window> window, Canvas &canvas)
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
-    // Translate coord from world to viewport.
+    // Translate coord from world to viewport, and leaves a margin.
     Coord translate(const Coord &coord) const
     {
-        return _window.to_viewport(_window.from_world(coord), _width, _height);
+        double _margin = _width * margin_percentage;
+        double top = _margin;
+        double left = _margin;
+        double content_width = _width - 2 * _margin;
+        double content_height = _height - 2 * _margin;
+
+        return _window->to_viewport(_window->from_world(coord), content_width, content_height).translated(top, left);
     }
 
     // Move to destination.
@@ -461,7 +487,7 @@ public:
 
 private:
     double _width, _height;
-    Window &_window;
+    shared_ptr<Window> _window;
     Canvas &_canvas;
 };
 
@@ -524,14 +550,16 @@ private:
 class World
 {
 public:
-    World(Window window, DisplayFile display_file)
+    World(shared_ptr<Window> window, DisplayFile display_file)
         : _window(window), _display_file(display_file), _center(0, 0) {}
 
-    Window& window() { return _window; }
+    shared_ptr<Window> window() { return _window; }
 
     // Objects from command list
     vector<shared_ptr<Object>> objects() {
         vector<shared_ptr<Object>> vector;
+
+        vector.push_back(_window);
 
         for (auto &command: _display_file.commands())
         {
@@ -550,6 +578,7 @@ public:
     {
         render_axis(viewport);
         render_center(viewport);
+        _window->draw(viewport);
         _display_file.render(viewport);
     }
 
@@ -605,7 +634,7 @@ public:
     // Set the new center from viewport coordinates
     void set_center_from_viewport(Coord center, double viewport_width, double viewport_height)
     {
-        _center = _window.to_world(_window.from_viewport(center, viewport_width, viewport_height));
+        _center = _window->to_world(_window->from_viewport(center, viewport_width, viewport_height));
     }
 
 private:
@@ -638,7 +667,7 @@ private:
         viewport.draw_line(_center.translated(0, +radius), BLUE);
     }
 
-    Window _window;
+    shared_ptr<Window> _window;
     DisplayFile _display_file;
     list<shared_ptr<Object>> _selected_objects;
     Coord _center;
