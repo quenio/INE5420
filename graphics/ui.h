@@ -84,7 +84,7 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
     canvas.clear(Color(1, 1, 1));
 
     World &world = *(World*)data;
-    Viewport viewport(widget_width, widget_height, world.window(), canvas);
+    ViewportCanvas viewport(widget_width, widget_height, world.window(), canvas);
     world.render(viewport);
 
     refresh(widget);
@@ -123,9 +123,10 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
         const Coord new_center = Coord(event->x, event->y);
         const int widget_width = gtk_widget_get_allocated_width(canvas);
         const int widget_height = gtk_widget_get_allocated_height(canvas);
+        const Viewport viewport(widget_width, widget_height);
 
         World &world = *(World*)data;
-        world.set_center_from_viewport(new_center, widget_width, widget_height);
+        world.set_center_from_viewport(new_center, viewport);
 
         refresh_canvas(canvas, world);
     }
