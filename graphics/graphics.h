@@ -271,6 +271,8 @@ class Window: public Object
 {
 public:
 
+    constexpr static double margin_percentage = 0.025;
+
     constexpr static int norm_left = -1;
     constexpr static int norm_bottom = -1;
     constexpr static int norm_width = 2;
@@ -311,16 +313,29 @@ public:
     // Translate coord from viewport to window.
     Coord from_viewport(Coord coord, double viewport_width, double viewport_height) const
     {
-        return Coord(coord.x(), viewport_height - coord.y()) *
-               scaling(norm_width / viewport_width, norm_height / viewport_height) *
+        double _margin = viewport_width * margin_percentage;
+        double content_width = viewport_width - 2 * _margin;
+        double content_height = viewport_height - 2 * _margin;
+        double top = _margin;
+        double left = _margin;
+
+        return Coord(coord.x() - left, (viewport_height - coord.y()) - top) *
+               scaling(norm_width / content_width, norm_height / content_height) *
                translation(norm_left, norm_bottom);
     }
 
-    // Translate coord from window to viewport.
+    // Translate coord from window to viewport, leaving a margin.
     Coord to_viewport(Coord coord, double viewport_width, double viewport_height) const
     {
+        double _margin = viewport_width * margin_percentage;
+        double content_width = viewport_width - 2 * _margin;
+        double content_height = viewport_height - 2 * _margin;
+        double top = _margin;
+        double left = _margin;
+
         return Coord(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
-            scaling(viewport_width / norm_width, viewport_height / norm_height);
+            scaling(content_width / norm_width, content_height / norm_height) *
+            translation(top, left);
     }
 
     // Zoom out by factor
@@ -450,21 +465,13 @@ class Viewport: public Canvas
 {
 public:
 
-    constexpr static double margin_percentage = 0.025;
-
     Viewport(double width, double height, shared_ptr<Window> window, Canvas &canvas)
         : _width(width), _height(height), _window(window), _canvas(canvas) {}
 
-    // Translate coord from world to viewport, and leaves a margin.
+    // Translate coord from world to viewport
     Coord translate(const Coord &coord) const
     {
-        double _margin = _width * margin_percentage;
-        double top = _margin;
-        double left = _margin;
-        double content_width = _width - 2 * _margin;
-        double content_height = _height - 2 * _margin;
-
-        return _window->to_viewport(_window->from_world(coord), content_width, content_height).translated(top, left);
+        return _window->to_viewport(_window->from_world(coord), _width, _height);
     }
 
     // Move to destination.
