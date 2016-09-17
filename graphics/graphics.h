@@ -87,16 +87,6 @@ Visibility visibility(Area &area, const Coord &a, const Coord &b)
     }
 }
 
-// Clippable objects
-class Clippable
-{
-public:
-
-    // Provide clipped version of itself in area.
-    virtual shared_ptr<Drawable> clipped_in(Area &area) = 0;
-
-};
-
 // World objects
 class Object: public Drawable, public Transformable
 {
@@ -108,10 +98,10 @@ public:
     }
 
     // Type used in the name
-    virtual string type() const = 0;
+    virtual string type() = 0;
 
     // Name displayed on the UI
-    virtual string name() const
+    virtual string name()
     {
         stringstream ss;
         ss << type() << _id;
@@ -166,7 +156,7 @@ public:
         canvas.draw_circle(_coord, 1.5, color());
     }
 
-    string type() const override
+    string type() override
     {
         return "Point";
     }
@@ -208,12 +198,11 @@ private:
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: public Object, public Clippable
+class Line: public Object
 {
 public:
 
     Line(Coord a, Coord b): _a(a), _b(b) {}
-    Line(const Color &color, Coord a, Coord b): Object(color), _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas &canvas) override
@@ -222,7 +211,7 @@ public:
         canvas.draw_line(_b, color());
     }
 
-    string type() const override
+    string type() override
     {
         return "Line";
     }
@@ -260,27 +249,16 @@ public:
         return visibility(area, _a, _b);
     }
 
-    // Provide clipped version of itself in area.
-    shared_ptr<Drawable> clipped_in(Area &area) override
-    {
-        // TODO Implement line clipping.
-
-        printf("clipped line %s\n", name().c_str());
-
-        return make_shared<Line>(color(), _a, _b);
-    }
-
 private:
     Coord _a, _b;
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Object, public Clippable
+class Polygon: public Object
 {
 public:
 
     Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
-    Polygon(const Color &color, list<Coord> vertices): Object(color), _vertices(vertices) {}
 
     void draw(Canvas &canvas) override
     {
@@ -293,7 +271,7 @@ public:
         }
     }
 
-    string type() const override
+    string type() override
     {
         return "Polygon";
     }
@@ -356,20 +334,8 @@ public:
         return result;
     }
 
-    // Provide clipped version of itself in area.
-    shared_ptr<Drawable> clipped_in(Area &area) override
-    {
-        // TODO Implement polygon clipping.
-
-        printf("clipped polygon %s\n", name().c_str());
-
-        return make_shared<Polygon>(color(), _vertices);
-    }
-
 private:
-
     list<Coord> _vertices;
-
 };
 
 // Visible area on a canvas
@@ -552,13 +518,13 @@ public:
     }
 
     // Type used in the name
-    string type() const override
+    string type() override
     {
         return "Window";
     }
 
     // Name displayed on the UI
-    string name() const override
+    string name() override
     {
         stringstream ss;
         ss << type();
@@ -653,27 +619,10 @@ public:
     // Render drawable on canvas if visible.
     void render(ViewportCanvas &canvas) override
     {
-        switch (_drawable->visibility_in(canvas))
-        {
-            case Visibility::FULL:
-            {
-                _drawable->draw(canvas);
-            }
-            break;
-
-            case Visibility::PARTIAL:
-            {
-                shared_ptr<Clippable> clippable = dynamic_pointer_cast<Clippable>(_drawable);
-                if (clippable == nullptr)
-                    _drawable->draw(canvas);
-                else
-                    clippable->clipped_in(canvas)->draw(canvas);
-            }
-            break;
-
-            case Visibility::NONE:
-                printf("invisible %s\n", object()->name().c_str());
-        }
+        if (_drawable->visibility_in(canvas) != Visibility::NONE)
+            _drawable->draw(canvas);
+        else
+            printf("invisible %s\n", object()->name().c_str());
     }
 
     shared_ptr<Object> object()
