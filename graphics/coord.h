@@ -221,6 +221,12 @@ void scale(Coord &coord, double factor, Coord center)
     coord *= translation(-center.x(), -center.y()) * scaling(factor, factor) * translation(center.x(), center.y());
 }
 
+// Rotate coord by degrees at the world origin; clockwise if angle positive; counter-clockwise if negative.
+void rotate(Coord & coord, double degrees)
+{
+    coord *= rotation(degrees);
+}
+
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 void rotate(Coord & coord, double degrees, Coord center)
 {

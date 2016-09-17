@@ -45,18 +45,6 @@ public:
 
 };
 
-// Area in world
-class Area
-{
-public:
-
-    // True if area contains coord.
-    virtual bool contains(Coord coord) const = 0;
-
-};
-
-enum class Visibility { FULL, PARTIAL, NONE };
-
 // Drawable objects
 class Drawable
 {
@@ -64,9 +52,6 @@ public:
 
     // Draw something in canvas.
     virtual void draw(Canvas &canvas) = 0;
-
-    // Determine the visibility in area.
-    virtual Visibility visibility_in(Area &area) const = 0;
 
 };
 
@@ -108,12 +93,6 @@ public:
 
     // Object's center
     virtual Coord center() = 0;
-
-    // Determine the visibility in area.
-    virtual Visibility visibility_in(Area &area) const
-    {
-        return Visibility::FULL;
-    }
 
 private:
 
@@ -168,12 +147,6 @@ public:
         return _coord;
     }
 
-    // Determine the visibility in area.
-    virtual Visibility visibility_in(Area &area) const
-    {
-        return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
-    }
-
 private:
 
     Coord _coord;
@@ -224,23 +197,6 @@ public:
     virtual Coord center()
     {
         return Coord((_a.x() + _b.x()) / 2, (_a.y() + _b.y()) / 2);
-    }
-
-    // Determine the visibility in area.
-    virtual Visibility visibility_in(Area &area) const
-    {
-        const bool a_in_area = area.contains(_a);
-        const bool b_in_area = area.contains(_b);
-        const bool mid_in_area = area.contains(equidistant(_a, _b));
-
-        if (a_in_area && b_in_area && mid_in_area)
-        {
-            return Visibility::FULL;
-        }
-        else
-        {
-            return a_in_area || b_in_area || mid_in_area ? Visibility::PARTIAL : Visibility::NONE;
-        }
     }
 
 private:
@@ -337,7 +293,7 @@ private:
 
 
 // Visible area of the world
-class Window: public Object, public Area
+class Window: public Object
 {
 public:
 
@@ -359,14 +315,6 @@ public:
 
     double width() const { return leftBottom().distance_to(rightBottom()); }
     double height() const { return leftBottom().distance_to(leftTop()); }
-
-    // True if Window contains World coord.
-    virtual bool contains(Coord coord) const
-    {
-        Coord wc = from_world(coord);
-        double x = wc.x(), y = wc.y();
-        return x >= -1 && x <= +1 && y >= -1 && y <= +1;
-    }
 
     // Translate coord from world to window, where left-bottom is (-1, -1) and right-top is (1, 1).
     Coord from_world(Coord coord) const
@@ -526,18 +474,12 @@ private:
 };
 
 // Area on a screen to execute display commands
-class ViewportCanvas: public Canvas, public Viewport, public Area
+class ViewportCanvas: public Canvas, public Viewport
 {
 public:
 
     ViewportCanvas(double width, double height, shared_ptr<Window> window, Canvas &canvas)
         : Viewport(width, height), _window(window), _canvas(canvas) {}
-
-    // True if area contains world coord.
-    virtual bool contains(Coord coord) const
-    {
-        return _window->contains(coord);
-    }
 
     // Translate coord from world to viewport
     Coord translate(const Coord &coord) const
@@ -576,7 +518,7 @@ class DisplayCommand
 public:
 
     // Render an object (image or figure) on canvas.
-    virtual void render(ViewportCanvas &canvas) = 0;
+    virtual void render(Canvas &canvas) = 0;
 
 };
 
@@ -587,13 +529,10 @@ public:
 
     DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
 
-    // Render drawable on canvas if visible.
-    virtual void render(ViewportCanvas &canvas)
+    // Render drawable on canvas.
+    virtual void render(Canvas &canvas)
     {
-        if (_drawable->visibility_in(canvas) != Visibility::NONE)
-            _drawable->draw(canvas);
-        else
-            printf("invisible %s\n", object()->name().c_str());
+        _drawable->draw(canvas);
     }
 
     shared_ptr<Object> object()
@@ -619,7 +558,7 @@ public:
     }
 
     // Render all commands on canvas.
-    void render(ViewportCanvas &canvas)
+    void render(Canvas &canvas)
     {
         for (auto &command: _commands) command->render(canvas);
     }
@@ -656,7 +595,7 @@ public:
     }
 
     // Render DisplayFile, the center, the x axis and y axis on canvas.
-    void render(ViewportCanvas &canvas)
+    void render(Canvas &canvas)
     {
         render_axis(canvas);
         render_center(canvas);
