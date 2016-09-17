@@ -41,13 +41,13 @@ public:
     }
 
     // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy);
+    void translate(double dx, double dy) override;
 
     // Scale by factor from center.
-    virtual void scale(double factor, Coord center);
+    void scale(double factor, Coord center) override;
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center);
+    void rotate(double degrees, Coord center) override;
 
     // Translated by dx horizontally, dy vertically
     Coord translated(double dx, double dy)
@@ -219,12 +219,6 @@ void scale(Coord &coord, double factor)
 void scale(Coord &coord, double factor, Coord center)
 {
     coord *= translation(-center.x(), -center.y()) * scaling(factor, factor) * translation(center.x(), center.y());
-}
-
-// Rotate coord by degrees at the world origin; clockwise if angle positive; counter-clockwise if negative.
-void rotate(Coord & coord, double degrees)
-{
-    coord *= rotation(degrees);
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
