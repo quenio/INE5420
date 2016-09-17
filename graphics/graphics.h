@@ -45,6 +45,18 @@ public:
 
 };
 
+// Area in world
+class Area
+{
+public:
+
+    // True if area contains coord.
+    virtual bool contains(Coord coord) const = 0;
+
+};
+
+enum class Visibility { FULL, PARTIAL, NONE };
+
 // Drawable objects
 class Drawable
 {
@@ -52,6 +64,36 @@ public:
 
     // Draw something in canvas.
     virtual void draw(Canvas &canvas) = 0;
+
+    // Determine the visibility in area.
+    virtual Visibility visibility_in(Area &area) const = 0;
+
+};
+
+// Determine the visibility in area for line between a and b.
+Visibility visibility(Area &area, const Coord &a, const Coord &b)
+{
+    const bool a_in_area = area.contains(a);
+    const bool b_in_area = area.contains(b);
+    const bool mid_in_area = area.contains(equidistant(a, b));
+
+    if (a_in_area && b_in_area && mid_in_area)
+    {
+        return Visibility::FULL;
+    }
+    else
+    {
+        return a_in_area || b_in_area || mid_in_area ? Visibility::PARTIAL : Visibility::NONE;
+    }
+}
+
+// Clippable objects
+class Clippable
+{
+public:
+
+    // Provide clipped version of itself in area.
+    virtual shared_ptr<Drawable> clipped_in(Area &area) = 0;
 
 };
 
@@ -66,10 +108,10 @@ public:
     }
 
     // Type used in the name
-    virtual string type() = 0;
+    virtual string type() const = 0;
 
     // Name displayed on the UI
-    virtual string name()
+    virtual string name() const
     {
         stringstream ss;
         ss << type() << _id;
@@ -94,6 +136,12 @@ public:
     // Object's center
     virtual Coord center() = 0;
 
+    // Determine the visibility in area.
+    Visibility visibility_in(Area &area) const override
+    {
+        return Visibility::FULL;
+    }
+
 private:
 
     int _id;
@@ -113,38 +161,44 @@ public:
     Point(Coord coord): _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
-    void draw(Canvas &canvas)
+    void draw(Canvas &canvas) override
     {
         canvas.draw_circle(_coord, 1.5, color());
     }
 
-    virtual string type()
+    string type() const override
     {
         return "Point";
     }
 
     // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy)
+    void translate(double dx, double dy) override
     {
         ::translate(_coord, dx, dy);
     }
 
     // Scale by factor from center.
-    virtual void scale(double factor, Coord center)
+    void scale(double factor, Coord center) override
     {
         ::scale(_coord, factor, center);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center)
+    void rotate(double degrees, Coord center) override
     {
         ::rotate(_coord, degrees, center);
     }
 
     // Coord of the Point itself
-    virtual Coord center()
+    Coord center() override
     {
         return _coord;
+    }
+
+    // Determine the visibility in area.
+    Visibility visibility_in(Area &area) const override
+    {
+        return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
     }
 
 private:
@@ -154,49 +208,66 @@ private:
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: public Object
+class Line: public Object, public Clippable
 {
 public:
 
     Line(Coord a, Coord b): _a(a), _b(b) {}
+    Line(const Color &color, Coord a, Coord b): Object(color), _a(a), _b(b) {}
 
     // Draw line in canvas.
-    void draw(Canvas &canvas)
+    void draw(Canvas &canvas) override
     {
         canvas.move(_a);
         canvas.draw_line(_b, color());
     }
 
-    virtual string type()
+    string type() const override
     {
         return "Line";
     }
 
     // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy)
+    void translate(double dx, double dy) override
     {
         ::translate(_a, dx, dy);
         ::translate(_b, dx, dy);
     }
 
     // Scale by factor from center.
-    virtual void scale(double factor, Coord center)
+    void scale(double factor, Coord center) override
     {
         ::scale(_a, factor, center);
         ::scale(_b, factor, center);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center)
+    void rotate(double degrees, Coord center) override
     {
         ::rotate(_a, degrees, center);
         ::rotate(_b, degrees, center);
     }
 
     // Midpoint between a and b
-    virtual Coord center()
+    Coord center() override
     {
         return Coord((_a.x() + _b.x()) / 2, (_a.y() + _b.y()) / 2);
+    }
+
+    // Determine the visibility in area.
+    Visibility visibility_in(Area &area) const override
+    {
+        return visibility(area, _a, _b);
+    }
+
+    // Provide clipped version of itself in area.
+    shared_ptr<Drawable> clipped_in(Area &area) override
+    {
+        // TODO Implement line clipping.
+
+        printf("clipped line %s\n", name().c_str());
+
+        return make_shared<Line>(color(), _a, _b);
     }
 
 private:
@@ -204,13 +275,14 @@ private:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Object
+class Polygon: public Object, public Clippable
 {
 public:
 
     Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
+    Polygon(const Color &color, list<Coord> vertices): Object(color), _vertices(vertices) {}
 
-    void draw(Canvas &canvas)
+    void draw(Canvas &canvas) override
     {
         Coord previous = _vertices.back();
         for (auto &current: _vertices)
@@ -221,34 +293,34 @@ public:
         }
     }
 
-    virtual string type()
+    string type() const override
     {
         return "Polygon";
     }
 
     // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy)
+    void translate(double dx, double dy) override
     {
         for (Coord &coord: _vertices)
             ::translate(coord, dx, dy);
     }
 
     // Scale by factor from center.
-    virtual void scale(double factor, Coord center)
+    void scale(double factor, Coord center) override
     {
         for (Coord &coord: _vertices)
             ::scale(coord, factor, center);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center)
+    void rotate(double degrees, Coord center) override
     {
         for (Coord &coord: _vertices)
             ::rotate(coord, degrees, center);
     }
 
     // Midpoint between a and b
-    virtual Coord center()
+    Coord center() override
     {
         double x = 0, y = 0;
 
@@ -261,8 +333,43 @@ public:
         return Coord(x / _vertices.size(), y / _vertices.size());
     }
 
+    Visibility visibility_in(Area &area) const override
+    {
+        Visibility result;
+
+        Coord a = _vertices.back();
+        for (auto &b: _vertices)
+        {
+            const Visibility v = visibility(area, a, b);
+            if (v == Visibility::PARTIAL)
+            {
+                return Visibility::PARTIAL;
+            }
+            else
+            {
+                result = v;
+            }
+
+            a = b;
+        }
+
+        return result;
+    }
+
+    // Provide clipped version of itself in area.
+    shared_ptr<Drawable> clipped_in(Area &area) override
+    {
+        // TODO Implement polygon clipping.
+
+        printf("clipped polygon %s\n", name().c_str());
+
+        return make_shared<Polygon>(color(), _vertices);
+    }
+
 private:
+
     list<Coord> _vertices;
+
 };
 
 // Visible area on a canvas
@@ -293,7 +400,7 @@ private:
 
 
 // Visible area of the world
-class Window: public Object
+class Window: public Object, public Area
 {
 public:
 
@@ -315,6 +422,14 @@ public:
 
     double width() const { return leftBottom().distance_to(rightBottom()); }
     double height() const { return leftBottom().distance_to(leftTop()); }
+
+    // True if Window contains World coord.
+    bool contains(Coord coord) const override
+    {
+        Coord wc = from_world(coord);
+        double x = wc.x(), y = wc.y();
+        return x >= -1 && x <= +1 && y >= -1 && y <= +1;
+    }
 
     // Translate coord from world to window, where left-bottom is (-1, -1) and right-top is (1, 1).
     Coord from_world(Coord coord) const
@@ -396,7 +511,7 @@ public:
     }
 
     // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy)
+    void translate(double dx, double dy) override
     {
         _leftBottom.translate(dx, dy);
         _leftTop.translate(dx, dy);
@@ -407,7 +522,7 @@ public:
     }
 
     // Scale by factor from center.
-    virtual void scale(double factor, Coord center)
+    void scale(double factor, Coord center) override
     {
         _leftBottom.scale(factor, center);
         _leftTop.scale(factor, center);
@@ -418,7 +533,7 @@ public:
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center)
+    void rotate(double degrees, Coord center) override
     {
         _up_angle += degrees;
 
@@ -431,19 +546,19 @@ public:
     }
 
     // Window's center
-    virtual Coord center()
+    Coord center() override
     {
         return _center;
     }
 
     // Type used in the name
-    virtual string type()
+    string type() const override
     {
         return "Window";
     }
 
     // Name displayed on the UI
-    virtual string name()
+    string name() const override
     {
         stringstream ss;
         ss << type();
@@ -451,7 +566,7 @@ public:
     }
 
     // Draw a square in canvas.
-    void draw(Canvas &canvas)
+    void draw(Canvas &canvas) override
     {
         canvas.move(leftBottom());
         canvas.draw_line(leftTop(), color());
@@ -474,12 +589,18 @@ private:
 };
 
 // Area on a screen to execute display commands
-class ViewportCanvas: public Canvas, public Viewport
+class ViewportCanvas: public Canvas, public Viewport, public Area
 {
 public:
 
     ViewportCanvas(double width, double height, shared_ptr<Window> window, Canvas &canvas)
         : Viewport(width, height), _window(window), _canvas(canvas) {}
+
+    // True if area contains world coord.
+    bool contains(Coord coord) const override
+    {
+        return _window->contains(coord);
+    }
 
     // Translate coord from world to viewport
     Coord translate(const Coord &coord) const
@@ -488,19 +609,19 @@ public:
     }
 
     // Move to destination.
-    virtual void move(const Coord &destination)
+    void move(const Coord &destination) override
     {
         _canvas.move(translate(destination));
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination, const Color &color)
+    void draw_line(const Coord &destination, const Color &color) override
     {
         _canvas.draw_line(translate(destination), color);
     }
 
     // Draw circle with the specified center, radius and color.
-    virtual void draw_circle(const Coord &center, const double radius, const Color &color)
+    void draw_circle(const Coord &center, const double radius, const Color &color) override
     {
         _canvas.draw_circle(translate(center), radius, color);
     }
@@ -518,7 +639,7 @@ class DisplayCommand
 public:
 
     // Render an object (image or figure) on canvas.
-    virtual void render(Canvas &canvas) = 0;
+    virtual void render(ViewportCanvas &canvas) = 0;
 
 };
 
@@ -529,10 +650,30 @@ public:
 
     DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
 
-    // Render drawable on canvas.
-    virtual void render(Canvas &canvas)
+    // Render drawable on canvas if visible.
+    void render(ViewportCanvas &canvas) override
     {
-        _drawable->draw(canvas);
+        switch (_drawable->visibility_in(canvas))
+        {
+            case Visibility::FULL:
+            {
+                _drawable->draw(canvas);
+            }
+            break;
+
+            case Visibility::PARTIAL:
+            {
+                shared_ptr<Clippable> clippable = dynamic_pointer_cast<Clippable>(_drawable);
+                if (clippable == nullptr)
+                    _drawable->draw(canvas);
+                else
+                    clippable->clipped_in(canvas)->draw(canvas);
+            }
+            break;
+
+            case Visibility::NONE:
+                printf("invisible %s\n", object()->name().c_str());
+        }
     }
 
     shared_ptr<Object> object()
@@ -558,7 +699,7 @@ public:
     }
 
     // Render all commands on canvas.
-    void render(Canvas &canvas)
+    void render(ViewportCanvas &canvas)
     {
         for (auto &command: _commands) command->render(canvas);
     }
@@ -595,7 +736,7 @@ public:
     }
 
     // Render DisplayFile, the center, the x axis and y axis on canvas.
-    void render(Canvas &canvas)
+    void render(ViewportCanvas &canvas)
     {
         render_axis(canvas);
         render_center(canvas);
@@ -629,7 +770,7 @@ public:
     }
 
     // Move the selected objects by dx horizontally, dy vertically.
-    virtual void translate_selected(double dx, double dy)
+    void translate_selected(double dx, double dy)
     {
         for (shared_ptr<Object> object: _selected_objects)
         {
@@ -639,14 +780,14 @@ public:
     }
 
     // Scale the selected objects by factor.
-    virtual void scale_selected(double factor)
+    void scale_selected(double factor)
     {
         for (shared_ptr<Object> object: _selected_objects)
             object->scale(factor, _center);
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate_selected(double degrees)
+    void rotate_selected(double degrees)
     {
         for (shared_ptr<Object> object: _selected_objects)
             object->rotate(degrees, _center);
