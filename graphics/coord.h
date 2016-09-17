@@ -41,13 +41,13 @@ public:
     }
 
     // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override;
+    virtual void translate(double dx, double dy);
 
     // Scale by factor from center.
-    void scale(double factor, Coord center) override;
+    virtual void scale(double factor, Coord center);
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override;
+    virtual void rotate(double degrees, Coord center);
 
     // Translated by dx horizontally, dy vertically
     Coord translated(double dx, double dy)

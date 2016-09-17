@@ -70,23 +70,6 @@ public:
 
 };
 
-// Determine the visibility in area for line between a and b.
-Visibility visibility(Area &area, const Coord &a, const Coord &b)
-{
-    const bool a_in_area = area.contains(a);
-    const bool b_in_area = area.contains(b);
-    const bool mid_in_area = area.contains(equidistant(a, b));
-
-    if (a_in_area && b_in_area && mid_in_area)
-    {
-        return Visibility::FULL;
-    }
-    else
-    {
-        return a_in_area || b_in_area || mid_in_area ? Visibility::PARTIAL : Visibility::NONE;
-    }
-}
-
 // World objects
 class Object: public Drawable, public Transformable
 {
@@ -127,7 +110,7 @@ public:
     virtual Coord center() = 0;
 
     // Determine the visibility in area.
-    Visibility visibility_in(Area &area) const override
+    virtual Visibility visibility_in(Area &area) const
     {
         return Visibility::FULL;
     }
@@ -151,42 +134,42 @@ public:
     Point(Coord coord): _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
-    void draw(Canvas &canvas) override
+    void draw(Canvas &canvas)
     {
         canvas.draw_circle(_coord, 1.5, color());
     }
 
-    string type() override
+    virtual string type()
     {
         return "Point";
     }
 
     // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
+    virtual void translate(double dx, double dy)
     {
         ::translate(_coord, dx, dy);
     }
 
     // Scale by factor from center.
-    void scale(double factor, Coord center) override
+    virtual void scale(double factor, Coord center)
     {
         ::scale(_coord, factor, center);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
+    virtual void rotate(double degrees, Coord center)
     {
         ::rotate(_coord, degrees, center);
     }
 
     // Coord of the Point itself
-    Coord center() override
+    virtual Coord center()
     {
         return _coord;
     }
 
     // Determine the visibility in area.
-    Visibility visibility_in(Area &area) const override
+    virtual Visibility visibility_in(Area &area) const
     {
         return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
     }
@@ -205,48 +188,59 @@ public:
     Line(Coord a, Coord b): _a(a), _b(b) {}
 
     // Draw line in canvas.
-    void draw(Canvas &canvas) override
+    void draw(Canvas &canvas)
     {
         canvas.move(_a);
         canvas.draw_line(_b, color());
     }
 
-    string type() override
+    virtual string type()
     {
         return "Line";
     }
 
     // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
+    virtual void translate(double dx, double dy)
     {
         ::translate(_a, dx, dy);
         ::translate(_b, dx, dy);
     }
 
     // Scale by factor from center.
-    void scale(double factor, Coord center) override
+    virtual void scale(double factor, Coord center)
     {
         ::scale(_a, factor, center);
         ::scale(_b, factor, center);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
+    virtual void rotate(double degrees, Coord center)
     {
         ::rotate(_a, degrees, center);
         ::rotate(_b, degrees, center);
     }
 
     // Midpoint between a and b
-    Coord center() override
+    virtual Coord center()
     {
         return Coord((_a.x() + _b.x()) / 2, (_a.y() + _b.y()) / 2);
     }
 
     // Determine the visibility in area.
-    Visibility visibility_in(Area &area) const override
+    virtual Visibility visibility_in(Area &area) const
     {
-        return visibility(area, _a, _b);
+        const bool a_in_area = area.contains(_a);
+        const bool b_in_area = area.contains(_b);
+        const bool mid_in_area = area.contains(equidistant(_a, _b));
+
+        if (a_in_area && b_in_area && mid_in_area)
+        {
+            return Visibility::FULL;
+        }
+        else
+        {
+            return a_in_area || b_in_area || mid_in_area ? Visibility::PARTIAL : Visibility::NONE;
+        }
     }
 
 private:
@@ -260,7 +254,7 @@ public:
 
     Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
 
-    void draw(Canvas &canvas) override
+    void draw(Canvas &canvas)
     {
         Coord previous = _vertices.back();
         for (auto &current: _vertices)
@@ -271,34 +265,34 @@ public:
         }
     }
 
-    string type() override
+    virtual string type()
     {
         return "Polygon";
     }
 
     // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
+    virtual void translate(double dx, double dy)
     {
         for (Coord &coord: _vertices)
             ::translate(coord, dx, dy);
     }
 
     // Scale by factor from center.
-    void scale(double factor, Coord center) override
+    virtual void scale(double factor, Coord center)
     {
         for (Coord &coord: _vertices)
             ::scale(coord, factor, center);
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
+    virtual void rotate(double degrees, Coord center)
     {
         for (Coord &coord: _vertices)
             ::rotate(coord, degrees, center);
     }
 
     // Midpoint between a and b
-    Coord center() override
+    virtual Coord center()
     {
         double x = 0, y = 0;
 
@@ -309,29 +303,6 @@ public:
         }
 
         return Coord(x / _vertices.size(), y / _vertices.size());
-    }
-
-    Visibility visibility_in(Area &area) const override
-    {
-        Visibility result;
-
-        Coord a = _vertices.back();
-        for (auto &b: _vertices)
-        {
-            const Visibility v = visibility(area, a, b);
-            if (v == Visibility::PARTIAL)
-            {
-                return Visibility::PARTIAL;
-            }
-            else
-            {
-                result = v;
-            }
-
-            a = b;
-        }
-
-        return result;
     }
 
 private:
@@ -390,7 +361,7 @@ public:
     double height() const { return leftBottom().distance_to(leftTop()); }
 
     // True if Window contains World coord.
-    bool contains(Coord coord) const override
+    virtual bool contains(Coord coord) const
     {
         Coord wc = from_world(coord);
         double x = wc.x(), y = wc.y();
@@ -477,7 +448,7 @@ public:
     }
 
     // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
+    virtual void translate(double dx, double dy)
     {
         _leftBottom.translate(dx, dy);
         _leftTop.translate(dx, dy);
@@ -488,7 +459,7 @@ public:
     }
 
     // Scale by factor from center.
-    void scale(double factor, Coord center) override
+    virtual void scale(double factor, Coord center)
     {
         _leftBottom.scale(factor, center);
         _leftTop.scale(factor, center);
@@ -499,7 +470,7 @@ public:
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
+    virtual void rotate(double degrees, Coord center)
     {
         _up_angle += degrees;
 
@@ -512,19 +483,19 @@ public:
     }
 
     // Window's center
-    Coord center() override
+    virtual Coord center()
     {
         return _center;
     }
 
     // Type used in the name
-    string type() override
+    virtual string type()
     {
         return "Window";
     }
 
     // Name displayed on the UI
-    string name() override
+    virtual string name()
     {
         stringstream ss;
         ss << type();
@@ -532,7 +503,7 @@ public:
     }
 
     // Draw a square in canvas.
-    void draw(Canvas &canvas) override
+    void draw(Canvas &canvas)
     {
         canvas.move(leftBottom());
         canvas.draw_line(leftTop(), color());
@@ -563,7 +534,7 @@ public:
         : Viewport(width, height), _window(window), _canvas(canvas) {}
 
     // True if area contains world coord.
-    bool contains(Coord coord) const override
+    virtual bool contains(Coord coord) const
     {
         return _window->contains(coord);
     }
@@ -575,19 +546,19 @@ public:
     }
 
     // Move to destination.
-    void move(const Coord &destination) override
+    virtual void move(const Coord &destination)
     {
         _canvas.move(translate(destination));
     }
 
     // Draw line from current position to destination.
-    void draw_line(const Coord &destination, const Color &color) override
+    virtual void draw_line(const Coord &destination, const Color &color)
     {
         _canvas.draw_line(translate(destination), color);
     }
 
     // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord &center, const double radius, const Color &color) override
+    virtual void draw_circle(const Coord &center, const double radius, const Color &color)
     {
         _canvas.draw_circle(translate(center), radius, color);
     }
@@ -617,7 +588,7 @@ public:
     DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
 
     // Render drawable on canvas if visible.
-    void render(ViewportCanvas &canvas) override
+    virtual void render(ViewportCanvas &canvas)
     {
         if (_drawable->visibility_in(canvas) != Visibility::NONE)
             _drawable->draw(canvas);
@@ -719,7 +690,7 @@ public:
     }
 
     // Move the selected objects by dx horizontally, dy vertically.
-    void translate_selected(double dx, double dy)
+    virtual void translate_selected(double dx, double dy)
     {
         for (shared_ptr<Object> object: _selected_objects)
         {
@@ -729,14 +700,14 @@ public:
     }
 
     // Scale the selected objects by factor.
-    void scale_selected(double factor)
+    virtual void scale_selected(double factor)
     {
         for (shared_ptr<Object> object: _selected_objects)
             object->scale(factor, _center);
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate_selected(double degrees)
+    virtual void rotate_selected(double degrees)
     {
         for (shared_ptr<Object> object: _selected_objects)
             object->rotate(degrees, _center);
