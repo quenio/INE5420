@@ -7,7 +7,7 @@
 
 using namespace std;
 
-enum  ClippingRegion { NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST, NORTHWEST, NONE };
+enum class ClippingRegion { NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST, NORTHWEST, NONE };
 
 static map<string, ClippingRegion> clipping_region_mapping
 {
@@ -22,16 +22,18 @@ static map<string, ClippingRegion> clipping_region_mapping
     { "0000", ClippingRegion::NONE },
 };
 
-typedef bitset<4> ClippingRegionCode;
+constexpr int REGION_CODE_SIZE = 4;
+typedef bitset<REGION_CODE_SIZE> ClippingRegionCode;
 
-// Determine the clipping region based on the code.
-inline ClippingRegion region(ClippingRegionCode code)
+// Position of the region in the region bit set.
+enum RegionIndex: size_t {
+    NORTH = 1, SOUTH = 2, EAST = 3, WEST = 4
+};
+
+// Determine actual region index based on the size of the bitset.
+inline size_t region_index(size_t index)
 {
-    for (auto &item: clipping_region_mapping)
-        if (code == ClippingRegionCode { item.first })
-            return item.second;
-
-    return ClippingRegion::NONE;
+    return REGION_CODE_SIZE - index;
 }
 
 // Determine the clipping region code based on the Window coord.
@@ -41,10 +43,20 @@ inline ClippingRegionCode region_code(Coord &coord)
 
     ClippingRegionCode code { "0000" };
 
-    if (x < -1) code.set(4); else if (x > +1) code.set(3);
-    if (y < -1) code.set(2); else if (y > +1) code.set(1);
+    if (x < -1) code.set(region_index(WEST)); else if (x > +1) code.set(region_index(EAST));
+    if (y < -1) code.set(region_index(SOUTH)); else if (y > +1) code.set(region_index(NORTH));
 
     return code;
+}
+
+// Determine the clipping region based on the code.
+inline ClippingRegion region(ClippingRegionCode code)
+{
+    for (auto &item: clipping_region_mapping)
+        if (code == ClippingRegionCode { item.first })
+            return item.second;
+
+    return ClippingRegion::NONE;
 }
 
 // Determine the clipping region based on Window coord.
