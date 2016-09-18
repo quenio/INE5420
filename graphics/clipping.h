@@ -33,7 +33,7 @@ enum SuperRegionIndex: size_t {
 // Determine actual super region index based on the size of the bitset.
 inline size_t bitset_index(size_t index)
 {
-    return REGION_CODE_SIZE - index;
+    return REGION_CODE_SIZE - index; // bitset has indexes in reserve order - LSB order.
 }
 
 // Determine the clipping region code based on the Window coord.
