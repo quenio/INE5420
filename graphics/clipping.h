@@ -25,13 +25,13 @@ static map<string, ClippingRegion> clipping_region_mapping
 constexpr int REGION_CODE_SIZE = 4;
 typedef bitset<REGION_CODE_SIZE> ClippingRegionCode;
 
-// Position of the region in the region bit set.
-enum RegionIndex: size_t {
+// Position of the super region in the region bit set.
+enum SuperRegionIndex: size_t {
     NORTH = 1, SOUTH = 2, EAST = 3, WEST = 4
 };
 
-// Determine actual region index based on the size of the bitset.
-inline size_t region_index(size_t index)
+// Determine actual super region index based on the size of the bitset.
+inline size_t bitset_index(size_t index)
 {
     return REGION_CODE_SIZE - index;
 }
@@ -43,8 +43,8 @@ inline ClippingRegionCode region_code(Coord &coord)
 
     ClippingRegionCode code { "0000" };
 
-    if (x < -1) code.set(region_index(WEST)); else if (x > +1) code.set(region_index(EAST));
-    if (y < -1) code.set(region_index(SOUTH)); else if (y > +1) code.set(region_index(NORTH));
+    if (x < -1) code.set(bitset_index(WEST)); else if (x > +1) code.set(bitset_index(EAST));
+    if (y < -1) code.set(bitset_index(SOUTH)); else if (y > +1) code.set(bitset_index(NORTH));
 
     return code;
 }
@@ -63,6 +63,25 @@ inline ClippingRegion region(ClippingRegionCode code)
 inline ClippingRegion region(Coord &coord)
 {
     return region(region_code(coord));
+}
+
+// Determine if coord is located in super region i.
+inline bool in_super_region(SuperRegionIndex i, Coord coord)
+{
+    return region_code(coord).test(bitset_index(i));
+}
+
+// Determine if line between a and b is fully located in super region i.
+inline bool in_super_region(SuperRegionIndex i, Coord a, Coord b)
+{
+    return in_super_region(i, a) && in_super_region(i, b);
+}
+
+// Determine if line between a and b is fully located in one super region.
+inline bool in_one_super_region(Coord a, Coord b)
+{
+    return in_super_region(NORTH, a, b) || in_super_region(SOUTH, a, b) ||
+           in_super_region(EAST, a, b)  || in_super_region(WEST, a, b);
 }
 
 // Determine which one between a nd b is in bounds.
@@ -88,7 +107,6 @@ inline Coord clip_point_in_line_using_cs(Coord &a, Coord &b, double m)
 
         case ClippingRegion::NONE: return a;
     }
-
 }
 
 // Clip line between Window coord a and b using Cohen-Sutherland

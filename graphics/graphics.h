@@ -82,15 +82,22 @@ Visibility visibility(Area &area, const Coord &a, const Coord &b)
 {
     const bool a_in_area = area.contains(a);
     const bool b_in_area = area.contains(b);
-    const bool mid_in_area = area.contains(equidistant(a, b));
 
-    if (a_in_area && b_in_area && mid_in_area)
+    if (a_in_area && b_in_area)
     {
         return Visibility::FULL;
     }
+    else if (a_in_area || b_in_area || area.contains(equidistant(a, b)))
+    {
+        return Visibility::PARTIAL;
+    }
+    else if (in_one_super_region(area.world_to_window(a), area.world_to_window(b)))
+    {
+        return Visibility::NONE;
+    }
     else
     {
-        return a_in_area || b_in_area || mid_in_area ? Visibility::PARTIAL : Visibility::NONE;
+        return Visibility::PARTIAL;
     }
 }
 
@@ -420,7 +427,7 @@ public:
     constexpr static int norm_height = 2;
 
     Window(double left, double bottom, double right, double top)
-        :Object(GREEN),
+        :Object(BLUE),
          _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
          _up_angle(0) {}
@@ -438,7 +445,8 @@ public:
     {
         Coord wc = from_world(coord);
         double x = wc.x(), y = wc.y();
-        return x >= -1 && x <= +1 && y >= -1 && y <= +1;
+        return ((x > -1 && x < +1) || equals(x, -1) || equals(x, +1)) &&
+               ((y > -1 && y < +1) || equals(y, -1) || equals(y, +1));
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
@@ -701,7 +709,17 @@ public:
                 if (clippable == nullptr)
                     _drawable->draw(canvas);
                 else
-                    clippable->clipped_in(canvas)->draw(canvas);
+                {
+                    shared_ptr<Drawable> clipped = clippable->clipped_in(canvas);
+                    if (clipped->visibility_in(canvas) == Visibility::FULL)
+                    {
+                        clipped->draw(canvas);
+                    }
+                    else
+                    {
+                        printf("clipped, non-full: %s\n", object()->name().c_str());
+                    }
+                }
             }
             break;
 
@@ -842,11 +860,11 @@ private:
 
         // x axis
         canvas.move(Coord(-length, 0));
-        canvas.draw_line(Coord(+length, 0), BLUE);
+        canvas.draw_line(Coord(+length, 0), GREEN);
 
         // y axis
         canvas.move(Coord(0, -length));
-        canvas.draw_line(Coord(0, +length), BLUE);
+        canvas.draw_line(Coord(0, +length), GREEN);
     }
 
     // Render the center as a little cross
@@ -856,11 +874,11 @@ private:
 
         // Horizontal bar
         canvas.move(_center.translated(-radius, 0));
-        canvas.draw_line(_center.translated(+radius, 0), BLUE);
+        canvas.draw_line(_center.translated(+radius, 0), GREEN);
 
         // Horizontal bar
         canvas.move(_center.translated(0, -radius));
-        canvas.draw_line(_center.translated(0, +radius), BLUE);
+        canvas.draw_line(_center.translated(0, +radius), GREEN);
     }
 
     shared_ptr<Window> _window;
