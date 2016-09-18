@@ -57,6 +57,9 @@ public:
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
     virtual Coord world_to_window(Coord coord) const = 0;
 
+    // Translate coord from Window to World.
+    virtual Coord window_to_world(Coord coord) const = 0;
+
 };
 
 enum class Visibility { FULL, PARTIAL, NONE };
@@ -267,9 +270,14 @@ public:
     // Provide clipped version of itself in area.
     shared_ptr<Drawable> clipped_in(Area &area) override
     {
+        printf("clipped %s\n", name().c_str());
+
         pair<Coord, Coord> clipped_line = clip_line_using_cs(area.world_to_window(_a), area.world_to_window(_b));
 
-        return make_shared<Line>(color(), clipped_line.first, clipped_line.second);
+        return make_shared<Line>(
+            color(),
+            area.window_to_world(clipped_line.first),
+            area.window_to_world(clipped_line.second));
     }
 
 private:
@@ -437,6 +445,12 @@ public:
     Coord world_to_window(Coord coord) const override
     {
         return from_world(coord);
+    }
+
+    // Translate coord from Window to World.
+    Coord window_to_world(Coord coord) const override
+    {
+        return to_world(coord);
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
@@ -614,6 +628,12 @@ public:
     Coord world_to_window(Coord coord) const override
     {
         return _window->world_to_window(coord);
+    }
+
+    // Translate coord from Window to World.
+    Coord window_to_world(Coord coord) const override
+    {
+        return _window->window_to_world(coord);
     }
 
     // Translate coord from world to viewport
