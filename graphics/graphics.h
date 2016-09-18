@@ -5,6 +5,7 @@
 #include <list>
 #include <sstream>
 #include "coord.h"
+#include "clipping.h"
 
 using namespace std;
 
@@ -50,8 +51,14 @@ class Area
 {
 public:
 
-    // True if area contains coord.
+    // True if area contains World coord.
     virtual bool contains(Coord coord) const = 0;
+
+    // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
+    virtual Coord world_to_window(Coord coord) const = 0;
+
+    // Translate coord from Window to World.
+    virtual Coord window_to_world(Coord coord) const = 0;
 
 };
 
@@ -263,11 +270,14 @@ public:
     // Provide clipped version of itself in area.
     shared_ptr<Drawable> clipped_in(Area &area) override
     {
-        // TODO Implement line clipping.
+        printf("clipped %s\n", name().c_str());
 
-        printf("clipped line %s\n", name().c_str());
+        pair<Coord, Coord> clipped_line = clip_line_using_cs(area.world_to_window(_a), area.world_to_window(_b));
 
-        return make_shared<Line>(color(), _a, _b);
+        return make_shared<Line>(
+            color(),
+            area.window_to_world(clipped_line.first),
+            area.window_to_world(clipped_line.second));
     }
 
 private:
@@ -431,7 +441,19 @@ public:
         return x >= -1 && x <= +1 && y >= -1 && y <= +1;
     }
 
-    // Translate coord from world to window, where left-bottom is (-1, -1) and right-top is (1, 1).
+    // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
+    Coord world_to_window(Coord coord) const override
+    {
+        return from_world(coord);
+    }
+
+    // Translate coord from Window to World.
+    Coord window_to_world(Coord coord) const override
+    {
+        return to_world(coord);
+    }
+
+    // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
     Coord from_world(Coord coord) const
     {
         return coord *
@@ -440,7 +462,7 @@ public:
             scaling(norm_width / width(), norm_height / height());
     }
 
-    // Translate coord from window to world.
+    // Translate coord from Window to World.
     Coord to_world(Coord coord) const
     {
         return coord *
@@ -449,7 +471,7 @@ public:
             translation(_center.x(), _center.y());
     }
 
-    // Translate coord from viewport to window.
+    // Translate coord from Viewport to Window.
     Coord from_viewport(Coord coord, const Viewport &viewport) const
     {
         return Coord(coord.x(), viewport.height() - coord.y()) *
@@ -458,7 +480,7 @@ public:
                translation(norm_left, norm_bottom);
     }
 
-    // Translate coord from window to viewport, leaving a margin.
+    // Translate coord from Window to Viewport, leaving a margin.
     Coord to_viewport(Coord coord, const Viewport &viewport) const
     {
         return Coord(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
@@ -600,6 +622,18 @@ public:
     bool contains(Coord coord) const override
     {
         return _window->contains(coord);
+    }
+
+    // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
+    Coord world_to_window(Coord coord) const override
+    {
+        return _window->world_to_window(coord);
+    }
+
+    // Translate coord from Window to World.
+    Coord window_to_world(Coord coord) const override
+    {
+        return _window->window_to_world(coord);
     }
 
     // Translate coord from world to viewport
