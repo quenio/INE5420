@@ -79,7 +79,6 @@ public:
         return a._x == b._x && a._y == b._y;
     }
 
-
 private:
 
     double _x, _y;
@@ -167,13 +166,13 @@ private:
 };
 
 // 2D translation as a matrix: translate by dx horizontally, dy vertically.
-TransformMatrix translation(double dx, double dy)
+inline TransformMatrix translation(double dx, double dy)
 {
     return TransformMatrix({ 1.0, 0.0, dx }, { 0.0, 1.0, dy }, { 0.0, 0.0, 1.0 });
 }
 
 // 2D scaling as a matrix: scale x by factor sx, y by factor sy.
-TransformMatrix scaling(double sx, double sy)
+inline TransformMatrix scaling(double sx, double sy)
 {
     return TransformMatrix({ sx, 0.0, 0.0 }, { 0.0, sy, 0.0 }, { 0.0, 0.0, 1.0 });
 }
@@ -181,7 +180,7 @@ TransformMatrix scaling(double sx, double sy)
 constexpr double PI = 3.14159265;
 
 // 2D rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
-TransformMatrix rotation(double degrees)
+inline TransformMatrix rotation(double degrees)
 {
     const double rad = degrees * PI / 180.0;
     const double c = cos(rad);
@@ -190,39 +189,33 @@ TransformMatrix rotation(double degrees)
 }
 
 // Transform coord using transformation matrix.
-Coord operator * (const Coord &coord, TransformMatrix matrix)
+inline Coord operator * (const Coord &coord, TransformMatrix matrix)
 {
     const TransformVector vector = TransformVector(coord) * matrix;
     return Coord(vector[0], vector[1]);
 }
 
 // Transform coord using transformation matrix, and assigns to lhs.
-Coord& operator *= (Coord &lhs, TransformMatrix matrix)
+inline Coord& operator *= (Coord &lhs, TransformMatrix matrix)
 {
     lhs = lhs * matrix;
     return lhs;
 }
 
 // Translate coord by dx horizontally, dy vertically.
-void translate(Coord &coord, double dx, double dy)
+inline void translate(Coord &coord, double dx, double dy)
 {
     coord *= translation(dx, dy);
 }
 
-// Scale coord by factor.
-void scale(Coord &coord, double factor)
-{
-    coord *= scaling(factor, factor);
-}
-
 // Scale coord by factor from center.
-void scale(Coord &coord, double factor, Coord center)
+inline void scale(Coord &coord, double factor, Coord center)
 {
     coord *= translation(-center.x(), -center.y()) * scaling(factor, factor) * translation(center.x(), center.y());
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-void rotate(Coord & coord, double degrees, Coord center)
+inline void rotate(Coord & coord, double degrees, Coord center)
 {
     coord *= translation(-center.x(), -center.y()) * rotation(degrees) * translation(center.x(), center.y());
 }
@@ -255,5 +248,23 @@ inline double equidistant(double a, double b)
 inline Coord equidistant(Coord a, Coord b)
 {
     return Coord(equidistant(a.x(), b.x()), equidistant(a.y(), b.y()));
+}
+
+// Angular coefficient of line between a and b.
+inline double angular_coefficient(Coord &a, Coord& b)
+{
+    return (a.y() - b.y()) / (a.x() - b.x());
+}
+
+// Determine point in line at x based on start and the angular coefficient m between start and the new point.
+inline Coord at_x(double x, Coord &start, double m)
+{
+    return Coord(x, start.y() + (m * (x - start.x())));
+}
+
+// Determine point in line at y based on start and the angular coefficient m between start and the new point.
+inline Coord at_y(double y, Coord &start, double m)
+{
+    return Coord(start.x() + ((1/m) * (y - start.y())), y);
 }
 
