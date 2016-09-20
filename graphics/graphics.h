@@ -77,6 +77,20 @@ public:
 
 };
 
+// Clip line between World coord a and b.
+inline pair<Coord, Coord> clip_line(Area &area, Coord a, Coord b)
+{
+    const Coord window_a = area.world_to_window(a);
+    const Coord window_b = area.world_to_window(b);
+
+    const pair<Coord, Coord> clipped_line = clip_line_using_cs(window_a, window_b);
+
+    return make_pair(
+        area.window_to_world(clipped_line.first),
+        area.window_to_world(clipped_line.second)
+    );
+};
+
 // Determine the visibility in area for line between a and b.
 Visibility visibility(Area &area, const Coord &a, const Coord &b)
 {
@@ -97,7 +111,8 @@ Visibility visibility(Area &area, const Coord &a, const Coord &b)
     }
     else
     {
-        return Visibility::PARTIAL;
+        const pair<Coord, Coord> clipped = clip_line(area, a, b);
+        return area.contains(clipped.first) || area.contains(clipped.second) ? Visibility::PARTIAL : Visibility::NONE;
     }
 }
 
@@ -277,14 +292,9 @@ public:
     // Provide clipped version of itself in area.
     shared_ptr<Drawable> clipped_in(Area &area) override
     {
-        printf("clipped %s\n", name().c_str());
+        const pair<Coord, Coord> clipped_line = clip_line(area, _a, _b);
 
-        pair<Coord, Coord> clipped_line = clip_line_using_cs(area.world_to_window(_a), area.world_to_window(_b));
-
-        return make_shared<Line>(
-            color(),
-            area.window_to_world(clipped_line.first),
-            area.window_to_world(clipped_line.second));
+        return make_shared<Line>(color(), clipped_line.first, clipped_line.second);
     }
 
 private:
@@ -376,11 +386,56 @@ public:
     // Provide clipped version of itself in area.
     shared_ptr<Drawable> clipped_in(Area &area) override
     {
-        // TODO Implement polygon clipping.
+        list<Coord> new_vertices;
 
-        printf("clipped polygon %s\n", name().c_str());
+        Coord a = _vertices.back();
+        for (auto &b: _vertices)
+        {
+            switch (visibility(area, a, b))
+            {
+                case Visibility::FULL:
+                {
+                    if (new_vertices.back() != a)
+                        new_vertices.push_back(a);
+                    if (new_vertices.back() != b)
+                        new_vertices.push_back(b);
+                }
+                break;
 
-        return make_shared<Polygon>(color(), _vertices);
+                case Visibility::PARTIAL:
+                {
+                    const pair<Coord, Coord> clipped_line = clip_line(area, a, b);
+
+                    if (area.contains(clipped_line.first) && new_vertices.back() != clipped_line.first)
+                        new_vertices.push_back(clipped_line.first);
+
+                    if (area.contains(clipped_line.second) && new_vertices.back() != clipped_line.second)
+                        new_vertices.push_back(clipped_line.second);
+                }
+                break;
+
+                case Visibility::NONE:
+                {
+                    const Coord window_a = area.world_to_window(a);
+                    const Coord window_b = area.world_to_window(b);
+
+                    if (region(window_a) != region(window_b))
+                    {
+                        // Determine closest corner
+                        const double x = min(window_a.x(), window_b.x()) < -1 ? -1 : +1;
+                        const double y = min(window_a.y(), window_b.y()) < -1 ? -1 : +1;
+                        const Coord corner = area.window_to_world(Coord(x, y));
+
+                        if (area.contains(corner) && new_vertices.back() != corner)
+                            new_vertices.push_back(corner);
+                    }
+                }
+            }
+
+            a = b;
+        }
+
+        return make_shared<Polygon>(color(), new_vertices);
     }
 
 private:
@@ -792,8 +847,8 @@ public:
     {
         render_axis(canvas);
         render_center(canvas);
-        _window->draw(canvas);
         _display_file.render(canvas);
+        _window->draw(canvas);
     }
 
     // Select the object at index.
