@@ -73,10 +73,16 @@ public:
         return coord;
     }
 
-    // Compare a and b.
+    // True if a and b match.
     friend bool operator == (Coord a, Coord b)
     {
         return a._x == b._x && a._y == b._y;
+    }
+
+    // True if a and b do not match.
+    friend bool operator != (Coord a, Coord b)
+    {
+        return a._x != b._x || a._y != b._y;
     }
 
 private:

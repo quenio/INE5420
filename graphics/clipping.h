@@ -37,7 +37,7 @@ inline size_t bitset_index(size_t index)
 }
 
 // Determine the clipping region code based on the Window coord.
-inline ClippingRegionCode region_code(Coord &coord)
+inline ClippingRegionCode region_code(const Coord &coord)
 {
     const double x = coord.x(), y = coord.y();
 
@@ -60,7 +60,7 @@ inline ClippingRegion region(ClippingRegionCode code)
 }
 
 // Determine the clipping region based on Window coord.
-inline ClippingRegion region(Coord &coord)
+inline ClippingRegion region(const Coord &coord)
 {
     return region(region_code(coord));
 }
