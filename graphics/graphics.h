@@ -5,7 +5,8 @@
 #include <list>
 #include <sstream>
 #include "coord.h"
-#include "clipping.h"
+#include "clipping_cs.h"
+#include "clipping_lb.h"
 
 using namespace std;
 
@@ -83,7 +84,7 @@ inline pair<Coord, Coord> clip_line(Area &area, Coord a, Coord b)
     const Coord window_a = area.world_to_window(a);
     const Coord window_b = area.world_to_window(b);
 
-    const pair<Coord, Coord> clipped_line = clip_line_using_cs(window_a, window_b);
+    const pair<Coord, Coord> clipped_line = clip_line_using_lb(window_a, window_b);
 
     return make_pair(
         area.window_to_world(clipped_line.first),

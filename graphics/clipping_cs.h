@@ -1,3 +1,5 @@
+// Line clipping based on the Cohen-Sutherland algorithm
+
 #pragma once
 
 #include <bitset>
@@ -109,7 +111,7 @@ inline Coord clip_point_in_line_using_cs(Coord &a, Coord &b, double m)
     }
 }
 
-// Clip line between Window coord a and b using Cohen-Sutherland
+// Clip line between Window coord a and b using Cohen-Sutherland.
 inline pair<Coord, Coord> clip_line_using_cs(Coord a, Coord b)
 {
     double m = angular_coefficient(a, b);
@@ -118,5 +120,5 @@ inline pair<Coord, Coord> clip_line_using_cs(Coord a, Coord b)
         clip_point_in_line_using_cs(a, b, m),
         clip_point_in_line_using_cs(b, a, m)
     );
-};
+}
 
