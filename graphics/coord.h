@@ -244,7 +244,7 @@ inline void Coord::rotate(double degrees, Coord center)
     ::rotate(*this, degrees, center);
 }
 
-// Absolute difference between a nd b.
+// Absolute difference between a nd b
 inline double abs_diff(double a, double b)
 {
     return abs(a - b);
@@ -269,10 +269,22 @@ inline Coord equidistant(Coord a, Coord b)
     return Coord(equidistant(a.x(), b.x()), equidistant(a.y(), b.y()));
 }
 
-// Angular coefficient of line between a and b.
-inline double angular_coefficient(Coord &a, Coord& b)
+// Difference between a.x() nd b.x()
+inline double delta_x(const Coord &a, const Coord &b)
 {
-    return (a.y() - b.y()) / (a.x() - b.x());
+    return a.x() - b.x();
+}
+
+// Difference between a.y() nd b.y()
+inline double delta_y(const Coord &a, const Coord &b)
+{
+    return a.y() - b.y();
+}
+
+// Angular coefficient of line between a and b.
+inline double angular_coefficient(const Coord &a, const Coord &b)
+{
+    return delta_y(a, b) / delta_x(a, b);
 }
 
 // Determine point in line at x based on start and the angular coefficient m between start and the new point.
@@ -285,5 +297,14 @@ inline Coord at_x(double x, Coord &start, double m)
 inline Coord at_y(double y, Coord &start, double m)
 {
     return Coord(start.x() + ((1/m) * (y - start.y())), y);
+}
+
+// Determine point in line between point a and b.
+inline Coord at_step(double step, const Coord &start, const Coord &end)
+{
+    return Coord(
+        start.x() + (step * delta_x(end, start)),
+        start.y() + (step * delta_y(end, start))
+    );
 }
 
