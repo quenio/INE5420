@@ -5,7 +5,7 @@
 #include <list>
 #include <sstream>
 #include "coord.h"
-#include "clipping.h"
+#include "clipping_cs.h"
 
 using namespace std;
 

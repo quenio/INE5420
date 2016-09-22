@@ -1,3 +1,5 @@
+// Line clipping based on the Cohen-Sutherland algorithm
+
 #pragma once
 
 #include <bitset>

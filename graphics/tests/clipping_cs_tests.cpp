@@ -1,5 +1,5 @@
 #include "min_unit.h"
-#include "../clipping.h"
+#include "../clipping_cs.h"
 
 const char * test_region()
 {
