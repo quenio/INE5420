@@ -244,7 +244,7 @@ inline void Coord::rotate(double degrees, Coord center)
     ::rotate(*this, degrees, center);
 }
 
-// Absolute difference between a nd b
+// Absolute difference between a and b
 inline double abs_diff(double a, double b)
 {
     return abs(a - b);
@@ -269,13 +269,13 @@ inline Coord equidistant(Coord a, Coord b)
     return Coord(equidistant(a.x(), b.x()), equidistant(a.y(), b.y()));
 }
 
-// Difference between a.x() nd b.x()
+// Difference between a.x() and b.x()
 inline double delta_x(const Coord &a, const Coord &b)
 {
     return a.x() - b.x();
 }
 
-// Difference between a.y() nd b.y()
+// Difference between a.y() and b.y()
 inline double delta_y(const Coord &a, const Coord &b)
 {
     return a.y() - b.y();
