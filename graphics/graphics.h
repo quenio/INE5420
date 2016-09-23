@@ -4,8 +4,10 @@
 #include <vector>
 #include <list>
 #include <sstream>
+
 #include "coord.h"
-#include "clipping_cs.h"
+#include "region.h"
+//#include "clipping_cs.h"
 #include "clipping_lb.h"
 
 using namespace std;
