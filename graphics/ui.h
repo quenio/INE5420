@@ -147,20 +147,24 @@ static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Obje
 static const int gtk_window__width = 600;
 static const int gtk_window__height = 480;
 
+static const gint pan_column__menu_bar = 7;
 static const gint pan_column__canvas = 7;
 static const gint pan_column__list_box = 2;
 static const gint pan_column__button = 1;
 
-static const gint pan_row__canvas = 6;
+static const gint pan_row__menu_bar = 1;
+static const gint pan_row__canvas = 20;
 static const gint pan_row__list_box = pan_row__canvas;
-static const gint pan_row__button = 1;
+static const gint pan_row__button = 2;
 
-static const gint column__tool_bar = 0;
-static const gint column__list_box = column__tool_bar;
+static const gint column__menu_bar = 0;
+static const gint column__tool_bar = column__menu_bar;
+static const gint column__list_box = column__menu_bar;
 static const gint column__canvas = column__list_box + pan_column__list_box;
 
-static const gint row__tool_bar = 0;
-static const gint row__list_box = 1;
+static const gint row__menu_bar = 0;
+static const gint row__tool_bar = row__menu_bar + pan_row__menu_bar;
+static const gint row__list_box = row__tool_bar + pan_row__button;
 static const gint row__canvas = row__list_box;
 
 static GtkWidget * new_gtk_window(const gchar *title)
@@ -229,4 +233,54 @@ static GtkWidget * new_button(
                     pan_column__button, pan_row__button);
 
     return button_with_label;
+}
+
+static void select_cs(GtkWidget UNUSED *menu_item)
+{
+    clipping_method = ClippingMethod::COHEN_SUTHERLAND;
+}
+
+static void select_lb(GtkWidget UNUSED *menu_item)
+{
+    clipping_method = ClippingMethod::LIANG_BARSKY;
+}
+
+static GSList *line_clipping_group = nullptr;
+
+static void menu_item(const GtkWidget *menu, const gchar *label, GCallback callback)
+{
+    GtkWidget *menu_item = gtk_radio_menu_item_new_with_label(line_clipping_group, label);
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
+    g_signal_connect(G_OBJECT(menu_item), "activate", callback, NULL);
+
+    if (line_clipping_group == nullptr)
+    {
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menu_item), TRUE);
+        line_clipping_group = gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menu_item));
+    }
+}
+
+static void line_clipping_menu(GtkWidget * menu_bar)
+{
+    GtkWidget *menu = gtk_menu_new();
+    GtkWidget *top_item = gtk_menu_item_new_with_label("Line Clipping");
+
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(top_item), menu);
+
+    menu_item(menu, "Cohen-Sutherland", G_CALLBACK(select_cs));
+    menu_item(menu, "Liang-Barsky", G_CALLBACK(select_lb));
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), top_item);
+}
+
+static void menu_bar(GtkWidget *grid)
+{
+    GtkWidget *menu_bar = gtk_menu_bar_new();
+
+    line_clipping_menu(menu_bar);
+
+    gtk_grid_attach(GTK_GRID(grid), menu_bar,
+                    column__menu_bar, row__menu_bar,
+                    pan_column__menu_bar, pan_row__menu_bar);
 }
