@@ -59,7 +59,7 @@ inline double zeta_two(const LBParam p, const LBParam q)
 }
 
 // Clip line between Window coord a and b using Liang-Barsky.
-inline pair<Coord, Coord> clip_line_using_lb(Coord a, Coord b)
+inline pair<Coord, Coord> clip_line_using_lb(const Coord &a, const Coord &b)
 {
     LBParam p, q;
     lb_p(p, a, b);

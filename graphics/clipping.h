@@ -32,19 +32,33 @@ public:
 
 };
 
+enum class ClippingMethod { COHEN_SUTHERLAND, LIANG_BARSKY };
+
+static ClippingMethod clipping_method = ClippingMethod::COHEN_SUTHERLAND;
+
 // Clip line between World coord a and b.
-inline pair<Coord, Coord> clip_line(ClippingArea &area, Coord a, Coord b)
+inline pair<Coord, Coord> clip_line(const Coord &a, const Coord &b)
+{
+    switch (clipping_method)
+    {
+        case ClippingMethod::COHEN_SUTHERLAND: return clip_line_using_cs(a, b);
+        case ClippingMethod::LIANG_BARSKY: return clip_line_using_lb(a, b);
+    }
+}
+
+// Clip line between World coord a and b into the area.
+inline pair<Coord, Coord> clip_line(ClippingArea &area, const Coord &a, const Coord &b)
 {
     const Coord window_a = area.world_to_window(a);
     const Coord window_b = area.world_to_window(b);
 
-    const pair<Coord, Coord> clipped_line = clip_line_using_lb(window_a, window_b);
+    const pair<Coord, Coord> clipped_line = clip_line(window_a, window_b);
 
     return make_pair(
         area.window_to_world(clipped_line.first),
         area.window_to_world(clipped_line.second)
     );
-};
+}
 
 // Determine the visibility in area for line between a and b.
 Visibility visibility(ClippingArea &area, const Coord &a, const Coord &b)

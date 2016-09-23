@@ -9,13 +9,13 @@
 using namespace std;
 
 // Determine which one between a nd b is in bounds.
-inline Coord choose_in_bounds(Coord a, Coord b)
+inline Coord choose_in_bounds(const Coord &a, const Coord &b)
 {
     if (region(a) == Region::CENTRAL) return a; else return b;
 }
 
 // Clip point a between Window coord a and b using Cohen-Sutherland
-inline Coord clip_point_in_line_using_cs(Coord &a, Coord &b, double m)
+inline Coord clip_point_in_line_using_cs(const Coord &a, const Coord &b, double m)
 {
     switch (region(a))
     {
@@ -34,7 +34,7 @@ inline Coord clip_point_in_line_using_cs(Coord &a, Coord &b, double m)
 }
 
 // Clip line between Window coord a and b using Cohen-Sutherland.
-inline pair<Coord, Coord> clip_line_using_cs(Coord a, Coord b)
+inline pair<Coord, Coord> clip_line_using_cs(const Coord &a, const Coord &b)
 {
     double m = angular_coefficient(a, b);
 
