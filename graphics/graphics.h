@@ -705,16 +705,12 @@ public:
                     {
                         clipped->draw(canvas);
                     }
-                    else
-                    {
-                        printf("clipped, non-full: %s\n", object()->name().c_str());
-                    }
                 }
             }
             break;
 
-            case Visibility::NONE:
-                printf("invisible %s\n", object()->name().c_str());
+            case Visibility::NONE:;
+                // Nothing to draw.
         }
     }
 
