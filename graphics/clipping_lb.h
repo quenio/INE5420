@@ -26,37 +26,6 @@ inline void lb_q(LBParam q, const Coord &a)
     q[3] = 1 - a.y();
 }
 
-// True if line between Window Coord a and b - which originated p - is parallel to one of the Window borders.
-inline bool parallel_to_border(const LBParam p)
-{
-    for (int i = 0; i < LB_PARAM_SIZE; i++)
-        if (equals(p[i], 0))
-            return true;
-
-    return false;
-}
-
-// Given line between Window Coord a and b - which originated q - is parallel to one of the Window borders,
-// returns True if line is out of the Window bounds.
-inline bool out_of_bounds(const LBParam q)
-{
-    for (int i = 0; i < LB_PARAM_SIZE; i++)
-        if (q[i] < 0)
-            return true;
-
-    return false;
-}
-
-// True if line between Window Coord a and b - which originated p - has 'a' out of Window bounds and 'b' in bounds.
-inline bool from_outside_into(const LBParam p)
-{
-    for (int i = 0; i < LB_PARAM_SIZE; i++)
-        if (p[i] < 0)
-            return true;
-
-    return false;
-}
-
 // Calculate zeta-one based on p and q.
 inline double zeta_one(const LBParam p, const LBParam q)
 {
