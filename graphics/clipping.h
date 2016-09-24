@@ -32,7 +32,7 @@ public:
 
 };
 
-enum class ClippingMethod { COHEN_SUTHERLAND, LIANG_BARSKY };
+enum class ClippingMethod { COHEN_SUTHERLAND, LIANG_BARSKY, NONE };
 
 static ClippingMethod clipping_method = ClippingMethod::COHEN_SUTHERLAND;
 
@@ -43,6 +43,7 @@ inline pair<Coord, Coord> clip_line(const Coord &a, const Coord &b)
     {
         case ClippingMethod::COHEN_SUTHERLAND: return clip_line_using_cs(a, b);
         case ClippingMethod::LIANG_BARSKY: return clip_line_using_lb(a, b);
+        case ClippingMethod::NONE: return make_pair(a, b);
     }
 }
 
@@ -63,6 +64,8 @@ inline pair<Coord, Coord> clip_line(ClippingArea &area, const Coord &a, const Co
 // Determine the visibility in area for line between a and b.
 Visibility visibility(ClippingArea &area, const Coord &a, const Coord &b)
 {
+    if (clipping_method == ClippingMethod::NONE) return Visibility::FULL;
+
     const bool a_in_area = area.contains(a);
     const bool b_in_area = area.contains(b);
 

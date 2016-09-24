@@ -68,6 +68,24 @@ static void tool_rotate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
     gtk_widget_grab_focus(GTK_WIDGET(canvas));
 }
 
+static void select_cs(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    clipping_method = ClippingMethod::COHEN_SUTHERLAND;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
+
+static void select_lb(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    clipping_method = ClippingMethod::LIANG_BARSKY;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
+
+static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    clipping_method = ClippingMethod::NONE;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
+
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer data)
 {
     World &world = *(World*)data;
@@ -171,9 +189,14 @@ int main(int argc, char *argv[])
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
 
-    menu_bar(grid);
-
     GtkWidget *canvas = new_canvas(grid, world, G_CALLBACK(canvas_on_key_press));
+
+    list<pair<string, GCallback>> menu_itens;
+    menu_itens.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
+    menu_itens.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
+    menu_itens.push_back(make_pair("None", G_CALLBACK(select_none)));
+
+    menu_bar(grid, canvas, menu_itens);
     new_list_box(grid, canvas, world, G_CALLBACK(select_object));
 
     new_button(
