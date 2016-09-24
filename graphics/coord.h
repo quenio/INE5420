@@ -208,40 +208,57 @@ inline Coord& operator *= (Coord &lhs, TransformMatrix matrix)
     return lhs;
 }
 
-// Translate coord by dx horizontally, dy vertically.
-inline void translate(Coord &coord, double dx, double dy)
+// Transform coords according to m.
+inline void transform(const TransformMatrix m, list<reference_wrapper<Coord>> coords)
 {
-    coord *= translation(dx, dy);
+    for (Coord &coord: coords)
+        coord *= m;
+}
+
+// Translate coord by dx horizontally, dy vertically.
+inline void translate(double dx, double dy, list<reference_wrapper<Coord>> coords)
+{
+    transform(translation(dx, dy), coords);
 }
 
 // Scale coord by factor from center.
-inline void scale(Coord &coord, double factor, Coord center)
+inline void scale(double factor, Coord center, list<reference_wrapper<Coord>> coords)
 {
-    coord *= translation(-center.x(), -center.y()) * scaling(factor, factor) * translation(center.x(), center.y());
+    transform(
+        translation(-center.x(), -center.y()) *
+        scaling(factor, factor) *
+        translation(center.x(), center.y()),
+        coords
+    );
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline void rotate(Coord & coord, double degrees, Coord center)
+inline void rotate(double degrees, Coord center, list<reference_wrapper<Coord>> coords)
 {
-    coord *= translation(-center.x(), -center.y()) * rotation(degrees) * translation(center.x(), center.y());
+    transform(
+        translation(-center.x(), -center.y()) *
+        rotation(degrees) *
+        translation(center.x(), center.y()),
+        coords
+    );
 }
 
 // Translate coord by dx horizontally, dy vertically.
 inline void Coord::translate(double dx, double dy)
 {
-    ::translate(*this, dx, dy);
+    ::translate(dx, dy, { *this });
 }
 
 // Scale coord by factor from center.
 inline void Coord::scale(double factor, Coord center)
 {
-    ::scale(*this, factor, center);
+    ::scale(factor, center, { *this });
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline void Coord::rotate(double degrees, Coord center)
 {
-    ::rotate(*this, degrees, center);
+    ::rotate(degrees, center, { *this });
 }
 
 // Absolute difference between a and b

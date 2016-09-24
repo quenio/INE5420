@@ -138,19 +138,19 @@ public:
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override
     {
-        ::translate(_coord, dx, dy);
+        ::translate(dx, dy, { _coord });
     }
 
     // Scale by factor from center.
     void scale(double factor, Coord center) override
     {
-        ::scale(_coord, factor, center);
+        ::scale(factor, center, { _coord });
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees, Coord center) override
     {
-        ::rotate(_coord, degrees, center);
+        ::rotate(degrees, center, { _coord });
     }
 
     // Coord of the Point itself
@@ -194,22 +194,19 @@ public:
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override
     {
-        ::translate(_a, dx, dy);
-        ::translate(_b, dx, dy);
+        ::translate(dx, dy, { _a, _b });
     }
 
     // Scale by factor from center.
     void scale(double factor, Coord center) override
     {
-        ::scale(_a, factor, center);
-        ::scale(_b, factor, center);
+        ::scale(factor, center, { _a, _b });
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees, Coord center) override
     {
-        ::rotate(_a, degrees, center);
-        ::rotate(_b, degrees, center);
+        ::rotate(degrees, center, { _a, _b });
     }
 
     // Midpoint between a and b
@@ -263,22 +260,19 @@ public:
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override
     {
-        for (Coord &coord: _vertices)
-            ::translate(coord, dx, dy);
+        ::translate(dx, dy, vertices());
     }
 
     // Scale by factor from center.
     void scale(double factor, Coord center) override
     {
-        for (Coord &coord: _vertices)
-            ::scale(coord, factor, center);
+        ::scale(factor, center, vertices());
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees, Coord center) override
     {
-        for (Coord &coord: _vertices)
-            ::rotate(coord, degrees, center);
+        ::rotate(degrees, center, vertices());
     }
 
     // Midpoint between a and b
@@ -374,6 +368,16 @@ public:
     }
 
 private:
+
+    list<reference_wrapper<Coord>> vertices()
+    {
+        list<reference_wrapper<Coord>> vertices;
+
+        for (auto &v: _vertices)
+            vertices.push_back(v);
+
+        return vertices;
+    }
 
     list<Coord> _vertices;
 
