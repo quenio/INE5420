@@ -10,10 +10,16 @@ using namespace std;
 // 2D coordinates
 class Coord;
 
+// 2D transformations as a matrix
+class TransformMatrix;
+
 // Transformable elements
 class Transformable
 {
 public:
+
+    // Transform according to TransformationMatrix.
+    virtual void transform(TransformMatrix m) = 0;
 
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy) = 0;
@@ -40,6 +46,9 @@ public:
     {
         return sqrt(pow(x() - coord.x(), 2) + pow(y() - coord.y(), 2));
     }
+
+    // Transform according to TransformationMatrix.
+    void transform(TransformMatrix m) override;
 
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override;
@@ -184,6 +193,14 @@ inline TransformMatrix scaling(double sx, double sy)
     return TransformMatrix({ sx, 0.0, 0.0 }, { 0.0, sy, 0.0 }, { 0.0, 0.0, 1.0 });
 }
 
+// 2 DScaling coord by factor from center.
+inline TransformMatrix scaling(double factor, Coord center)
+{
+    return translation(-center.x(), -center.y()) *
+           scaling(factor, factor) *
+           translation(center.x(), center.y());
+}
+
 constexpr double PI = 3.14159265;
 
 // 2D rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
@@ -193,6 +210,14 @@ inline TransformMatrix rotation(double degrees)
     const double c = cos(rad);
     const double s = sin(rad);
     return TransformMatrix({ c, s, 0.0 }, { -s, c, 0.0 }, { 0.0, 0.0, 1.0 });
+}
+
+// 2D rotation coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline TransformMatrix rotation(double degrees, Coord center)
+{
+    return translation(-center.x(), -center.y()) *
+           rotation(degrees) *
+           translation(center.x(), center.y());
 }
 
 // Transform coord using transformation matrix.
@@ -225,23 +250,19 @@ inline void translate(double dx, double dy, list<Coord *> coords)
 // Scale coord by factor from center.
 inline void scale(double factor, Coord center, list<Coord *> coords)
 {
-    transform(
-        translation(-center.x(), -center.y()) *
-        scaling(factor, factor) *
-        translation(center.x(), center.y()),
-        coords
-    );
+    transform(scaling(factor, center), coords);
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline void rotate(double degrees, Coord center, list<Coord *> coords)
 {
-    transform(
-        translation(-center.x(), -center.y()) *
-        rotation(degrees) *
-        translation(center.x(), center.y()),
-        coords
-    );
+    transform(rotation(degrees, center), coords);
+}
+
+// Transform according to TransformationMatrix.
+inline void Coord::transform(TransformMatrix m)
+{
+    ::transform(m, { this });
 }
 
 // Translate coord by dx horizontally, dy vertically.

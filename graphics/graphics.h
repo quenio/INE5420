@@ -106,6 +106,12 @@ public:
         return Visibility::FULL;
     }
 
+    // Transform according to TransformationMatrix.
+    void transform(TransformMatrix m) override
+    {
+        ::transform(m, coords());
+    }
+
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override
     {
@@ -519,6 +525,14 @@ public:
         double ty = height() * factor;
 
         translate(0, -ty);
+    }
+
+    // Transform according to TransformationMatrix.
+    void transform(TransformMatrix m) override
+    {
+        Object::transform(m);
+
+        _center = equidistant(_leftBottom, _rightTop);
     }
 
     // Translate by dx horizontally, dy vertically.
