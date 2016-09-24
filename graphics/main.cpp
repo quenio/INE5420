@@ -191,12 +191,12 @@ int main(int argc, char *argv[])
 
     GtkWidget *canvas = new_canvas(grid, world, G_CALLBACK(canvas_on_key_press));
 
-    list<pair<string, GCallback>> menu_itens;
-    menu_itens.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
-    menu_itens.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
-    menu_itens.push_back(make_pair("None", G_CALLBACK(select_none)));
-
-    menu_bar(grid, canvas, menu_itens);
+    list<pair<string, GCallback>> menu_items;
+    menu_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
+    menu_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
+    menu_items.push_back(make_pair("None", G_CALLBACK(select_none)));
+    menu_bar(grid, canvas, menu_items);
+    
     new_list_box(grid, canvas, world, G_CALLBACK(select_object));
 
     new_button(

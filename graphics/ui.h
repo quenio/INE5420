@@ -252,14 +252,14 @@ static void menu_item(const GtkWidget *menu, const gchar *label, GCallback callb
     }
 }
 
-static void line_clipping_menu(GtkWidget * menu_bar, GtkWidget *canvas, list<pair<string, GCallback>> menu_itens)
+static void line_clipping_menu(GtkWidget * menu_bar, GtkWidget *canvas, list<pair<string, GCallback>> menu_items)
 {
     GtkWidget *menu = gtk_menu_new();
     GtkWidget *top_item = gtk_menu_item_new_with_label("Line Clipping");
 
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(top_item), menu);
 
-    for (auto &item : menu_itens)
+    for (auto &item : menu_items)
     {
         menu_item(menu, item.first.c_str(), item.second, canvas);
     }
@@ -267,11 +267,11 @@ static void line_clipping_menu(GtkWidget * menu_bar, GtkWidget *canvas, list<pai
     gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), top_item);
 }
 
-static void menu_bar(GtkWidget *grid, GtkWidget *canvas, list<pair<string, GCallback>> menu_itens)
+static void menu_bar(GtkWidget *grid, GtkWidget *canvas, list<pair<string, GCallback>> menu_items)
 {
     GtkWidget *menu_bar = gtk_menu_bar_new();
 
-    line_clipping_menu(menu_bar, canvas, menu_itens);
+    line_clipping_menu(menu_bar, canvas, menu_items);
 
     gtk_grid_attach(GTK_GRID(grid), menu_bar,
                     column__menu_bar, row__menu_bar,
