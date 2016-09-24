@@ -245,6 +245,11 @@ static void select_lb(GtkWidget UNUSED *menu_item)
     clipping_method = ClippingMethod::LIANG_BARSKY;
 }
 
+static void select_none(GtkWidget UNUSED *menu_item)
+{
+    clipping_method = ClippingMethod::NONE;
+}
+
 static GSList *line_clipping_group = nullptr;
 
 static void menu_item(const GtkWidget *menu, const gchar *label, GCallback callback)
@@ -270,6 +275,7 @@ static void line_clipping_menu(GtkWidget * menu_bar)
 
     menu_item(menu, "Cohen-Sutherland", G_CALLBACK(select_cs));
     menu_item(menu, "Liang-Barsky", G_CALLBACK(select_lb));
+    menu_item(menu, "None", G_CALLBACK(select_none));
 
     gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), top_item);
 }
