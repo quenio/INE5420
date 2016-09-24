@@ -235,24 +235,14 @@ static GtkWidget * new_button(
     return button_with_label;
 }
 
-static void select_cs(GtkWidget UNUSED *menu_item)
-{
-    clipping_method = ClippingMethod::COHEN_SUTHERLAND;
-}
-
-static void select_lb(GtkWidget UNUSED *menu_item)
-{
-    clipping_method = ClippingMethod::LIANG_BARSKY;
-}
-
 static GSList *line_clipping_group = nullptr;
 
-static void menu_item(const GtkWidget *menu, const gchar *label, GCallback callback)
+static void menu_item(const GtkWidget *menu, const gchar *label, GCallback callback, GtkWidget *canvas)
 {
     GtkWidget *menu_item = gtk_radio_menu_item_new_with_label(line_clipping_group, label);
 
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
-    g_signal_connect(G_OBJECT(menu_item), "activate", callback, NULL);
+    g_signal_connect(G_OBJECT(menu_item), "activate", callback, canvas);
 
     if (line_clipping_group == nullptr)
     {
@@ -261,24 +251,26 @@ static void menu_item(const GtkWidget *menu, const gchar *label, GCallback callb
     }
 }
 
-static void line_clipping_menu(GtkWidget * menu_bar)
+static void line_clipping_menu(GtkWidget * menu_bar, GtkWidget *canvas, list<pair<string, GCallback>> menu_itens)
 {
     GtkWidget *menu = gtk_menu_new();
     GtkWidget *top_item = gtk_menu_item_new_with_label("Line Clipping");
 
     gtk_menu_item_set_submenu(GTK_MENU_ITEM(top_item), menu);
 
-    menu_item(menu, "Cohen-Sutherland", G_CALLBACK(select_cs));
-    menu_item(menu, "Liang-Barsky", G_CALLBACK(select_lb));
+    for (auto &item : menu_itens)
+    {
+        menu_item(menu, item.first.c_str(), item.second, canvas);
+    }
 
     gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), top_item);
 }
 
-static void menu_bar(GtkWidget *grid)
+static void menu_bar(GtkWidget *grid, GtkWidget *canvas, list<pair<string, GCallback>> menu_itens)
 {
     GtkWidget *menu_bar = gtk_menu_bar_new();
 
-    line_clipping_menu(menu_bar);
+    line_clipping_menu(menu_bar, canvas, menu_itens);
 
     gtk_grid_attach(GTK_GRID(grid), menu_bar,
                     column__menu_bar, row__menu_bar,
