@@ -212,10 +212,8 @@ inline Coord& operator *= (Coord &lhs, TransformMatrix matrix)
 // Transform coords according to m.
 inline void transform(const TransformMatrix m, list<reference_wrapper<Coord>> coords)
 {
-    typedef list<reference_wrapper<Coord>>::iterator it;
-
-    for (it i = coords.begin(); i != coords.end(); i++)
-        *i *= m;
+    for (Coord &coord: coords)
+        coord *= m;
 }
 
 // Translate coord by dx horizontally, dy vertically.
