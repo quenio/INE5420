@@ -1,5 +1,7 @@
 #include "ui.h"
 
+using namespace std;
+
 static World world(
     make_shared<Window>(-20, -20, 120, 120),
     DisplayFile({
@@ -196,7 +198,7 @@ int main(int argc, char *argv[])
     menu_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
     menu_items.push_back(make_pair("None", G_CALLBACK(select_none)));
     menu_bar(grid, canvas, menu_items);
-    
+
     new_list_box(grid, canvas, world, G_CALLBACK(select_object));
 
     new_button(

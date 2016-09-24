@@ -3,6 +3,8 @@
 #include "clipping_cs.h"
 #include "clipping_lb.h"
 
+using namespace std;
+
 enum class Visibility { FULL, PARTIAL, NONE };
 
 // Area in world that may be clipped
