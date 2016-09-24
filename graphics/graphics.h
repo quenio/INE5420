@@ -1,13 +1,13 @@
 #pragma once
 
+#include "coord.h"
+#include "region.h"
+#include "clipping.h"
+
 #include <memory>
 #include <vector>
 #include <list>
 #include <sstream>
-
-#include "coord.h"
-#include "region.h"
-#include "clipping.h"
 
 using namespace std;
 

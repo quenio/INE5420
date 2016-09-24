@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics.h"
+
 #include <cairo.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
