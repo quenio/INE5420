@@ -193,7 +193,7 @@ inline TransformMatrix scaling(double sx, double sy)
     return TransformMatrix({ sx, 0.0, 0.0 }, { 0.0, sy, 0.0 }, { 0.0, 0.0, 1.0 });
 }
 
-// 2 DScaling coord by factor from center.
+// 2D scaling coord by factor from center.
 inline TransformMatrix scaling(double factor, Coord center)
 {
     return translation(-center.x(), -center.y()) *
