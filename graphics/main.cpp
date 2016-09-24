@@ -170,6 +170,9 @@ int main(int argc, char *argv[])
 
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
+
+    menu_bar(grid);
+
     GtkWidget *canvas = new_canvas(grid, world, G_CALLBACK(canvas_on_key_press));
     new_list_box(grid, canvas, world, G_CALLBACK(select_object));
 

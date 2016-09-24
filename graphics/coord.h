@@ -288,13 +288,13 @@ inline double angular_coefficient(const Coord &a, const Coord &b)
 }
 
 // Determine point in line at x based on start and the angular coefficient m between start and the new point.
-inline Coord at_x(double x, Coord &start, double m)
+inline Coord at_x(double x, const Coord &start, double m)
 {
     return Coord(x, start.y() + (m * (x - start.x())));
 }
 
 // Determine point in line at y based on start and the angular coefficient m between start and the new point.
-inline Coord at_y(double y, Coord &start, double m)
+inline Coord at_y(double y, const Coord &start, double m)
 {
     return Coord(start.x() + ((1/m) * (y - start.y())), y);
 }

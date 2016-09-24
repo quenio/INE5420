@@ -4,9 +4,10 @@
 #include <vector>
 #include <list>
 #include <sstream>
+
 #include "coord.h"
-#include "clipping_cs.h"
-#include "clipping_lb.h"
+#include "region.h"
+#include "clipping.h"
 
 using namespace std;
 
@@ -47,24 +48,6 @@ public:
 
 };
 
-// Area in world
-class Area
-{
-public:
-
-    // True if area contains World coord.
-    virtual bool contains(Coord coord) const = 0;
-
-    // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    virtual Coord world_to_window(Coord coord) const = 0;
-
-    // Translate coord from Window to World.
-    virtual Coord window_to_world(Coord coord) const = 0;
-
-};
-
-enum class Visibility { FULL, PARTIAL, NONE };
-
 // Drawable objects
 class Drawable
 {
@@ -74,56 +57,7 @@ public:
     virtual void draw(Canvas &canvas) = 0;
 
     // Determine the visibility in area.
-    virtual Visibility visibility_in(Area &area) const = 0;
-
-};
-
-// Clip line between World coord a and b.
-inline pair<Coord, Coord> clip_line(Area &area, Coord a, Coord b)
-{
-    const Coord window_a = area.world_to_window(a);
-    const Coord window_b = area.world_to_window(b);
-
-    const pair<Coord, Coord> clipped_line = clip_line_using_lb(window_a, window_b);
-
-    return make_pair(
-        area.window_to_world(clipped_line.first),
-        area.window_to_world(clipped_line.second)
-    );
-};
-
-// Determine the visibility in area for line between a and b.
-Visibility visibility(Area &area, const Coord &a, const Coord &b)
-{
-    const bool a_in_area = area.contains(a);
-    const bool b_in_area = area.contains(b);
-
-    if (a_in_area && b_in_area)
-    {
-        return Visibility::FULL;
-    }
-    else if (a_in_area || b_in_area || area.contains(equidistant(a, b)))
-    {
-        return Visibility::PARTIAL;
-    }
-    else if (in_one_super_region(area.world_to_window(a), area.world_to_window(b)))
-    {
-        return Visibility::NONE;
-    }
-    else
-    {
-        const pair<Coord, Coord> clipped = clip_line(area, a, b);
-        return area.contains(clipped.first) || area.contains(clipped.second) ? Visibility::PARTIAL : Visibility::NONE;
-    }
-}
-
-// Clippable objects
-class Clippable
-{
-public:
-
-    // Provide clipped version of itself in area.
-    virtual shared_ptr<Drawable> clipped_in(Area &area) = 0;
+    virtual Visibility visibility_in(ClippingArea &area) const = 0;
 
 };
 
@@ -167,7 +101,7 @@ public:
     virtual Coord center() = 0;
 
     // Determine the visibility in area.
-    Visibility visibility_in(Area &area) const override
+    Visibility visibility_in(ClippingArea &area) const override
     {
         return Visibility::FULL;
     }
@@ -226,7 +160,7 @@ public:
     }
 
     // Determine the visibility in area.
-    Visibility visibility_in(Area &area) const override
+    Visibility visibility_in(ClippingArea &area) const override
     {
         return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
     }
@@ -238,7 +172,7 @@ private:
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: public Object, public Clippable
+class Line: public Object, public Clippable<Drawable>
 {
 public:
 
@@ -285,13 +219,13 @@ public:
     }
 
     // Determine the visibility in area.
-    Visibility visibility_in(Area &area) const override
+    Visibility visibility_in(ClippingArea &area) const override
     {
         return visibility(area, _a, _b);
     }
 
     // Provide clipped version of itself in area.
-    shared_ptr<Drawable> clipped_in(Area &area) override
+    shared_ptr<Drawable> clipped_in(ClippingArea &area) override
     {
         const pair<Coord, Coord> clipped_line = clip_line(area, _a, _b);
 
@@ -303,7 +237,7 @@ private:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Object, public Clippable
+class Polygon: public Object, public Clippable<Drawable>
 {
 public:
 
@@ -361,7 +295,7 @@ public:
         return Coord(x / _vertices.size(), y / _vertices.size());
     }
 
-    Visibility visibility_in(Area &area) const override
+    Visibility visibility_in(ClippingArea &area) const override
     {
         Visibility result;
 
@@ -385,7 +319,7 @@ public:
     }
 
     // Provide clipped version of itself in area.
-    shared_ptr<Drawable> clipped_in(Area &area) override
+    shared_ptr<Drawable> clipped_in(ClippingArea &area) override
     {
         list<Coord> new_vertices;
 
@@ -473,7 +407,7 @@ private:
 
 
 // Visible area of the world
-class Window: public Object, public Area
+class Window: public Object, public ClippingArea
 {
 public:
 
@@ -675,7 +609,7 @@ private:
 };
 
 // Area on a screen to execute display commands
-class ViewportCanvas: public Canvas, public Viewport, public Area
+class ViewportCanvas: public Canvas, public Viewport, public ClippingArea
 {
 public:
 
@@ -761,7 +695,7 @@ public:
 
             case Visibility::PARTIAL:
             {
-                shared_ptr<Clippable> clippable = dynamic_pointer_cast<Clippable>(_drawable);
+                shared_ptr<Clippable<Drawable>> clippable = dynamic_pointer_cast<Clippable<Drawable>>(_drawable);
                 if (clippable == nullptr)
                     _drawable->draw(canvas);
                 else
@@ -771,16 +705,12 @@ public:
                     {
                         clipped->draw(canvas);
                     }
-                    else
-                    {
-                        printf("clipped, non-full: %s\n", object()->name().c_str());
-                    }
                 }
             }
             break;
 
-            case Visibility::NONE:
-                printf("invisible %s\n", object()->name().c_str());
+            case Visibility::NONE:;
+                // Nothing to draw.
         }
     }
 
