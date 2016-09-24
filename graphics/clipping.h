@@ -3,6 +3,8 @@
 #include "clipping_cs.h"
 #include "clipping_lb.h"
 
+#include <memory>
+
 using namespace std;
 
 enum class Visibility { FULL, PARTIAL, NONE };
