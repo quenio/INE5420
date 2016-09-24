@@ -210,20 +210,20 @@ inline Coord& operator *= (Coord &lhs, TransformMatrix matrix)
 }
 
 // Transform coords according to m.
-inline void transform(const TransformMatrix m, list<reference_wrapper<Coord>> coords)
+inline void transform(TransformMatrix m, list<Coord *> coords)
 {
-    for (Coord &coord: coords)
-        coord *= m;
+    for (auto c: coords)
+        *c *= m;
 }
 
 // Translate coord by dx horizontally, dy vertically.
-inline void translate(double dx, double dy, list<reference_wrapper<Coord>> coords)
+inline void translate(double dx, double dy, list<Coord *> coords)
 {
     transform(translation(dx, dy), coords);
 }
 
 // Scale coord by factor from center.
-inline void scale(double factor, Coord center, list<reference_wrapper<Coord>> coords)
+inline void scale(double factor, Coord center, list<Coord *> coords)
 {
     transform(
         translation(-center.x(), -center.y()) *
@@ -234,7 +234,7 @@ inline void scale(double factor, Coord center, list<reference_wrapper<Coord>> co
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline void rotate(double degrees, Coord center, list<reference_wrapper<Coord>> coords)
+inline void rotate(double degrees, Coord center, list<Coord *> coords)
 {
     transform(
         translation(-center.x(), -center.y()) *
@@ -247,19 +247,19 @@ inline void rotate(double degrees, Coord center, list<reference_wrapper<Coord>> 
 // Translate coord by dx horizontally, dy vertically.
 inline void Coord::translate(double dx, double dy)
 {
-    ::translate(dx, dy, { *this });
+    ::translate(dx, dy, { this });
 }
 
 // Scale coord by factor from center.
 inline void Coord::scale(double factor, Coord center)
 {
-    ::scale(factor, center, { *this });
+    ::scale(factor, center, { this });
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline void Coord::rotate(double degrees, Coord center)
 {
-    ::rotate(degrees, center, { *this });
+    ::rotate(degrees, center, { this });
 }
 
 // Absolute difference between a and b

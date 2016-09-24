@@ -106,6 +106,28 @@ public:
         return Visibility::FULL;
     }
 
+    // Translate by dx horizontally, dy vertically.
+    void translate(double dx, double dy) override
+    {
+        ::translate(dx, dy, coords());
+    }
+
+    // Scale by factor from center.
+    void scale(double factor, Coord center) override
+    {
+        ::scale(factor, center, coords());
+    }
+
+    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate(double degrees, Coord center) override
+    {
+        ::rotate(degrees, center, coords());
+    }
+
+protected:
+
+    virtual list<Coord *> coords() = 0;
+
 private:
 
     int _id;
@@ -135,23 +157,6 @@ public:
         return "Point";
     }
 
-    // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
-    {
-        ::translate(dx, dy, { _coord });
-    }
-
-    // Scale by factor from center.
-    void scale(double factor, Coord center) override
-    {
-        ::scale(factor, center, { _coord });
-    }
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
-    {
-        ::rotate(degrees, center, { _coord });
-    }
 
     // Coord of the Point itself
     Coord center() override
@@ -163,6 +168,13 @@ public:
     Visibility visibility_in(ClippingArea &area) const override
     {
         return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
+    }
+
+protected:
+
+    list<Coord *> coords() override
+    {
+        return { &_coord };
     }
 
 private:
@@ -191,24 +203,6 @@ public:
         return "Line";
     }
 
-    // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
-    {
-        ::translate(dx, dy, { _a, _b });
-    }
-
-    // Scale by factor from center.
-    void scale(double factor, Coord center) override
-    {
-        ::scale(factor, center, { _a, _b });
-    }
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
-    {
-        ::rotate(degrees, center, { _a, _b });
-    }
-
     // Midpoint between a and b
     Coord center() override
     {
@@ -229,8 +223,17 @@ public:
         return make_shared<Line>(color(), clipped_line.first, clipped_line.second);
     }
 
+protected:
+
+    list<Coord *> coords() override
+    {
+        return { &_a, &_b };
+    }
+
 private:
+
     Coord _a, _b;
+
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
@@ -255,24 +258,6 @@ public:
     string type() const override
     {
         return "Polygon";
-    }
-
-    // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
-    {
-        ::translate(dx, dy, vertices());
-    }
-
-    // Scale by factor from center.
-    void scale(double factor, Coord center) override
-    {
-        ::scale(factor, center, vertices());
-    }
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
-    {
-        ::rotate(degrees, center, vertices());
     }
 
     // Midpoint between a and b
@@ -367,17 +352,19 @@ public:
         return make_shared<Polygon>(color(), new_vertices);
     }
 
-private:
+protected:
 
-    list<reference_wrapper<Coord>> vertices()
+    list<Coord *> coords() override
     {
-        list<reference_wrapper<Coord>> vertices;
+        list<Coord *> vertices;
 
         for (auto &v: _vertices)
-            vertices.push_back(v);
+            vertices.push_back(&v);
 
         return vertices;
     }
+
+private:
 
     list<Coord> _vertices;
 
@@ -537,10 +524,7 @@ public:
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override
     {
-        _leftBottom.translate(dx, dy);
-        _leftTop.translate(dx, dy);
-        _rightTop.translate(dx, dy);
-        _rightBottom.translate(dx, dy);
+        Object::translate(dx, dy);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -548,10 +532,7 @@ public:
     // Scale by factor from center.
     void scale(double factor, Coord center) override
     {
-        _leftBottom.scale(factor, center);
-        _leftTop.scale(factor, center);
-        _rightTop.scale(factor, center);
-        _rightBottom.scale(factor, center);
+        Object::scale(factor, center);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -559,13 +540,9 @@ public:
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees, Coord center) override
     {
+        Object::rotate(-degrees, center);
+
         _up_angle += degrees;
-
-        _leftBottom.rotate(-degrees, center);
-        _leftTop.rotate(-degrees, center);
-        _rightTop.rotate(-degrees, center);
-        _rightBottom.rotate(-degrees, center);
-
         _center = equidistant(_leftBottom, _rightTop);
     }
 
@@ -603,6 +580,13 @@ public:
 
         canvas.move(rightBottom());
         canvas.draw_line(leftBottom(), color());
+    }
+
+protected:
+
+    list<Coord *> coords() override
+    {
+        return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
     }
 
 private:
