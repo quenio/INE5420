@@ -7,6 +7,7 @@
 #pragma GCC diagnostic ignored "-Wdocumentation"
 #pragma GCC diagnostic ignored "-Wreserved-id-macro"
 #pragma GCC diagnostic ignored "-Wshift-sign-overflow"
+#pragma GCC diagnostic ignored "-Wdeprecated-register"
 
 #include <cairo.h>
 #include <gtk/gtk.h>
