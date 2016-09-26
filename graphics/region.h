@@ -1,9 +1,9 @@
 #pragma once
 
+#include "coord.h"
+
 #include <bitset>
 #include <map>
-
-#include "coord.h"
 
 using namespace std;
 

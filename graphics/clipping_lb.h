@@ -4,6 +4,8 @@
 
 #include "coord.h"
 
+using namespace std;
+
 constexpr size_t LB_PARAM_SIZE = 4;
 typedef double LBParam[LB_PARAM_SIZE];
 
