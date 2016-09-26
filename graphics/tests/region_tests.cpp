@@ -1,7 +1,7 @@
 #include "min_unit.h"
 #include "../region.h"
 
-const char * test_region()
+static const char * test_region()
 {
     Coord north(0, +1.5);
     Coord northeast(+1.5, +1.5);

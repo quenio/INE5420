@@ -17,9 +17,9 @@ public:
 
     Color(double red, double green, double blue): _red(red), _green(green), _blue(blue) {}
 
-    double const red() const { return _red; }
-    double const green() const { return _green; }
-    double const blue() const { return _blue; }
+    double red() const { return _red; }
+    double green() const { return _green; }
+    double blue() const { return _blue; }
 
 private:
 
@@ -101,7 +101,7 @@ public:
     virtual Coord center() = 0;
 
     // Determine the visibility in area.
-    Visibility visibility_in(ClippingArea &area) const override
+    Visibility visibility_in(ClippingArea UNUSED &area) const override
     {
         return Visibility::FULL;
     }
@@ -282,7 +282,7 @@ public:
 
     Visibility visibility_in(ClippingArea &area) const override
     {
-        Visibility result;
+        Visibility result = Visibility::NONE;
 
         Coord a = _vertices.back();
         for (auto &b: _vertices)
@@ -876,17 +876,17 @@ private:
 
 };
 
-shared_ptr<DrawCommand> draw_point(Coord a)
+inline shared_ptr<DrawCommand> draw_point(Coord a)
 {
     return make_shared<DrawCommand>(make_shared<Point>(a));
 }
 
-shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
+inline shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
 {
     return make_shared<DrawCommand>(make_shared<Line>(a, b));
 }
 
-shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
+inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 {
     return make_shared<DrawCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
 }

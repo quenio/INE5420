@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 project(graphics)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 \
+    -Werror -Weverything \
+    -Wno-header-hygiene -Wno-non-virtual-dtor -Wno-exit-time-destructors -Wno-global-constructors \
+    -Wno-padded -Wno-weak-vtables -Wno-gnu-zero-variadic-macro-arguments \
+    -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-old-style-cast")
 
 # GTK3
 find_package(PkgConfig REQUIRED)

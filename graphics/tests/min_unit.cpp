@@ -1,14 +1,14 @@
 // Copyright (c) 2016 Quenio Cesar Machado dos Santos. All rights reserved.
 // Original Code: http://www.jera.com/techinfo/jtns/jtn002.html#License
 
-#include <stdio.h>
+#include "min_unit.h"
 
-void all_tests();
+#define UNUSED __attribute__ ((unused))
 
 int tests_run = 0;
 int tests_failed = 0;
 
-int main(int argc, char **argv)
+int main(int UNUSED argc, char UNUSED **argv)
 {
     printf("\n");
 

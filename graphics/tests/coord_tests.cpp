@@ -1,6 +1,6 @@
 #include "min_unit.h"
 
-const char * test()
+static const char * test()
 {
     mu_assert("one" == "one");
 
