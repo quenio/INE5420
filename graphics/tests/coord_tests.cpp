@@ -2,7 +2,7 @@
 
 static const char * test()
 {
-    mu_assert("one" == "one");
+    mu_assert(1 == 1);
 
     return nullptr;
 }
