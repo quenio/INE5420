@@ -1,18 +1,40 @@
 #pragma once
 
 #include <vector>
+#include <list>
 #include <cmath>
 #include <cassert>
 
 using namespace std;
 
+#define UNUSED __attribute__ ((unused))
+
+// Absolute difference between a and b
+inline double abs_diff(double a, double b)
+{
+    return abs(a - b);
+}
+
+// Determine if a and b are equal, accepting up to epsilon as the difference.
+inline bool equals(double a, double b)
+{
+    constexpr double epsilon = 0.000001;
+    return abs_diff(a, b) < epsilon;
+}
+
 // 2D coordinates
 class Coord;
+
+// 2D transformations as a matrix
+class TransformMatrix;
 
 // Transformable elements
 class Transformable
 {
 public:
+
+    // Transform according to TransformationMatrix.
+    virtual void transform(TransformMatrix m) = 0;
 
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy) = 0;
@@ -40,14 +62,17 @@ public:
         return sqrt(pow(x() - coord.x(), 2) + pow(y() - coord.y(), 2));
     }
 
+    // Transform according to TransformationMatrix.
+    void transform(TransformMatrix m) override;
+
     // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy);
+    void translate(double dx, double dy) override;
 
     // Scale by factor from center.
-    virtual void scale(double factor, Coord center);
+    void scale(double factor, Coord center) override;
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center);
+    void rotate(double degrees, Coord center) override;
 
     // Translated by dx horizontally, dy vertically
     Coord translated(double dx, double dy)
@@ -73,12 +98,17 @@ public:
         return coord;
     }
 
-    // Compare a and b.
+    // True if a and b match.
     friend bool operator == (Coord a, Coord b)
     {
-        return a._x == b._x && a._y == b._y;
+        return equals(a._x, b._x) && equals(a._y, b._y);
     }
 
+    // True if a and b do not match.
+    friend bool operator != (Coord a, Coord b)
+    {
+        return !equals(a._x, b._x) || !equals(a._y, b._y);
+    }
 
 private:
 
@@ -100,7 +130,7 @@ public:
     TransformVector(Coord coord): TransformVector({ coord.x(), coord.y(), 1 }) {}
 
     // Retrieve the double at the i'th position.
-    double operator [] (int i) const
+    double operator [] (size_t i) const
     {
         return _vector[i];
     }
@@ -109,7 +139,7 @@ public:
     double operator * (TransformVector other)
     {
         double sum = 0;
-        for (int i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
+        for (size_t i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
         return sum;
     }
 
@@ -121,8 +151,8 @@ private:
 class TransformMatrix
 {
 public:
-    constexpr static int column_count = TransformVector::count;
-    constexpr static int row_count = TransformVector::count;
+    constexpr static size_t column_count = TransformVector::count;
+    constexpr static size_t row_count = TransformVector::count;
 
     TransformMatrix(initializer_list<double> column1, initializer_list<double> column2, initializer_list<double> column3)
     : _column { column1, column2, column3 } {}
@@ -138,8 +168,8 @@ public:
     {
         double m[column_count][row_count];
 
-        for (int c = 0; c < column_count; c++)
-            for (int r = 0; r < row_count; r++)
+        for (size_t c = 0; c < column_count; c++)
+            for (size_t r = 0; r < row_count; r++)
                 m[c][r] = row(r) * other.column(c);
 
         return TransformMatrix(
@@ -152,13 +182,13 @@ public:
 private:
 
     // Vector representing row at the i'th position
-    TransformVector row(int i)
+    TransformVector row(size_t i)
     {
         return TransformVector({ _column[0][i], _column[1][i], _column[2][i] });
     }
 
     // Vector representing column at the i'th position
-    TransformVector column(int i)
+    TransformVector column(size_t i)
     {
         return _column[i];
     }
@@ -167,21 +197,29 @@ private:
 };
 
 // 2D translation as a matrix: translate by dx horizontally, dy vertically.
-TransformMatrix translation(double dx, double dy)
+inline TransformMatrix translation(double dx, double dy)
 {
     return TransformMatrix({ 1.0, 0.0, dx }, { 0.0, 1.0, dy }, { 0.0, 0.0, 1.0 });
 }
 
 // 2D scaling as a matrix: scale x by factor sx, y by factor sy.
-TransformMatrix scaling(double sx, double sy)
+inline TransformMatrix scaling(double sx, double sy)
 {
     return TransformMatrix({ sx, 0.0, 0.0 }, { 0.0, sy, 0.0 }, { 0.0, 0.0, 1.0 });
+}
+
+// 2D scaling coord by factor from center.
+inline TransformMatrix scaling(double factor, Coord center)
+{
+    return translation(-center.x(), -center.y()) *
+           scaling(factor, factor) *
+           translation(center.x(), center.y());
 }
 
 constexpr double PI = 3.14159265;
 
 // 2D rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
-TransformMatrix rotation(double degrees)
+inline TransformMatrix rotation(double degrees)
 {
     const double rad = degrees * PI / 180.0;
     const double c = cos(rad);
@@ -189,77 +227,125 @@ TransformMatrix rotation(double degrees)
     return TransformMatrix({ c, s, 0.0 }, { -s, c, 0.0 }, { 0.0, 0.0, 1.0 });
 }
 
+// 2D rotation coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline TransformMatrix rotation(double degrees, Coord center)
+{
+    return translation(-center.x(), -center.y()) *
+           rotation(degrees) *
+           translation(center.x(), center.y());
+}
+
 // Transform coord using transformation matrix.
-Coord operator * (const Coord &coord, TransformMatrix matrix)
+inline Coord operator * (const Coord &coord, TransformMatrix matrix)
 {
     const TransformVector vector = TransformVector(coord) * matrix;
     return Coord(vector[0], vector[1]);
 }
 
 // Transform coord using transformation matrix, and assigns to lhs.
-Coord& operator *= (Coord &lhs, TransformMatrix matrix)
+inline Coord& operator *= (Coord &lhs, TransformMatrix matrix)
 {
     lhs = lhs * matrix;
     return lhs;
 }
 
-// Translate coord by dx horizontally, dy vertically.
-void translate(Coord &coord, double dx, double dy)
+// Transform coords according to m.
+inline void transform(TransformMatrix m, list<Coord *> coords)
 {
-    coord *= translation(dx, dy);
+    for (auto c: coords)
+        *c *= m;
 }
 
-// Scale coord by factor.
-void scale(Coord &coord, double factor)
+// Translate coord by dx horizontally, dy vertically.
+inline void translate(double dx, double dy, list<Coord *> coords)
 {
-    coord *= scaling(factor, factor);
+    transform(translation(dx, dy), coords);
 }
 
 // Scale coord by factor from center.
-void scale(Coord &coord, double factor, Coord center)
+inline void scale(double factor, Coord center, list<Coord *> coords)
 {
-    coord *= translation(-center.x(), -center.y()) * scaling(factor, factor) * translation(center.x(), center.y());
-}
-
-// Rotate coord by degrees at the world origin; clockwise if angle positive; counter-clockwise if negative.
-void rotate(Coord & coord, double degrees)
-{
-    coord *= rotation(degrees);
+    transform(scaling(factor, center), coords);
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-void rotate(Coord & coord, double degrees, Coord center)
+inline void rotate(double degrees, Coord center, list<Coord *> coords)
 {
-    coord *= translation(-center.x(), -center.y()) * rotation(degrees) * translation(center.x(), center.y());
+    transform(rotation(degrees, center), coords);
+}
+
+// Transform according to TransformationMatrix.
+inline void Coord::transform(TransformMatrix m)
+{
+    ::transform(m, { this });
 }
 
 // Translate coord by dx horizontally, dy vertically.
 inline void Coord::translate(double dx, double dy)
 {
-    ::translate(*this, dx, dy);
+    ::translate(dx, dy, { this });
 }
 
 // Scale coord by factor from center.
 inline void Coord::scale(double factor, Coord center)
 {
-    ::scale(*this, factor, center);
+    ::scale(factor, center, { this });
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline void Coord::rotate(double degrees, Coord center)
 {
-    ::rotate(*this, degrees, center);
+    ::rotate(degrees, center, { this });
 }
 
 // Equidistant double between a and b.
 inline double equidistant(double a, double b)
 {
-    return min(a, b) + (abs(a - b) / 2);
+    return min(a, b) + (abs_diff(a, b) / 2);
 }
 
 // Equidistant coord between a and b
 inline Coord equidistant(Coord a, Coord b)
 {
     return Coord(equidistant(a.x(), b.x()), equidistant(a.y(), b.y()));
+}
+
+// Difference between a.x() and b.x()
+inline double delta_x(const Coord &a, const Coord &b)
+{
+    return a.x() - b.x();
+}
+
+// Difference between a.y() and b.y()
+inline double delta_y(const Coord &a, const Coord &b)
+{
+    return a.y() - b.y();
+}
+
+// Angular coefficient of line between a and b.
+inline double angular_coefficient(const Coord &a, const Coord &b)
+{
+    return delta_y(a, b) / delta_x(a, b);
+}
+
+// Determine point in line at x based on start and the angular coefficient m between start and the new point.
+inline Coord at_x(double x, const Coord &start, double m)
+{
+    return Coord(x, start.y() + (m * (x - start.x())));
+}
+
+// Determine point in line at y based on start and the angular coefficient m between start and the new point.
+inline Coord at_y(double y, const Coord &start, double m)
+{
+    return Coord(start.x() + ((1/m) * (y - start.y())), y);
+}
+
+// Determine point in line between point a and b.
+inline Coord at_step(double step, const Coord &start, const Coord &end)
+{
+    return Coord(
+        start.x() + (step * delta_x(end, start)),
+        start.y() + (step * delta_y(end, start))
+    );
 }
 

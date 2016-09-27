@@ -1,9 +1,19 @@
 #pragma once
 
 #include "graphics.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdocumentation-unknown-command"
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#pragma GCC diagnostic ignored "-Wreserved-id-macro"
+#pragma GCC diagnostic ignored "-Wshift-sign-overflow"
+#pragma GCC diagnostic ignored "-Wdeprecated-register"
+
 #include <cairo.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+
+#pragma GCC diagnostic pop
 
 #define UNUSED __attribute__ ((unused))
 
@@ -147,20 +157,24 @@ static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Obje
 static const int gtk_window__width = 600;
 static const int gtk_window__height = 480;
 
+static const gint pan_column__menu_bar = 7;
 static const gint pan_column__canvas = 7;
 static const gint pan_column__list_box = 2;
 static const gint pan_column__button = 1;
 
-static const gint pan_row__canvas = 6;
+static const gint pan_row__menu_bar = 1;
+static const gint pan_row__canvas = 20;
 static const gint pan_row__list_box = pan_row__canvas;
-static const gint pan_row__button = 1;
+static const gint pan_row__button = 2;
 
-static const gint column__tool_bar = 0;
-static const gint column__list_box = column__tool_bar;
+static const gint column__menu_bar = 0;
+static const gint column__tool_bar = column__menu_bar;
+static const gint column__list_box = column__menu_bar;
 static const gint column__canvas = column__list_box + pan_column__list_box;
 
-static const gint row__tool_bar = 0;
-static const gint row__list_box = 1;
+static const gint row__menu_bar = 0;
+static const gint row__tool_bar = row__menu_bar + pan_row__menu_bar;
+static const gint row__list_box = row__tool_bar + pan_row__button;
 static const gint row__canvas = row__list_box;
 
 static GtkWidget * new_gtk_window(const gchar *title)
@@ -196,7 +210,7 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
     g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &world);
-    g_signal_connect(canvas, "key-press-event", on_key_press, &world);
+    g_signal_connect(canvas, "key-press-event", on_key_press, nullptr);
 
     gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
     gtk_widget_set_can_focus(canvas, true);
@@ -229,4 +243,46 @@ static GtkWidget * new_button(
                     pan_column__button, pan_row__button);
 
     return button_with_label;
+}
+
+static GSList *line_clipping_group = nullptr;
+
+static void menu_item(const GtkWidget *menu, const gchar *label, GCallback callback, GtkWidget *canvas)
+{
+    GtkWidget *menu_item = gtk_radio_menu_item_new_with_label(line_clipping_group, label);
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
+    g_signal_connect(G_OBJECT(menu_item), "activate", callback, canvas);
+
+    if (line_clipping_group == nullptr)
+    {
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menu_item), TRUE);
+        line_clipping_group = gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menu_item));
+    }
+}
+
+static void line_clipping_menu(GtkWidget * menu_bar, GtkWidget *canvas, list<pair<string, GCallback>> menu_items)
+{
+    GtkWidget *menu = gtk_menu_new();
+    GtkWidget *top_item = gtk_menu_item_new_with_label("Line Clipping");
+
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(top_item), menu);
+
+    for (auto &item : menu_items)
+    {
+        menu_item(menu, item.first.c_str(), item.second, canvas);
+    }
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), top_item);
+}
+
+static void menu_bar(GtkWidget *grid, GtkWidget *canvas, list<pair<string, GCallback>> menu_items)
+{
+    GtkWidget *menu_bar = gtk_menu_bar_new();
+
+    line_clipping_menu(menu_bar, canvas, menu_items);
+
+    gtk_grid_attach(GTK_GRID(grid), menu_bar,
+                    column__menu_bar, row__menu_bar,
+                    pan_column__menu_bar, pan_row__menu_bar);
 }

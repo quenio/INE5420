@@ -1,5 +1,7 @@
 #include "ui.h"
 
+using namespace std;
+
 static World world(
     make_shared<Window>(-20, -20, 120, 120),
     DisplayFile({
@@ -48,7 +50,7 @@ static void pan_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 
 enum Tool { TRANSLATE, SCALE, ROTATE };
 
-Tool selected_tool = TRANSLATE;
+static Tool selected_tool = TRANSLATE;
 
 static void tool_translate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
@@ -68,10 +70,26 @@ static void tool_rotate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
     gtk_widget_grab_focus(GTK_WIDGET(canvas));
 }
 
-static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer data)
+static void select_cs(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
-    World &world = *(World*)data;
+    clipping_method = ClippingMethod::COHEN_SUTHERLAND;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
 
+static void select_lb(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    clipping_method = ClippingMethod::LIANG_BARSKY;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
+
+static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    clipping_method = ClippingMethod::NONE;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
+
+static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
+{
     switch (selected_tool)
     {
         case TRANSLATE:
@@ -156,7 +174,7 @@ static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpoin
     world.clear_selection();
 
     if (row != nullptr) {
-        world.select_object_at(gtk_list_box_row_get_index(row));
+        world.select_object_at((size_t)gtk_list_box_row_get_index(row));
     }
 
     refresh_canvas(GTK_WIDGET(canvas), world);
@@ -170,7 +188,15 @@ int main(int argc, char *argv[])
 
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
+
     GtkWidget *canvas = new_canvas(grid, world, G_CALLBACK(canvas_on_key_press));
+
+    list<pair<string, GCallback>> menu_items;
+    menu_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
+    menu_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
+    menu_items.push_back(make_pair("None", G_CALLBACK(select_none)));
+    menu_bar(grid, canvas, menu_items);
+
     new_list_box(grid, canvas, world, G_CALLBACK(select_object));
 
     new_button(

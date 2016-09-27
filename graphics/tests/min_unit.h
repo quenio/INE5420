@@ -18,4 +18,6 @@ extern int tests_failed;
         printf(" - PASSED (t = %9.6lf)\n", time); \
     } while (0)
 
+void all_tests();
+
 
