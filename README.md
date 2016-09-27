@@ -41,3 +41,4 @@ make
 - 1.1: Basic system with window navigation and zoom.
 - 1.2: 2D transformations and homogeneous coordinates.
 - 1.3: Window normalized coordinates system.
+- 1.4: Point, Line and Polygon Clipping.
