@@ -7,6 +7,21 @@
 
 using namespace std;
 
+#define UNUSED __attribute__ ((unused))
+
+// Absolute difference between a and b
+inline double abs_diff(double a, double b)
+{
+    return abs(a - b);
+}
+
+// Determine if a and b are equal, accepting up to epsilon as the difference.
+inline bool equals(double a, double b)
+{
+    constexpr double epsilon = 0.000001;
+    return abs_diff(a, b) < epsilon;
+}
+
 // 2D coordinates
 class Coord;
 
@@ -86,13 +101,13 @@ public:
     // True if a and b match.
     friend bool operator == (Coord a, Coord b)
     {
-        return a._x == b._x && a._y == b._y;
+        return equals(a._x, b._x) && equals(a._y, b._y);
     }
 
     // True if a and b do not match.
     friend bool operator != (Coord a, Coord b)
     {
-        return a._x != b._x || a._y != b._y;
+        return !equals(a._x, b._x) || !equals(a._y, b._y);
     }
 
 private:
@@ -115,7 +130,7 @@ public:
     TransformVector(Coord coord): TransformVector({ coord.x(), coord.y(), 1 }) {}
 
     // Retrieve the double at the i'th position.
-    double operator [] (int i) const
+    double operator [] (size_t i) const
     {
         return _vector[i];
     }
@@ -124,7 +139,7 @@ public:
     double operator * (TransformVector other)
     {
         double sum = 0;
-        for (int i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
+        for (size_t i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
         return sum;
     }
 
@@ -136,8 +151,8 @@ private:
 class TransformMatrix
 {
 public:
-    constexpr static int column_count = TransformVector::count;
-    constexpr static int row_count = TransformVector::count;
+    constexpr static size_t column_count = TransformVector::count;
+    constexpr static size_t row_count = TransformVector::count;
 
     TransformMatrix(initializer_list<double> column1, initializer_list<double> column2, initializer_list<double> column3)
     : _column { column1, column2, column3 } {}
@@ -153,8 +168,8 @@ public:
     {
         double m[column_count][row_count];
 
-        for (int c = 0; c < column_count; c++)
-            for (int r = 0; r < row_count; r++)
+        for (size_t c = 0; c < column_count; c++)
+            for (size_t r = 0; r < row_count; r++)
                 m[c][r] = row(r) * other.column(c);
 
         return TransformMatrix(
@@ -167,13 +182,13 @@ public:
 private:
 
     // Vector representing row at the i'th position
-    TransformVector row(int i)
+    TransformVector row(size_t i)
     {
         return TransformVector({ _column[0][i], _column[1][i], _column[2][i] });
     }
 
     // Vector representing column at the i'th position
-    TransformVector column(int i)
+    TransformVector column(size_t i)
     {
         return _column[i];
     }
@@ -281,19 +296,6 @@ inline void Coord::scale(double factor, Coord center)
 inline void Coord::rotate(double degrees, Coord center)
 {
     ::rotate(degrees, center, { this });
-}
-
-// Absolute difference between a and b
-inline double abs_diff(double a, double b)
-{
-    return abs(a - b);
-}
-
-// Determine if a and b are equal, accepting up to epsilon as the difference.
-inline double equals(double a, double b)
-{
-    constexpr double epsilon = 0.000001;
-    return abs_diff(a, b) < epsilon;
 }
 
 // Equidistant double between a and b.

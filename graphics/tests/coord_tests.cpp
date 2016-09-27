@@ -1,8 +1,8 @@
 #include "min_unit.h"
 
-const char * test()
+static const char * test()
 {
-    mu_assert("one" == "one");
+    mu_assert(1 == 1);
 
     return nullptr;
 }

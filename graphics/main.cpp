@@ -50,7 +50,7 @@ static void pan_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 
 enum Tool { TRANSLATE, SCALE, ROTATE };
 
-Tool selected_tool = TRANSLATE;
+static Tool selected_tool = TRANSLATE;
 
 static void tool_translate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
@@ -88,10 +88,8 @@ static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
-static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer data)
+static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
-    World &world = *(World*)data;
-
     switch (selected_tool)
     {
         case TRANSLATE:
@@ -176,7 +174,7 @@ static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpoin
     world.clear_selection();
 
     if (row != nullptr) {
-        world.select_object_at(gtk_list_box_row_get_index(row));
+        world.select_object_at((size_t)gtk_list_box_row_get_index(row));
     }
 
     refresh_canvas(GTK_WIDGET(canvas), world);

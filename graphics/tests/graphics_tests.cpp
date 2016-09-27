@@ -1,12 +1,12 @@
 #include "min_unit.h"
 #include "../graphics.h"
 
-void print(Coord coord)
+static void print(Coord coord)
 {
     printf("(%f,%f)\n", coord.x(), coord.y());
 }
 
-const char * to_world()
+static const char * to_world()
 {
     const double left = -20, bottom = -20, right = 120, top = 120;
 
@@ -37,7 +37,7 @@ const char * to_world()
     return nullptr;
 }
 
-const char * from_world()
+static const char * from_world()
 {
     const double left = -20, bottom = -20, right = 120, top = 120;
 
@@ -66,7 +66,7 @@ const char * from_world()
     return nullptr;
 }
 
-const char * to_viewport()
+static const char * to_viewport()
 {
     Coord left_top(-1, +1);
     Coord left_bottom(-1, -1);
@@ -96,7 +96,7 @@ const char * to_viewport()
     return nullptr;
 }
 
-const char * from_viewport()
+static const char * from_viewport()
 {
     Coord left_top(2.5, 2.5);
     Coord left_bottom(2.5, 97.5);

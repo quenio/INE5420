@@ -33,7 +33,7 @@ inline double zeta_one(const LBParam p, const LBParam q)
 {
     double result = 0;
 
-    for (int i = 0; i < LB_PARAM_SIZE; i++)
+    for (size_t i = 0; i < LB_PARAM_SIZE; i++)
     {
         if (p[i] < 0)
         {
@@ -49,7 +49,7 @@ inline double zeta_two(const LBParam p, const LBParam q)
 {
     double result = 1;
 
-    for (int i = 0; i < LB_PARAM_SIZE; i++)
+    for (size_t i = 0; i < LB_PARAM_SIZE; i++)
     {
         if (p[i] > 0)
         {

@@ -2,9 +2,18 @@
 
 #include "graphics.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdocumentation-unknown-command"
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#pragma GCC diagnostic ignored "-Wreserved-id-macro"
+#pragma GCC diagnostic ignored "-Wshift-sign-overflow"
+#pragma GCC diagnostic ignored "-Wdeprecated-register"
+
 #include <cairo.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+
+#pragma GCC diagnostic pop
 
 #define UNUSED __attribute__ ((unused))
 
@@ -201,7 +210,7 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
     g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
     g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &world);
-    g_signal_connect(canvas, "key-press-event", on_key_press, &world);
+    g_signal_connect(canvas, "key-press-event", on_key_press, nullptr);
 
     gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
     gtk_widget_set_can_focus(canvas, true);

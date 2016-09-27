@@ -66,7 +66,7 @@ inline pair<Coord, Coord> clip_line(ClippingArea &area, const Coord &a, const Co
 }
 
 // Determine the visibility in area for line between a and b.
-Visibility visibility(ClippingArea &area, const Coord &a, const Coord &b)
+inline Visibility visibility(ClippingArea &area, const Coord &a, const Coord &b)
 {
     if (clipping_method == ClippingMethod::NONE) return Visibility::FULL;
 
