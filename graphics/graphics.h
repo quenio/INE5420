@@ -158,6 +158,7 @@ public:
         canvas.draw_circle(_coord, 1.5, color());
     }
 
+    // Type used in the name
     string type() const override
     {
         return "Point";
@@ -204,6 +205,7 @@ public:
         canvas.draw_line(_b, color());
     }
 
+    // Type used in the name
     string type() const override
     {
         return "Line";
@@ -212,7 +214,7 @@ public:
     // Midpoint between a and b
     Coord center() override
     {
-        return Coord((_a.x() + _b.x()) / 2, (_a.y() + _b.y()) / 2);
+        return equidistant(_a, _b);
     }
 
     // Determine the visibility in area.
@@ -250,6 +252,7 @@ public:
     Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
     Polygon(const Color &color, list<Coord> vertices): Object(color), _vertices(vertices) {}
 
+    // Draw polygon in canvas.
     void draw(Canvas &canvas) override
     {
         Coord previous = _vertices.back();
@@ -261,6 +264,7 @@ public:
         }
     }
 
+    // Type used in the name
     string type() const override
     {
         return "Polygon";
@@ -373,6 +377,48 @@ protected:
 private:
 
     list<Coord> _vertices;
+
+};
+
+
+// Curve defined by two edge coords and two internal control points
+class Bezier: public Object
+{
+public:
+
+    Bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
+        : Object(RED), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
+
+    // Draw curve in canvas.
+    void draw(Canvas &canvas) override
+    {
+        canvas.move(_edge1);
+        canvas.draw_line(_edge2, color());
+    }
+
+    // Type used in the name
+    string type() const override
+    {
+        return "Bezier";
+    }
+
+    // Midpoint between both edges
+    Coord center() override
+    {
+        return equidistant(_edge1, _edge2);
+    }
+
+protected:
+
+    list<Coord *> coords() override
+    {
+        return { &_edge1, &_control1, &_edge2, &_control2 };
+    }
+
+private:
+
+    Coord _edge1, _control1;
+    Coord _edge2, _control2;
 
 };
 
@@ -889,4 +935,9 @@ inline shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
 inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 {
     return make_shared<DrawCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
+}
+
+inline shared_ptr<DrawCommand> draw_bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
+{
+    return make_shared<DrawCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
 }
