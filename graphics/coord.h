@@ -120,14 +120,14 @@ private:
 class TransformVector
 {
 public:
-    constexpr static int count = 3;
+    constexpr static int count = 4;
 
     TransformVector(initializer_list<double> vector): _vector(vector)
     {
         assert(_vector.size() == count);
     }
 
-    TransformVector(Coord coord): TransformVector({ coord.x(), coord.y(), 1 }) {}
+    TransformVector(Coord coord): TransformVector({ coord.x(), coord.y(), 1, 0 }) {}
 
     // Retrieve the double at the i'th position.
     double operator [] (size_t i) const
@@ -147,20 +147,29 @@ private:
     vector<double> _vector;
 };
 
-// 2D transformations as a matrix
+// Transformations as a matrix
 class TransformMatrix
 {
 public:
     constexpr static size_t column_count = TransformVector::count;
     constexpr static size_t row_count = TransformVector::count;
 
-    TransformMatrix(initializer_list<double> column1, initializer_list<double> column2, initializer_list<double> column3)
-    : _column { column1, column2, column3 } {}
+    TransformMatrix(
+        initializer_list<double> column1,
+        initializer_list<double> column2,
+        initializer_list<double> column3,
+        initializer_list<double> column4)
+    : _column { column1, column2, column3, column4 } {}
 
     // Transform vector using transformation matrix.
     friend TransformVector operator * (TransformVector vector, TransformMatrix matrix)
     {
-        return TransformVector({ vector * matrix.column(0), vector * matrix.column(1), vector * matrix.column(2) });
+        return TransformVector({
+            vector * matrix.column(0),
+            vector * matrix.column(1),
+            vector * matrix.column(2),
+            vector * matrix.column(3)
+        });
     }
 
     // Multiply this matrix by other
@@ -173,9 +182,10 @@ public:
                 m[c][r] = row(r) * other.column(c);
 
         return TransformMatrix(
-           { m[0][0], m[0][1], m[0][2] },
-           { m[1][0], m[1][1], m[1][2] },
-           { m[2][0], m[2][1], m[2][2] }
+           { m[0][0], m[0][1], m[0][2], m[0][3] },
+           { m[1][0], m[1][1], m[1][2], m[1][3] },
+           { m[2][0], m[2][1], m[2][2], m[2][3] },
+           { m[3][0], m[3][1], m[3][2], m[3][3] }
         );
     }
 
@@ -184,7 +194,7 @@ private:
     // Vector representing row at the i'th position
     TransformVector row(size_t i)
     {
-        return TransformVector({ _column[0][i], _column[1][i], _column[2][i] });
+        return TransformVector({ _column[0][i], _column[1][i], _column[2][i], _column[3][i] });
     }
 
     // Vector representing column at the i'th position
@@ -196,19 +206,29 @@ private:
     TransformVector _column[column_count];
 };
 
-// 2D translation as a matrix: translate by dx horizontally, dy vertically.
+// Translation as a matrix: translate by dx horizontally, dy vertically.
 inline TransformMatrix translation(double dx, double dy)
 {
-    return TransformMatrix({ 1.0, 0.0, dx }, { 0.0, 1.0, dy }, { 0.0, 0.0, 1.0 });
+    return TransformMatrix(
+        { 1.0, 0.0,  dx, 0.0 },
+        { 0.0, 1.0,  dy, 0.0 },
+        { 0.0, 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 0.0, 0.0 }
+    );
 }
 
-// 2D scaling as a matrix: scale x by factor sx, y by factor sy.
+// Scaling as a matrix: scale x by factor sx, y by factor sy.
 inline TransformMatrix scaling(double sx, double sy)
 {
-    return TransformMatrix({ sx, 0.0, 0.0 }, { 0.0, sy, 0.0 }, { 0.0, 0.0, 1.0 });
+    return TransformMatrix(
+        {  sx, 0.0, 0.0, 0.0 },
+        { 0.0,  sy, 0.0, 0.0 },
+        { 0.0, 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 0.0, 0.0 }
+    );
 }
 
-// 2D scaling coord by factor from center.
+// Scaling coord by factor from center.
 inline TransformMatrix scaling(double factor, Coord center)
 {
     return translation(-center.x(), -center.y()) *
@@ -218,16 +238,21 @@ inline TransformMatrix scaling(double factor, Coord center)
 
 constexpr double PI = 3.14159265;
 
-// 2D rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+// Rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
 inline TransformMatrix rotation(double degrees)
 {
     const double rad = degrees * PI / 180.0;
     const double c = cos(rad);
     const double s = sin(rad);
-    return TransformMatrix({ c, s, 0.0 }, { -s, c, 0.0 }, { 0.0, 0.0, 1.0 });
+    return TransformMatrix(
+        {   c,   s, 0.0, 0.0 },
+        {  -s,   c, 0.0, 0.0 },
+        { 0.0, 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 0.0, 0.0 }
+    );
 }
 
-// 2D rotation coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+// Rotation coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline TransformMatrix rotation(double degrees, Coord center)
 {
     return translation(-center.x(), -center.y()) *
