@@ -387,13 +387,23 @@ class Bezier: public Object
 public:
 
     Bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
-        : Object(RED), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
+        : _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
 
     // Draw curve in canvas.
     void draw(Canvas &canvas) override
     {
-        canvas.move(_edge1);
-        canvas.draw_line(_edge2, color());
+        const list<Coord> vertices = bezier_vertices(_edge1, _control1, _control2, _edge2);
+
+        Coord const *previous = nullptr;
+        for (auto &current: vertices)
+        {
+            if (previous != nullptr)
+            {
+                canvas.move(*previous);
+                canvas.draw_line(current, color());
+            }
+            previous = &current;
+        }
     }
 
     // Type used in the name

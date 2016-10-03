@@ -129,6 +129,24 @@ public:
 
     TransformVector(Coord coord): TransformVector({ coord.x(), coord.y(), 1, 0 }) {}
 
+    // Create TransformVector with the x coordinates of a, b, c and d.
+    static inline TransformVector of_x(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
+    {
+        return { a.x(), b.x(), c.x(), d.x() };
+    }
+
+    // Create TransformVector with the y coordinates of a, b, c and d.
+    static inline TransformVector of_y(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
+    {
+        return { a.y(), b.y(), c.y(), d.y() };
+    }
+
+    // Create TransformVector of step.
+    static inline TransformVector of_step(double step)
+    {
+        return { pow(step, 3), pow(step, 2), step, 1 };
+    }
+
     // Retrieve the double at the i'th position.
     double operator [] (size_t i) const
     {
@@ -136,7 +154,7 @@ public:
     }
 
     // Multiply this vector by other.
-    double operator * (TransformVector other)
+    double operator * (const TransformVector other) const
     {
         double sum = 0;
         for (size_t i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
@@ -260,6 +278,23 @@ inline TransformMatrix rotation(double degrees, Coord center)
            translation(center.x(), center.y());
 }
 
+// Bezier matrix
+inline TransformMatrix bezier()
+{
+    return TransformMatrix(
+        { -1, +3, -3, +1 },
+        { +3, -6, +3,  0 },
+        { -3, +3,  0,  0 },
+        { +1,  0,  0,  0 }
+    );
+}
+
+// Bezier vector
+inline TransformVector bezier(double step)
+{
+    return TransformVector::of_step(step) * bezier();
+}
+
 // Transform coord using transformation matrix.
 inline Coord operator * (const Coord &coord, TransformMatrix matrix)
 {
@@ -374,3 +409,18 @@ inline Coord at_step(double step, const Coord &start, const Coord &end)
     );
 }
 
+// Generate the vertices to represent a Bezier curve.
+inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, const Coord &control2, const Coord &edge2)
+{
+    const TransformVector vx = TransformVector::of_x(edge1, control1, control2, edge2);
+    const TransformVector vy = TransformVector::of_y(edge1, control1, control2, edge2);
+
+    list<Coord> coords;
+    for (double step = 0; step < 1 || equals(step, 1); step += 0.025)
+    {
+        const TransformVector b = bezier(step);
+        coords.push_back(Coord(b * vx, b * vy));
+    }
+
+    return coords;
+}
