@@ -507,6 +507,57 @@ private:
 
 };
 
+// B-Spline curve defined by a list of control coords.
+class Spline: public Object, public Polyline
+{
+public:
+
+    Spline(initializer_list<Coord> vertices): Spline(BLACK, vertices) {}
+
+    Spline(const Color &color, initializer_list<Coord> vertices): Object(color), _controls(vertices) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "Spline";
+    }
+
+    // Midpoint between both edges
+    Coord center() override
+    {
+        return equidistant(_controls.front(), _controls.back());
+    }
+
+    // Vertices to use when drawing the lines
+    list<Coord> vertices() const override
+    {
+        //TODO Finish implementation
+    }
+
+    // New drawable from clipped_vertices
+    /*
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    {
+        //TODO Finish implementation
+    }
+    */
+
+protected:
+
+    list<Coord *> coords() override
+    {
+        list<Coord *> result;
+        for (auto coord = _controls.begin(); coord != _controls.end(); ++coord)
+        {
+            result.push_back(&(*coord));
+        }
+    }
+
+private:
+
+    list<Coord> _controls;
+};
+
 // Visible area on a canvas
 class Viewport
 {
