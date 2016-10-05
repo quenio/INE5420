@@ -56,13 +56,19 @@ public:
     // Draw something in canvas.
     virtual void draw(Canvas &canvas) = 0;
 
+    // Color used to draw.
+    virtual Color color() const = 0;
+
     // Determine the visibility in area.
-    virtual Visibility visibility_in(ClippingArea &area) const = 0;
+    virtual Visibility visibility_in(ClippingArea UNUSED &area) const
+    {
+        return Visibility::FULL;
+    }
 
 };
 
 // World objects
-class Object: public Drawable, public Transformable
+class Object: public virtual Drawable, public Transformable
 {
 public:
 
@@ -92,19 +98,14 @@ public:
         _color = _regular_color;
     }
 
-    Color color()
+    // Color used to draw.
+    Color color() const override
     {
         return _color;
     }
 
     // Object's center
     virtual Coord center() = 0;
-
-    // Determine the visibility in area.
-    Visibility visibility_in(ClippingArea UNUSED &area) const override
-    {
-        return Visibility::FULL;
-    }
 
     // Transform according to TransformationMatrix.
     void transform(TransformMatrix m) override
@@ -158,11 +159,11 @@ public:
         canvas.draw_circle(_coord, 1.5, color());
     }
 
+    // Type used in the name
     string type() const override
     {
         return "Point";
     }
-
 
     // Coord of the Point itself
     Coord center() override
@@ -204,6 +205,7 @@ public:
         canvas.draw_line(_b, color());
     }
 
+    // Type used in the name
     string type() const override
     {
         return "Line";
@@ -212,7 +214,7 @@ public:
     // Midpoint between a and b
     Coord center() override
     {
-        return Coord((_a.x() + _b.x()) / 2, (_a.y() + _b.y()) / 2);
+        return equidistant(_a, _b);
     }
 
     // Determine the visibility in area.
@@ -242,25 +244,146 @@ private:
 
 };
 
+// Sequence of lines drawn from the given vertices.
+class Polyline: public virtual Drawable, public Clippable<Drawable>
+{
+public:
+
+    // Vertices to use when drawing the lines.
+    virtual list<Coord> vertices() const = 0;
+
+    // Initial vertex of the first line to be drawn
+    // nullptr if should start from first vertex in the list of vertices
+    virtual Coord const * initial_vertex() const
+    {
+        return nullptr;
+    }
+
+    // New drawable from clipped_vertices
+    virtual shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const = 0;
+
+    // Draw the sequence of lines in canvas.
+    void draw(Canvas &canvas) override
+    {
+        Coord const *previous = initial_vertex();
+        for (auto &current: vertices())
+        {
+            if (previous != nullptr)
+            {
+                canvas.move(*previous);
+                canvas.draw_line(current, color());
+            }
+            previous = &current;
+        }
+    }
+
+    // Determine the visibility in area.
+    Visibility visibility_in(ClippingArea &area) const override
+    {
+        Visibility result = Visibility::NONE;
+
+        Coord const *previous = initial_vertex();
+        for (auto &current: vertices())
+        {
+            if (previous != nullptr)
+            {
+                const Visibility v = visibility(area, *previous, current);
+                if (v == Visibility::PARTIAL)
+                {
+                    return Visibility::PARTIAL;
+                } else
+                {
+                    result = v;
+                }
+            }
+
+            previous = &current;
+        }
+
+        return result;
+    }
+
+    // Provide clipped version of itself in area.
+    shared_ptr<Drawable> clipped_in(ClippingArea &area) override
+    {
+        list<Coord> new_vertices;
+
+        Coord const *previous = initial_vertex();
+        for (auto &current: vertices())
+        {
+            if (previous != nullptr)
+            {
+                switch (visibility(area, *previous, current))
+                {
+                    case Visibility::FULL:
+                    {
+                        if (&new_vertices.back() != previous)
+                            new_vertices.push_back(*previous);
+                        if (new_vertices.back() != current)
+                            new_vertices.push_back(current);
+                    }
+                        break;
+
+                    case Visibility::PARTIAL:
+                    {
+                        const pair<Coord, Coord> clipped_line = clip_line(area, *previous, current);
+
+                        if (area.contains(clipped_line.first) && new_vertices.back() != clipped_line.first)
+                            new_vertices.push_back(clipped_line.first);
+
+                        if (area.contains(clipped_line.second) && new_vertices.back() != clipped_line.second)
+                            new_vertices.push_back(clipped_line.second);
+                    }
+                        break;
+
+                    case Visibility::NONE:
+                    {
+                        const Coord window_a = area.world_to_window(*previous);
+                        const Coord window_b = area.world_to_window(current);
+
+                        if (region(window_a) != region(window_b))
+                        {
+                            // Determine closest corner
+                            const double x = min(window_a.x(), window_b.x()) < -1 ? -1 : +1;
+                            const double y = min(window_a.y(), window_b.y()) < -1 ? -1 : +1;
+                            const Coord corner = area.window_to_world(Coord(x, y));
+
+                            if (area.contains(corner) && new_vertices.back() != corner)
+                                new_vertices.push_back(corner);
+                        }
+                    }
+                }
+            }
+
+            previous = &current;
+        }
+
+        return clipped_drawable(color(), new_vertices);
+    }
+
+};
+
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Object, public Clippable<Drawable>
+class Polygon: public Object, public Polyline
 {
 public:
 
     Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
     Polygon(const Color &color, list<Coord> vertices): Object(color), _vertices(vertices) {}
 
-    void draw(Canvas &canvas) override
+    // Vertices to use when drawing the lines.
+    list<Coord> vertices() const override
     {
-        Coord previous = _vertices.back();
-        for (auto &current: _vertices)
-        {
-            canvas.move(previous);
-            canvas.draw_line(current, color());
-            previous = current;
-        }
+        return _vertices;
     }
 
+    // Initial vertex of the first line to be drawn.
+    Coord const * initial_vertex() const override
+    {
+        return &_vertices.back();
+    }
+
+    // Type used in the name
     string type() const override
     {
         return "Polygon";
@@ -280,82 +403,10 @@ public:
         return Coord(x / _vertices.size(), y / _vertices.size());
     }
 
-    Visibility visibility_in(ClippingArea &area) const override
+    // New drawable from clipped_vertices
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
     {
-        Visibility result = Visibility::NONE;
-
-        Coord a = _vertices.back();
-        for (auto &b: _vertices)
-        {
-            const Visibility v = visibility(area, a, b);
-            if (v == Visibility::PARTIAL)
-            {
-                return Visibility::PARTIAL;
-            }
-            else
-            {
-                result = v;
-            }
-
-            a = b;
-        }
-
-        return result;
-    }
-
-    // Provide clipped version of itself in area.
-    shared_ptr<Drawable> clipped_in(ClippingArea &area) override
-    {
-        list<Coord> new_vertices;
-
-        Coord a = _vertices.back();
-        for (auto &b: _vertices)
-        {
-            switch (visibility(area, a, b))
-            {
-                case Visibility::FULL:
-                {
-                    if (new_vertices.back() != a)
-                        new_vertices.push_back(a);
-                    if (new_vertices.back() != b)
-                        new_vertices.push_back(b);
-                }
-                break;
-
-                case Visibility::PARTIAL:
-                {
-                    const pair<Coord, Coord> clipped_line = clip_line(area, a, b);
-
-                    if (area.contains(clipped_line.first) && new_vertices.back() != clipped_line.first)
-                        new_vertices.push_back(clipped_line.first);
-
-                    if (area.contains(clipped_line.second) && new_vertices.back() != clipped_line.second)
-                        new_vertices.push_back(clipped_line.second);
-                }
-                break;
-
-                case Visibility::NONE:
-                {
-                    const Coord window_a = area.world_to_window(a);
-                    const Coord window_b = area.world_to_window(b);
-
-                    if (region(window_a) != region(window_b))
-                    {
-                        // Determine closest corner
-                        const double x = min(window_a.x(), window_b.x()) < -1 ? -1 : +1;
-                        const double y = min(window_a.y(), window_b.y()) < -1 ? -1 : +1;
-                        const Coord corner = area.window_to_world(Coord(x, y));
-
-                        if (area.contains(corner) && new_vertices.back() != corner)
-                            new_vertices.push_back(corner);
-                    }
-                }
-            }
-
-            a = b;
-        }
-
-        return make_shared<Polygon>(color(), new_vertices);
+        return make_shared<Polygon>(color, clipped_vertices);
     }
 
 protected:
@@ -373,6 +424,86 @@ protected:
 private:
 
     list<Coord> _vertices;
+
+};
+
+// Curve defined by two edge coords and two internal control points
+class Bezier: public Object, public Polyline
+{
+public:
+
+    Bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
+        : Bezier(BLACK, edge1, control1, edge2, control2) {}
+
+    Bezier(const Color &color, Coord edge1, Coord control1, Coord edge2, Coord control2)
+        : Object(color), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "Bezier";
+    }
+
+    // Midpoint between both edges
+    Coord center() override
+    {
+        return equidistant(_edge1, _edge2);
+    }
+
+    // Vertices to use when drawing the lines.
+    list<Coord> vertices() const override
+    {
+        return bezier_vertices(_edge1, _control1, _control2, _edge2);
+    }
+
+    // New drawable from clipped_vertices
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    {
+        return make_shared<ClippedPolyline>(color, clipped_vertices);
+    }
+
+protected:
+
+    list<Coord *> coords() override
+    {
+        return { &_edge1, &_control1, &_edge2, &_control2 };
+    }
+
+private:
+
+    class ClippedPolyline: public Polyline
+    {
+    public:
+
+        ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
+
+        // Color used to draw.
+        Color color() const override
+        {
+            return _color;
+        }
+
+        // Vertices to use when drawing the lines.
+        list<Coord> vertices() const override
+        {
+            return _vertices;
+        }
+
+        // New drawable from clipped_vertices
+        shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+        {
+            return make_shared<ClippedPolyline>(color, clipped_vertices);
+        }
+
+    private:
+
+        Color _color;
+        list<Coord> _vertices;
+
+    };
+
+    Coord _edge1, _control1;
+    Coord _edge2, _control2;
 
 };
 
@@ -889,4 +1020,9 @@ inline shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
 inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 {
     return make_shared<DrawCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
+}
+
+inline shared_ptr<DrawCommand> draw_bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
+{
+    return make_shared<DrawCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
 }

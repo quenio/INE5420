@@ -42,3 +42,4 @@ make
 - 1.2: 2D transformations and homogeneous coordinates.
 - 1.3: Window normalized coordinates system.
 - 1.4: Point, Line and Polygon Clipping.
+- 1.5: Bézier parametric curves.
