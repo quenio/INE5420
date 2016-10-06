@@ -1075,3 +1075,8 @@ inline shared_ptr<DrawCommand> draw_bezier(Coord edge1, Coord control1, Coord ed
 {
     return make_shared<DrawCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
 }
+
+inline shared_ptr<DrawCommand> draw_spline(Coord a, Coord b, Coord c, Coord d)
+{
+    return make_shared<DrawCommand>(make_shared<Spline>(Spline({ a, b, c, d })));
+}
