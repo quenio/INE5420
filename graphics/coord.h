@@ -453,57 +453,70 @@ inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, co
     return coords;
 }
 
-// Generate the vertices to represent a Spline curve.
-inline list<Coord> spline_vertices(vector<Coord> controls, double step)
+inline void coefficients(double c1, double c2, double c3, double c4, double &A, double &B, double &C, double &D)
 {
+    double d16 = 1.0 / 6.0;
+    double d46 = 4.0 / 6.0;
+
+    A = -d16 * c1 + 0.5 * c2 - 0.5 * c3 + d16 * c4;
+    B =  0.5 * c1 -       c2 + 0.5 * c3;
+    C = -0.5 * c1            + 0.5 * c3;
+    D =  d16 * c1 + d46 * c2 + d16 * c3;
+}
+
+inline void differences(double A, double B, double C, UNUSED double D,
+                        double step, double step2, double step3,
+                        double &delta, double &delta2, double &delta3)
+{
+    delta  = A * step3 + B * step2 + C * step;
+    delta3 = 6 * A * step3;
+    delta2 = delta3 + 2 * B * step2;
+}
+
+// Generate the vertices to represent a Spline curve.
+inline list<Coord> spline_vertices(vector<Coord> controls, double step) {
     list<Coord> result;
 
-    if (controls.size() < 4)
-    {
+    if (controls.size() < 4) {
         //TODO Houston we have a problem.
         return result;
     }
 
+    double step2 = step  * step;
+    double step3 = step2 * step;
+
     long nCurves = controls.size() - 3;
-    
-    for (int curve = 0; curve < nCurves; curve++)
-    {
+
+    for (int curve = 0; curve < nCurves; curve++) {
         auto c1 = controls[curve];
         auto c2 = controls[curve + 1];
         auto c3 = controls[curve + 2];
         auto c4 = controls[curve + 3];
-        
-        TransformVector vx = TransformVector::of_x(c1, c2, c3, c4) * spline();
-        TransformVector vy = TransformVector::of_y(c1, c2, c3, c4) * spline();
 
-        TransformVector dx = vx * spline(step);
-        TransformVector dy = vy * spline(step);
+        double Ax, Bx, Cx, Dx, deltaX, delta2X, delta3X;
+        coefficients(c1.x(), c2.x(), c3.x(), c4.x(), Ax, Bx, Cx, Dx);
+        differences(Ax, Bx, Cx, Dx, step, step2, step3, deltaX, delta2X, delta3X);
 
-        Coord oldC = *new Coord(vx[3], vy[3]);
-        result.push_back(oldC);
+        double Ay, By, Cy, Dy, deltaY, delta2Y, delta3Y;
+        coefficients(c1.y(), c2.y(), c3.y(), c4.y(), Ay, By, Cy, Dy);
+        differences(Ay, By, Cy, Dy, step, step2, step3, deltaY, delta2Y, delta3Y);
 
-        double deltaX = dx[0];
-        double deltaX2 = dx[1];
-        double deltaX3 = dx[2];
+        Coord oldCoord(Dx, Dy);
+        result.push_back(oldCoord);
 
-        double deltaY = dy[0];
-        double deltaY2 = dy[1];
-        double deltaY3 = dy[2];
-        
-        for (double t = 0; t <= 1; t += step)
-        {
-            Coord newC = oldC;
-            newC.x(newC.x() + deltaX);
-            newC.y(newC.y() + deltaY);
+        for (double t = 0.0; t <= 1; t += step) {
+            Coord newCoord = oldCoord;
+            newCoord.x(newCoord.x() + deltaX);
+            newCoord.y(newCoord.y() + deltaY);
 
-            deltaX = deltaX + deltaX2;
-            deltaX2 = deltaX2 + deltaX3;
+            deltaX += delta2X;
+            delta2X += delta3X;
 
-            deltaY = deltaY + deltaY2;
-            deltaY2 = deltaY2 + deltaY3;
+            deltaY += delta2Y;
+            delta2Y += delta3Y;
 
-            result.push_back(newC);
-            oldC = newC;
+            result.push_back(newCoord);
+            oldCoord = newCoord;
         }
     }
 }
