@@ -302,10 +302,10 @@ inline TransformVector bezier(double step)
 inline TransformMatrix spline()
 {
     return TransformMatrix(
-            { -1.0/6.0, +0.5, -0.5, +1.0/6.0 },
-            { +0.5    , -1.0,  0.0, +4.0/6.0 },
-            { -0.5    , +0.5, +0.5, +1.0/6.0 },
-            { +1.0/6.0,  0.0,  0.0,  0.0  }
+            { -1.0/6.0,  0.5    , -0.5    , 1.0/6.0 },
+            {  0.5    , -1.0    ,  0.5    , 0.0     },
+            { -0.5    ,  0.0    ,  0.5    , 0.0     },
+            {  1.0/6.0,  4.0/6.0,  1.0/6.0, 0.0     }
     );
 }
 
@@ -316,10 +316,10 @@ inline TransformMatrix spline(double step)
     double step3 = step2 * step;
 
     return TransformMatrix(
-            { step3, 6 * step3, 6 * step3, 0},
-            { step2, 0        , 2 * step2, 0},
-            { step , 0        , 0        , 0},
-            { 0    , 0        , 0        , 0}
+            { step3    , step2    , step, 0.0 },
+            { 6.0*step3, 0.0      , 0.0 , 0.0 },
+            { 6.0*step3, 2.0*step2, 0.0 , 0.0 },
+            { 0.0      , 0.0      , 0.0 , 1.0 }
     );
 }
 
