@@ -424,3 +424,10 @@ inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, co
 
     return coords;
 }
+
+// Generate the vertices to represent a Spline curve.
+inline list<Coord> spline_vertices(list<Coord> controls)
+{
+    //TODO Finish impl.
+    return controls;
+}

@@ -427,6 +427,37 @@ private:
 
 };
 
+class ClippedPolyline: public Polyline
+{
+public:
+
+    ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
+
+    // Color used to draw.
+    Color color() const override
+    {
+        return _color;
+    }
+
+    // Vertices to use when drawing the lines.
+    list<Coord> vertices() const override
+    {
+        return _vertices;
+    }
+
+    // New drawable from clipped_vertices
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    {
+        return make_shared<ClippedPolyline>(color, clipped_vertices);
+    }
+
+private:
+
+    Color _color;
+    list<Coord> _vertices;
+
+};
+
 // Curve defined by two edge coords and two internal control points
 class Bezier: public Object, public Polyline
 {
@@ -471,37 +502,6 @@ protected:
 
 private:
 
-    class ClippedPolyline: public Polyline
-    {
-    public:
-
-        ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
-
-        // Color used to draw.
-        Color color() const override
-        {
-            return _color;
-        }
-
-        // Vertices to use when drawing the lines.
-        list<Coord> vertices() const override
-        {
-            return _vertices;
-        }
-
-        // New drawable from clipped_vertices
-        shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
-        {
-            return make_shared<ClippedPolyline>(color, clipped_vertices);
-        }
-
-    private:
-
-        Color _color;
-        list<Coord> _vertices;
-
-    };
-
     Coord _edge1, _control1;
     Coord _edge2, _control2;
 
@@ -531,16 +531,14 @@ public:
     // Vertices to use when drawing the lines
     list<Coord> vertices() const override
     {
-        //TODO Finish implementation
+        return spline_vertices(_controls);
     }
 
     // New drawable from clipped_vertices
-    /*
     shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
     {
-        //TODO Finish implementation
+        return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
-    */
 
 protected:
 
