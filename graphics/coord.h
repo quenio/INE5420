@@ -56,6 +56,9 @@ public:
     double x() const { return _x; }
     double y() const { return _y; }
 
+    double x(double x) { this->_x = x; }
+    double y(double y) { this->_y = y; }
+
     // Distance to coord.
     double distance_to(Coord coord)
     {
@@ -295,6 +298,31 @@ inline TransformVector bezier(double step)
     return TransformVector::of_step(step) * bezier();
 }
 
+// Spline matrix
+inline TransformMatrix spline()
+{
+    return TransformMatrix(
+            { -1/6, +1/2, -1/2, +1/6 },
+            { +1/2, -1  ,  0  , +4/6 },
+            { -1/2, +1/2, +1/2, +1/6 },
+            { +1/6,  0  ,  0  ,  0   }
+    );
+}
+
+// Spline delta matrix
+inline TransformMatrix spline(double step)
+{
+    double step2 = step * step;
+    double step3 = step2 * step;
+
+    return TransformMatrix(
+            { step3, 6 * step3, 6 * step3, 0},
+            { step2, 0        , 2 * step2, 0},
+            { step , 0        , 0        , 0},
+            { 0    , 0        , 0        , 0}
+    );
+}
+
 // Transform coord using transformation matrix.
 inline Coord operator * (const Coord &coord, TransformMatrix matrix)
 {
@@ -426,8 +454,56 @@ inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, co
 }
 
 // Generate the vertices to represent a Spline curve.
-inline list<Coord> spline_vertices(list<Coord> controls)
+inline list<Coord> spline_vertices(vector<Coord> controls, double step)
 {
-    //TODO Finish impl.
-    return controls;
+    list<Coord> result;
+
+    if (controls.size() < 4)
+    {
+        //TODO Houston we have a problem.
+        return result;
+    }
+
+    long nCurves = controls.size() - 3;
+    
+    for (int curve = 0; curve < nCurves; curve++)
+    {
+        auto c1 = controls[curve];
+        auto c2 = controls[curve + 1];
+        auto c3 = controls[curve + 2];
+        auto c4 = controls[curve + 3];
+        
+        TransformVector vx = TransformVector::of_x(c1, c2, c3, c4) * spline();
+        TransformVector vy = TransformVector::of_y(c1, c2, c3, c4) * spline();
+
+        TransformVector dx = vx * spline(step);
+        TransformVector dy = vy * spline(step);
+
+        Coord oldC = *new Coord(vx[3], vy[3]);
+        result.push_back(oldC);
+
+        double deltaX = dx[0];
+        double deltaX2 = dx[1];
+        double deltaX3 = dx[2];
+
+        double deltaY = dy[0];
+        double deltaY2 = dy[1];
+        double deltaY3 = dy[2];
+        
+        for (double t = 0; t <= 1; t += step)
+        {
+            Coord newC = oldC;
+            newC.x(newC.x() + deltaX);
+            newC.y(newC.y() + deltaY);
+
+            deltaX = deltaX + deltaX2;
+            deltaX2 = deltaX2 + deltaX3;
+
+            deltaY = deltaY + deltaY2;
+            deltaY2 = deltaY2 + deltaY3;
+
+            result.push_back(newC);
+            oldC = newC;
+        }
+    }
 }

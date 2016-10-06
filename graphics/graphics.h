@@ -531,7 +531,7 @@ public:
     // Vertices to use when drawing the lines
     list<Coord> vertices() const override
     {
-        return spline_vertices(_controls);
+        return spline_vertices(_controls, 0.025);
     }
 
     // New drawable from clipped_vertices
@@ -553,7 +553,7 @@ protected:
 
 private:
 
-    list<Coord> _controls;
+    vector<Coord> _controls;
 };
 
 // Visible area on a canvas
