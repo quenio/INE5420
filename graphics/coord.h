@@ -56,8 +56,8 @@ public:
     double x() const { return _x; }
     double y() const { return _y; }
 
-    double x(double x) { this->_x = x; }
-    double y(double y) { this->_y = y; }
+    void x(double x) { this->_x = x; }
+    void y(double y) { this->_y = y; }
 
     // Distance to coord.
     double distance_to(Coord coord)
@@ -485,9 +485,9 @@ inline list<Coord> spline_vertices(vector<Coord> controls, double step) {
     double step2 = step  * step;
     double step3 = step2 * step;
 
-    long nCurves = controls.size() - 3;
+    size_t nCurves = controls.size() - 3;
 
-    for (int curve = 0; curve < nCurves; curve++) {
+    for (size_t curve = 0; curve < nCurves; curve++) {
         auto c1 = controls[curve];
         auto c2 = controls[curve + 1];
         auto c3 = controls[curve + 2];
@@ -519,4 +519,6 @@ inline list<Coord> spline_vertices(vector<Coord> controls, double step) {
             oldCoord = newCoord;
         }
     }
+
+    return result;
 }

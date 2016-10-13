@@ -549,6 +549,7 @@ protected:
         {
             result.push_back(&(*coord));
         }
+        return result;
     }
 
 private:
