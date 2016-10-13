@@ -110,30 +110,30 @@ public:
     // Transform according to TransformationMatrix.
     void transform(TransformMatrix m) override
     {
-        ::transform(m, coords());
+        ::transform(m, controls());
     }
 
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override
     {
-        ::translate(dx, dy, coords());
+        ::translate(dx, dy, controls());
     }
 
     // Scale by factor from center.
     void scale(double factor, Coord center) override
     {
-        ::scale(factor, center, coords());
+        ::scale(factor, center, controls());
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees, Coord center) override
     {
-        ::rotate(degrees, center, coords());
+        ::rotate(degrees, center, controls());
     }
 
 protected:
 
-    virtual list<Coord *> coords() = 0;
+    virtual list<Coord *> controls() = 0;
 
 private:
 
@@ -179,7 +179,7 @@ public:
 
 protected:
 
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_coord };
     }
@@ -233,7 +233,7 @@ public:
 
 protected:
 
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_a, &_b };
     }
@@ -411,7 +411,7 @@ public:
 
 protected:
 
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         list<Coord *> vertices;
 
@@ -495,7 +495,7 @@ public:
 
 protected:
 
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_edge1, &_control1, &_edge2, &_control2 };
     }
@@ -542,7 +542,7 @@ public:
 
 protected:
 
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         list<Coord *> result;
         for (auto coord = _controls.begin(); coord != _controls.end(); ++coord)
@@ -779,7 +779,7 @@ public:
 
 protected:
 
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
     }
