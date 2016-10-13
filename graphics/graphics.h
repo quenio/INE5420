@@ -427,6 +427,37 @@ private:
 
 };
 
+class ClippedPolyline: public Polyline
+{
+public:
+
+    ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
+
+    // Color used to draw.
+    Color color() const override
+    {
+        return _color;
+    }
+
+    // Vertices to use when drawing the lines.
+    list<Coord> vertices() const override
+    {
+        return _vertices;
+    }
+
+    // New drawable from clipped_vertices
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    {
+        return make_shared<ClippedPolyline>(color, clipped_vertices);
+    }
+
+private:
+
+    Color _color;
+    list<Coord> _vertices;
+
+};
+
 // Curve defined by two edge coords and two internal control points
 class Bezier: public Object, public Polyline
 {
@@ -471,40 +502,59 @@ protected:
 
 private:
 
-    class ClippedPolyline: public Polyline
-    {
-    public:
-
-        ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
-
-        // Color used to draw.
-        Color color() const override
-        {
-            return _color;
-        }
-
-        // Vertices to use when drawing the lines.
-        list<Coord> vertices() const override
-        {
-            return _vertices;
-        }
-
-        // New drawable from clipped_vertices
-        shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
-        {
-            return make_shared<ClippedPolyline>(color, clipped_vertices);
-        }
-
-    private:
-
-        Color _color;
-        list<Coord> _vertices;
-
-    };
-
     Coord _edge1, _control1;
     Coord _edge2, _control2;
 
+};
+
+// B-Spline curve defined by a list of control coords.
+class Spline: public Object, public Polyline
+{
+public:
+
+    Spline(initializer_list<Coord> vertices): Spline(BLACK, vertices) {}
+
+    Spline(const Color &color, initializer_list<Coord> vertices): Object(color), _controls(vertices) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "Spline";
+    }
+
+    // Midpoint between both edges
+    Coord center() override
+    {
+        return equidistant(_controls.front(), _controls.back());
+    }
+
+    // Vertices to use when drawing the lines
+    list<Coord> vertices() const override
+    {
+        return spline_vertices(_controls, 0.025);
+    }
+
+    // New drawable from clipped_vertices
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    {
+        return make_shared<ClippedPolyline>(color, clipped_vertices);
+    }
+
+protected:
+
+    list<Coord *> coords() override
+    {
+        list<Coord *> result;
+        for (auto coord = _controls.begin(); coord != _controls.end(); ++coord)
+        {
+            result.push_back(&(*coord));
+        }
+        return result;
+    }
+
+private:
+
+    vector<Coord> _controls;
 };
 
 // Visible area on a canvas
@@ -1025,4 +1075,9 @@ inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 inline shared_ptr<DrawCommand> draw_bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
 {
     return make_shared<DrawCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
+}
+
+inline shared_ptr<DrawCommand> draw_spline(initializer_list<Coord> controls)
+{
+    return make_shared<DrawCommand>(make_shared<Spline>(Spline(controls)));
 }
