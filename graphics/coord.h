@@ -486,13 +486,13 @@ inline list<Coord> spline_vertices(vector<Coord> controls) {
     double step2 = step  * step;
     double step3 = step2 * step;
 
-    size_t nCurves = controls.size() - 3;
+    size_t n = controls.size() - 3;
 
-    for (size_t curve = 0; curve < nCurves; curve++) {
-        auto c1 = controls[curve];
-        auto c2 = controls[curve + 1];
-        auto c3 = controls[curve + 2];
-        auto c4 = controls[curve + 3];
+    for (size_t i = 0; i < n; i++) {
+        auto c1 = controls[i];
+        auto c2 = controls[i + 1];
+        auto c3 = controls[i + 2];
+        auto c4 = controls[i + 3];
 
         double Ax, Bx, Cx, Dx, deltaX, delta2X, delta3X;
         coefficients(c1.x(), c2.x(), c3.x(), c4.x(), Ax, Bx, Cx, Dx);

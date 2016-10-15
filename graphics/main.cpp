@@ -10,7 +10,7 @@ static World world(
         draw_line(Coord(10, 10), Coord(90, 90)),
         draw_square(Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10)),
         draw_bezier(Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10)),
-        draw_spline({ Coord(40, 10), Coord(20, 50), Coord(40, 90), Coord(60, 90), Coord(80, 50), Coord(60, 10) })
+        draw_spline({ Coord(50, 10), Coord(20, 30), Coord(20, 70), Coord(50, 90), Coord(80, 70), Coord(80, 30), Coord(50, 10) })
     })
 );
 
