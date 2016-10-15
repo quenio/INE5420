@@ -3,6 +3,8 @@
 #include "coord.h"
 #include "region.h"
 #include "clipping.h"
+#include "bezier.h"
+#include "spline.h"
 
 #include <memory>
 #include <vector>
