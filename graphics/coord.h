@@ -325,7 +325,7 @@ inline TransformMatrix spline_matrix()
     );
 }
 
-// Matrix used to calculate deltas in forward differences
+// Matrix used to calculate initial deltas of forward differences
 inline TransformMatrix delta_matrix()
 {
     return TransformMatrix(
@@ -336,7 +336,7 @@ inline TransformMatrix delta_matrix()
     );
 }
 
-// Vector used to calculate deltas in forward differences
+// Vector with initial deltas of forward differences
 inline TransformVector delta_vector(const TransformVector &v, double step)
 {
     const TransformVector sv = TransformVector::of_step(step);
