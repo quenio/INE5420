@@ -522,7 +522,7 @@ public:
     // Vertices to use when drawing the lines
     list<Coord> vertices() const override
     {
-        return spline_vertices(_controls, 0.025);
+        return spline_vertices(_controls);
     }
 
     // New drawable from clipped_vertices

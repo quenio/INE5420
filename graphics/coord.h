@@ -474,7 +474,7 @@ inline void differences(double A, double B, double C, UNUSED double D,
 }
 
 // Generate the vertices to represent a Spline curve.
-inline list<Coord> spline_vertices(vector<Coord> controls, double step) {
+inline list<Coord> spline_vertices(vector<Coord> controls) {
     list<Coord> result;
 
     if (controls.size() < 4) {
@@ -482,6 +482,7 @@ inline list<Coord> spline_vertices(vector<Coord> controls, double step) {
         return result;
     }
 
+    double step = 0.025;
     double step2 = step  * step;
     double step3 = step2 * step;
 
