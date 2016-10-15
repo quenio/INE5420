@@ -411,3 +411,31 @@ inline Coord at_step(double step, const Coord &start, const Coord &end)
     );
 }
 
+// True if item is not found in container
+template<class Container, class T>
+inline bool missing(const Container &container, const T &item)
+{
+    return find(container.begin(), container.end(), item) == container.end();
+}
+
+// Center of all vertices
+template<class Container>
+inline Coord center(const Container &vertices)
+{
+    list<Coord> accounted;
+
+    double x = 0, y = 0;
+    for (const Coord &coord: vertices)
+    {
+        if (missing(accounted, coord))
+        {
+            x += coord.x();
+            y += coord.y();
+
+            accounted.push_back(coord);
+        }
+
+    }
+
+    return Coord(x / accounted.size(), y / accounted.size());
+}
