@@ -386,18 +386,10 @@ public:
         return "Polygon";
     }
 
-    // Midpoint between a and b
+    // Center of all vertices
     Coord center() override
     {
-        double x = 0, y = 0;
-
-        for (Coord &coord: _vertices)
-        {
-            x += coord.x();
-            y += coord.y();
-        }
-
-        return Coord(x / _vertices.size(), y / _vertices.size());
+        return ::center(_vertices);
     }
 
     // New drawable from clipped_vertices
@@ -505,9 +497,9 @@ class Spline: public Object, public Polyline
 {
 public:
 
-    Spline(initializer_list<Coord> vertices): Spline(BLACK, vertices) {}
+    Spline(initializer_list<Coord> controls): Spline(BLACK, controls) {}
 
-    Spline(const Color &color, initializer_list<Coord> vertices): Object(color), _controls(vertices) {}
+    Spline(const Color &color, initializer_list<Coord> controls): Object(color), _controls(controls) {}
 
     // Type used in the name
     string type() const override
@@ -515,10 +507,10 @@ public:
         return "Spline";
     }
 
-    // Midpoint between both edges
+    // Center of all controls
     Coord center() override
     {
-        return equidistant(_controls.front(), _controls.back());
+        return ::center(_controls);
     }
 
     // Vertices to use when drawing the lines
@@ -573,7 +565,6 @@ private:
     double _width, _height, _margin;
 
 };
-
 
 // Visible area of the world
 class Window: public Object, public ClippingArea
