@@ -434,7 +434,6 @@ inline Coord center(const Container &vertices)
 
             accounted.push_back(coord);
         }
-
     }
 
     return Coord(x / accounted.size(), y / accounted.size());
