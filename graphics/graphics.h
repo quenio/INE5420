@@ -31,6 +31,7 @@ const Color BLACK = Color(0, 0, 0);
 const Color RED = Color(1, 0, 0);
 const Color GREEN = Color(0, 1, 0);
 const Color BLUE = Color(0, 0, 1);
+const Color CONTROL = Color(1, 0, 1);
 
 // Drawable area of the screen
 class Canvas
@@ -131,8 +132,6 @@ public:
         ::rotate(degrees, center, controls());
     }
 
-protected:
-
     virtual list<Coord *> controls() = 0;
 
 private:
@@ -176,8 +175,6 @@ public:
     {
         return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
     }
-
-protected:
 
     list<Coord *> controls() override
     {
@@ -230,8 +227,6 @@ public:
 
         return make_shared<Line>(color(), clipped_line.first, clipped_line.second);
     }
-
-protected:
 
     list<Coord *> controls() override
     {
@@ -409,8 +404,6 @@ public:
         return make_shared<Polygon>(color, clipped_vertices);
     }
 
-protected:
-
     list<Coord *> controls() override
     {
         list<Coord *> vertices;
@@ -493,8 +486,6 @@ public:
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
 
-protected:
-
     list<Coord *> controls() override
     {
         return { &_edge1, &_control1, &_edge2, &_control2 };
@@ -539,8 +530,6 @@ public:
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
-
-protected:
 
     list<Coord *> controls() override
     {
@@ -777,8 +766,6 @@ public:
         canvas.draw_line(leftBottom(), color());
     }
 
-protected:
-
     list<Coord *> controls() override
     {
         return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
@@ -960,8 +947,9 @@ public:
     void render(ViewportCanvas &canvas)
     {
         render_axis(canvas);
-        render_center(canvas);
         _display_file.render(canvas);
+        render_controls(canvas);
+        render_center(canvas);
         _window->draw(canvas);
     }
 
@@ -1022,32 +1010,47 @@ public:
 
 private:
 
+    // Render a cross at center with radius, using color.
+    void render_cross(Canvas &canvas, const Coord &coord, double radius, const Color &color)
+    {
+        // Horizontal bar
+        canvas.move(coord.translated(-radius, 0));
+        canvas.draw_line(coord.translated(+radius, 0), color);
+
+        // Vertical bar
+        canvas.move(coord.translated(0, -radius));
+        canvas.draw_line(coord.translated(0, +radius), color);
+    }
+
     // Render the x axis and y axis.
     void render_axis(Canvas &canvas)
     {
-        const double length = 10000;
+        const Coord center = Coord(0, 0);
+        const int radius = 10000;
 
-        // x axis
-        canvas.move(Coord(-length, 0));
-        canvas.draw_line(Coord(+length, 0), GREEN);
-
-        // y axis
-        canvas.move(Coord(0, -length));
-        canvas.draw_line(Coord(0, +length), GREEN);
+        render_cross(canvas, center, radius, GREEN);
     }
 
-    // Render the center as a little cross
+    // Render controls of selected objects.
+    void render_controls(Canvas &canvas)
+    {
+        const int radius = 2;
+
+        for (auto obj: _selected_objects)
+        {
+            for (auto control: obj->controls())
+            {
+                render_cross(canvas, *control, radius, CONTROL);
+            }
+        }
+    }
+
+    // Render the center as a little cross.
     void render_center(Canvas &canvas)
     {
-        const double radius = 2;
+        const int radius = 2;
 
-        // Horizontal bar
-        canvas.move(_center.translated(-radius, 0));
-        canvas.draw_line(_center.translated(+radius, 0), GREEN);
-
-        // Horizontal bar
-        canvas.move(_center.translated(0, -radius));
-        canvas.draw_line(_center.translated(0, +radius), GREEN);
+        render_cross(canvas, _center, radius, GREEN);
     }
 
     shared_ptr<Window> _window;
