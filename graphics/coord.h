@@ -4,6 +4,7 @@
 #include <list>
 #include <cmath>
 #include <cassert>
+#include <algorithm>
 
 using namespace std;
 
@@ -75,7 +76,7 @@ public:
     void rotate(double degrees, Coord center) override;
 
     // Translated by dx horizontally, dy vertically
-    Coord translated(double dx, double dy)
+    Coord translated(double dx, double dy) const
     {
         Coord coord = *this;
         coord.translate(dx, dy);
@@ -83,7 +84,7 @@ public:
     }
 
     // Scaled by factor from center
-    Coord scaled(double factor, Coord center)
+    Coord scaled(double factor, Coord center) const
     {
         Coord coord = *this;
         coord.scale(factor, center);
@@ -91,7 +92,7 @@ public:
     }
 
     // Rotated by degrees at center (clockwise if angle positive or counter-clockwise if negative)
-    Coord rotated(double degrees, Coord center)
+    Coord rotated(double degrees, Coord center) const
     {
         Coord coord = *this;
         coord.rotate(degrees, center);
@@ -120,7 +121,8 @@ private:
 class TransformVector
 {
 public:
-    constexpr static int count = 4;
+    constexpr static size_t count = 4;
+    constexpr static size_t last_index = count - 1;
 
     TransformVector(initializer_list<double> vector): _vector(vector)
     {
@@ -139,6 +141,24 @@ public:
     static inline TransformVector of_y(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
     {
         return { a.y(), b.y(), c.y(), d.y() };
+    }
+
+    // Create TransformVector with the x coordinates of controls from i-3 to i.
+    static inline TransformVector of_x(const vector<Coord> &controls, size_t i)
+    {
+        assert(controls.size() >= count);
+        assert(i >= last_index && i < controls.size());
+
+        return { controls[i-3].x(), controls[i-2].x(), controls[i-1].x(), controls[i].x() };
+    }
+
+    // Create TransformVector with the y coordinates of controls from i-3 to i.
+    static inline TransformVector of_y(const vector<Coord> &controls, size_t i)
+    {
+        assert(controls.size() >= count);
+        assert(i >= last_index && i < controls.size());
+
+        return { controls[i-3].y(), controls[i-2].y(), controls[i-1].y(), controls[i].y() };
     }
 
     // Create TransformVector of step.
@@ -278,23 +298,6 @@ inline TransformMatrix rotation(double degrees, Coord center)
            translation(center.x(), center.y());
 }
 
-// Bezier matrix
-inline TransformMatrix bezier()
-{
-    return TransformMatrix(
-        { -1, +3, -3, +1 },
-        { +3, -6, +3,  0 },
-        { -3, +3,  0,  0 },
-        { +1,  0,  0,  0 }
-    );
-}
-
-// Bezier vector
-inline TransformVector bezier(double step)
-{
-    return TransformVector::of_step(step) * bezier();
-}
-
 // Transform coord using transformation matrix.
 inline Coord operator * (const Coord &coord, TransformMatrix matrix)
 {
@@ -409,18 +412,30 @@ inline Coord at_step(double step, const Coord &start, const Coord &end)
     );
 }
 
-// Generate the vertices to represent a Bezier curve.
-inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, const Coord &control2, const Coord &edge2)
+// True if item is not found in container
+template<class Container, class T>
+inline bool missing(const Container &container, const T &item)
 {
-    const TransformVector vx = TransformVector::of_x(edge1, control1, control2, edge2);
-    const TransformVector vy = TransformVector::of_y(edge1, control1, control2, edge2);
+    return find(container.begin(), container.end(), item) == container.end();
+}
 
-    list<Coord> coords;
-    for (double step = 0; step < 1 || equals(step, 1); step += 0.025)
+// Center of all vertices
+template<class Container>
+inline Coord center(const Container &vertices)
+{
+    list<Coord> accounted;
+
+    double x = 0, y = 0;
+    for (const Coord &coord: vertices)
     {
-        const TransformVector b = bezier(step);
-        coords.push_back(Coord(b * vx, b * vy));
+        if (missing(accounted, coord))
+        {
+            x += coord.x();
+            y += coord.y();
+
+            accounted.push_back(coord);
+        }
     }
 
-    return coords;
+    return Coord(x / accounted.size(), y / accounted.size());
 }

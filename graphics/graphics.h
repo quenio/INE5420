@@ -3,6 +3,8 @@
 #include "coord.h"
 #include "region.h"
 #include "clipping.h"
+#include "bezier.h"
+#include "spline.h"
 
 #include <memory>
 #include <vector>
@@ -31,6 +33,7 @@ const Color BLACK = Color(0, 0, 0);
 const Color RED = Color(1, 0, 0);
 const Color GREEN = Color(0, 1, 0);
 const Color BLUE = Color(0, 0, 1);
+const Color CONTROL = Color(1, 0, 1);
 
 // Drawable area of the screen
 class Canvas
@@ -110,30 +113,28 @@ public:
     // Transform according to TransformationMatrix.
     void transform(TransformMatrix m) override
     {
-        ::transform(m, coords());
+        ::transform(m, controls());
     }
 
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override
     {
-        ::translate(dx, dy, coords());
+        ::translate(dx, dy, controls());
     }
 
     // Scale by factor from center.
     void scale(double factor, Coord center) override
     {
-        ::scale(factor, center, coords());
+        ::scale(factor, center, controls());
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees, Coord center) override
     {
-        ::rotate(degrees, center, coords());
+        ::rotate(degrees, center, controls());
     }
 
-protected:
-
-    virtual list<Coord *> coords() = 0;
+    virtual list<Coord *> controls() = 0;
 
 private:
 
@@ -177,9 +178,7 @@ public:
         return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
     }
 
-protected:
-
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_coord };
     }
@@ -231,9 +230,7 @@ public:
         return make_shared<Line>(color(), clipped_line.first, clipped_line.second);
     }
 
-protected:
-
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_a, &_b };
     }
@@ -389,18 +386,10 @@ public:
         return "Polygon";
     }
 
-    // Midpoint between a and b
+    // Center of all vertices
     Coord center() override
     {
-        double x = 0, y = 0;
-
-        for (Coord &coord: _vertices)
-        {
-            x += coord.x();
-            y += coord.y();
-        }
-
-        return Coord(x / _vertices.size(), y / _vertices.size());
+        return ::center(_vertices);
     }
 
     // New drawable from clipped_vertices
@@ -409,9 +398,7 @@ public:
         return make_shared<Polygon>(color, clipped_vertices);
     }
 
-protected:
-
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         list<Coord *> vertices;
 
@@ -423,6 +410,37 @@ protected:
 
 private:
 
+    list<Coord> _vertices;
+
+};
+
+class ClippedPolyline: public Polyline
+{
+public:
+
+    ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
+
+    // Color used to draw.
+    Color color() const override
+    {
+        return _color;
+    }
+
+    // Vertices to use when drawing the lines.
+    list<Coord> vertices() const override
+    {
+        return _vertices;
+    }
+
+    // New drawable from clipped_vertices
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    {
+        return make_shared<ClippedPolyline>(color, clipped_vertices);
+    }
+
+private:
+
+    Color _color;
     list<Coord> _vertices;
 
 };
@@ -462,49 +480,64 @@ public:
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
 
-protected:
-
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_edge1, &_control1, &_edge2, &_control2 };
     }
 
 private:
 
-    class ClippedPolyline: public Polyline
-    {
-    public:
-
-        ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
-
-        // Color used to draw.
-        Color color() const override
-        {
-            return _color;
-        }
-
-        // Vertices to use when drawing the lines.
-        list<Coord> vertices() const override
-        {
-            return _vertices;
-        }
-
-        // New drawable from clipped_vertices
-        shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
-        {
-            return make_shared<ClippedPolyline>(color, clipped_vertices);
-        }
-
-    private:
-
-        Color _color;
-        list<Coord> _vertices;
-
-    };
-
     Coord _edge1, _control1;
     Coord _edge2, _control2;
 
+};
+
+// B-Spline curve defined by a list of control coords.
+class Spline: public Object, public Polyline
+{
+public:
+
+    Spline(initializer_list<Coord> controls): Spline(BLACK, controls) {}
+
+    Spline(const Color &color, initializer_list<Coord> controls): Object(color), _controls(controls) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "Spline";
+    }
+
+    // Center of all controls
+    Coord center() override
+    {
+        return ::center(_controls);
+    }
+
+    // Vertices to use when drawing the lines
+    list<Coord> vertices() const override
+    {
+        return spline_vertices(_controls);
+    }
+
+    // New drawable from clipped_vertices
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    {
+        return make_shared<ClippedPolyline>(color, clipped_vertices);
+    }
+
+    list<Coord *> controls() override
+    {
+        list<Coord *> result;
+        for (auto coord = _controls.begin(); coord != _controls.end(); ++coord)
+        {
+            result.push_back(&(*coord));
+        }
+        return result;
+    }
+
+private:
+
+    vector<Coord> _controls;
 };
 
 // Visible area on a canvas
@@ -532,7 +565,6 @@ private:
     double _width, _height, _margin;
 
 };
-
 
 // Visible area of the world
 class Window: public Object, public ClippingArea
@@ -727,9 +759,7 @@ public:
         canvas.draw_line(leftBottom(), color());
     }
 
-protected:
-
-    list<Coord *> coords() override
+    list<Coord *> controls() override
     {
         return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
     }
@@ -910,8 +940,9 @@ public:
     void render(ViewportCanvas &canvas)
     {
         render_axis(canvas);
-        render_center(canvas);
         _display_file.render(canvas);
+        render_controls(canvas);
+        render_center(canvas);
         _window->draw(canvas);
     }
 
@@ -972,32 +1003,47 @@ public:
 
 private:
 
+    // Render a cross at center with radius, using color.
+    void render_cross(Canvas &canvas, const Coord &coord, double radius, const Color &color)
+    {
+        // Horizontal bar
+        canvas.move(coord.translated(-radius, 0));
+        canvas.draw_line(coord.translated(+radius, 0), color);
+
+        // Vertical bar
+        canvas.move(coord.translated(0, -radius));
+        canvas.draw_line(coord.translated(0, +radius), color);
+    }
+
     // Render the x axis and y axis.
     void render_axis(Canvas &canvas)
     {
-        const double length = 10000;
+        const Coord center = Coord(0, 0);
+        const int radius = 10000;
 
-        // x axis
-        canvas.move(Coord(-length, 0));
-        canvas.draw_line(Coord(+length, 0), GREEN);
-
-        // y axis
-        canvas.move(Coord(0, -length));
-        canvas.draw_line(Coord(0, +length), GREEN);
+        render_cross(canvas, center, radius, GREEN);
     }
 
-    // Render the center as a little cross
+    // Render controls of selected objects.
+    void render_controls(Canvas &canvas)
+    {
+        const int radius = 2;
+
+        for (auto obj: _selected_objects)
+        {
+            for (auto control: obj->controls())
+            {
+                render_cross(canvas, *control, radius, CONTROL);
+            }
+        }
+    }
+
+    // Render the center as a little cross.
     void render_center(Canvas &canvas)
     {
-        const double radius = 2;
+        const int radius = 2;
 
-        // Horizontal bar
-        canvas.move(_center.translated(-radius, 0));
-        canvas.draw_line(_center.translated(+radius, 0), GREEN);
-
-        // Horizontal bar
-        canvas.move(_center.translated(0, -radius));
-        canvas.draw_line(_center.translated(0, +radius), GREEN);
+        render_cross(canvas, _center, radius, GREEN);
     }
 
     shared_ptr<Window> _window;
@@ -1025,4 +1071,9 @@ inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
 inline shared_ptr<DrawCommand> draw_bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
 {
     return make_shared<DrawCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
+}
+
+inline shared_ptr<DrawCommand> draw_spline(initializer_list<Coord> controls)
+{
+    return make_shared<DrawCommand>(make_shared<Spline>(Spline(controls)));
 }
