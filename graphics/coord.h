@@ -297,7 +297,7 @@ inline TransformMatrix rotation(double degrees, Coord center)
            translation(center.x(), center.y());
 }
 
-// Matrix used to calculate a Bezier curve
+// Coefficient matrix used to calculate a Bezier curve
 inline TransformMatrix bezier_matrix()
 {
     return TransformMatrix(
@@ -308,13 +308,13 @@ inline TransformMatrix bezier_matrix()
     );
 }
 
-// Vector used to calculate a Bezier curve
+// Vector used to calculate points in each step of a Bezier curve
 inline TransformVector bezier_vector(double step)
 {
     return TransformVector::of_step(step) * bezier_matrix();
 }
 
-// Matrix used to calculate a Spline curve
+// Coefficient matrix used to calculate a Spline curve
 inline TransformMatrix spline_matrix()
 {
     return TransformMatrix(
