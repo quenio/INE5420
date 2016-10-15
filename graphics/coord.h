@@ -120,7 +120,8 @@ private:
 class TransformVector
 {
 public:
-    constexpr static int count = 4;
+    constexpr static size_t count = 4;
+    constexpr static size_t last_index = count - 1;
 
     TransformVector(initializer_list<double> vector): _vector(vector)
     {
@@ -135,26 +136,28 @@ public:
         return { a.x(), b.x(), c.x(), d.x() };
     }
 
-    // Create TransformVector with the x coordinates of controls from i.
-    static inline TransformVector of_x(const vector<Coord> &controls, size_t i)
-    {
-        assert(controls.size() > i+3);
-
-        return { controls[i].x(), controls[i+1].x(), controls[i+2].x(), controls[i+3].x() };
-    }
-
     // Create TransformVector with the y coordinates of a, b, c and d.
     static inline TransformVector of_y(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
     {
         return { a.y(), b.y(), c.y(), d.y() };
     }
 
-    // Create TransformVector with the y coordinates of controls from i.
+    // Create TransformVector with the x coordinates of controls from i-3 to i.
+    static inline TransformVector of_x(const vector<Coord> &controls, size_t i)
+    {
+        assert(controls.size() >= count);
+        assert(i >= last_index && i < controls.size());
+
+        return { controls[i-3].x(), controls[i-2].x(), controls[i-1].x(), controls[i].x() };
+    }
+
+    // Create TransformVector with the y coordinates of controls from i-3 to i.
     static inline TransformVector of_y(const vector<Coord> &controls, size_t i)
     {
-        assert(controls.size() > i+3);
+        assert(controls.size() >= count);
+        assert(i >= last_index && i < controls.size());
 
-        return { controls[i].y(), controls[i+1].y(), controls[i+2].y(), controls[i+3].y() };
+        return { controls[i-3].y(), controls[i-2].y(), controls[i-1].y(), controls[i].y() };
     }
 
     // Create TransformVector of step.
@@ -518,16 +521,15 @@ inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, co
 }
 
 // Generate the vertices to represent a Spline curve.
-inline list<Coord> spline_vertices(vector<Coord> controls) {
+inline list<Coord> spline_vertices(vector<Coord> controls)
+{
+    constexpr size_t start = TransformVector::last_index;
 
-    constexpr size_t min_size = 4;
-
-    assert(controls.size() >= min_size);
+    assert(controls.size() > start);
 
     list<Coord> result;
 
-    const size_t n = controls.size() - min_size + 1;
-    for (size_t i = 0; i < n; i++)
+    for (size_t i = start; i < controls.size(); i++)
     {
         generate_fd_vertices(
             result,
