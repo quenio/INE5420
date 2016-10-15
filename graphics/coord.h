@@ -56,9 +56,6 @@ public:
     double x() const { return _x; }
     double y() const { return _y; }
 
-    void x(double x) { this->_x = x; }
-    void y(double y) { this->_y = y; }
-
     // Distance to coord.
     double distance_to(Coord coord)
     {
@@ -138,10 +135,26 @@ public:
         return { a.x(), b.x(), c.x(), d.x() };
     }
 
+    // Create TransformVector with the x coordinates of controls from i.
+    static inline TransformVector of_x(const vector<Coord> &controls, size_t i)
+    {
+        assert(controls.size() > i+3);
+
+        return { controls[i].x(), controls[i+1].x(), controls[i+2].x(), controls[i+3].x() };
+    }
+
     // Create TransformVector with the y coordinates of a, b, c and d.
     static inline TransformVector of_y(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
     {
         return { a.y(), b.y(), c.y(), d.y() };
+    }
+
+    // Create TransformVector with the y coordinates of controls from i.
+    static inline TransformVector of_y(const vector<Coord> &controls, size_t i)
+    {
+        assert(controls.size() > i+3);
+
+        return { controls[i].y(), controls[i+1].y(), controls[i+2].y(), controls[i+3].y() };
     }
 
     // Create TransformVector of step.
@@ -281,8 +294,8 @@ inline TransformMatrix rotation(double degrees, Coord center)
            translation(center.x(), center.y());
 }
 
-// Bezier matrix
-inline TransformMatrix bezier()
+// Matrix used to calculate a Bezier curve
+inline TransformMatrix bezier_matrix()
 {
     return TransformMatrix(
         { -1, +3, -3, +1 },
@@ -292,34 +305,58 @@ inline TransformMatrix bezier()
     );
 }
 
-// Bezier vector
-inline TransformVector bezier(double step)
+// Vector used to calculate a Bezier curve
+inline TransformVector bezier_vector(double step)
 {
-    return TransformVector::of_step(step) * bezier();
+    return TransformVector::of_step(step) * bezier_matrix();
 }
 
-// Spline matrix
-inline TransformMatrix spline()
+// Matrix used to calculate a Spline curve
+inline TransformMatrix spline_matrix()
 {
     return TransformMatrix(
-            { -1.0/6.0,  0.5    , -0.5    , 1.0/6.0 },
-            {  0.5    , -1.0    ,  0.5    , 0.0     },
-            { -0.5    ,  0.0    ,  0.5    , 0.0     },
-            {  1.0/6.0,  4.0/6.0,  1.0/6.0, 0.0     }
+        { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
+        {      0.5,     -1.0,     0.5,     0.0 },
+        {     -0.5,      0.0,     0.5,     0.0 },
+        {  1.0/6.0,  4.0/6.0, 1.0/6.0,     0.0 }
     );
 }
 
-// Spline delta matrix
-inline TransformMatrix spline(double step)
+// Matrix used to calculate deltas in forward differences
+inline TransformMatrix delta_matrix()
 {
-    double step2 = step * step;
-    double step3 = step2 * step;
-
     return TransformMatrix(
-            { step3    , step2    , step, 0.0 },
-            { 6.0*step3, 0.0      , 0.0 , 0.0 },
-            { 6.0*step3, 2.0*step2, 0.0 , 0.0 },
-            { 0.0      , 0.0      , 0.0 , 1.0 }
+        { 1.0, 1.0, 1.0, 0.0 },
+        { 6.0, 2.0, 0.0, 0.0 },
+        { 6.0, 0.0, 0.0, 0.0 },
+        { 0.0, 0.0, 0.0, 0.0 }
+    );
+}
+
+// Vector used to calculate deltas in forward differences
+inline TransformVector delta_vector(const TransformVector &v, double step)
+{
+    const TransformVector sv = TransformVector::of_step(step);
+    return TransformVector(
+        {
+          sv[0] * v[0],
+          sv[1] * v[1],
+          sv[2] * v[2],
+          sv[3] * v[3]
+        }
+    ) * delta_matrix();
+}
+
+// Calculate next delta vector based on previous one.
+inline TransformVector next_delta(const TransformVector &d)
+{
+    return TransformVector(
+        {
+            d[0] + d[1],
+            d[1] + d[2],
+            d[2],
+            d[3]
+        }
     );
 }
 
@@ -446,31 +483,11 @@ inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, co
     list<Coord> coords;
     for (double step = 0; step < 1 || equals(step, 1); step += 0.025)
     {
-        const TransformVector b = bezier(step);
+        const TransformVector b = bezier_vector(step);
         coords.push_back(Coord(b * vx, b * vy));
     }
 
     return coords;
-}
-
-inline void coefficients(double c1, double c2, double c3, double c4, double &A, double &B, double &C, double &D)
-{
-    double d16 = 1.0 / 6.0;
-    double d46 = 4.0 / 6.0;
-
-    A = -d16 * c1 + 0.5 * c2 - 0.5 * c3 + d16 * c4;
-    B =  0.5 * c1 -       c2 + 0.5 * c3;
-    C = -0.5 * c1            + 0.5 * c3;
-    D =  d16 * c1 + d46 * c2 + d16 * c3;
-}
-
-inline void differences(double A, double B, double C, UNUSED double D,
-                        double step, double step2, double step3,
-                        double &delta, double &delta2, double &delta3)
-{
-    delta  = A * step3 + B * step2 + C * step;
-    delta3 = 6 * A * step3;
-    delta2 = delta3 + 2 * B * step2;
 }
 
 // Generate the vertices to represent a Spline curve.
@@ -482,42 +499,29 @@ inline list<Coord> spline_vertices(vector<Coord> controls) {
         return result;
     }
 
-    double step = 0.025;
-    double step2 = step  * step;
-    double step3 = step2 * step;
+    const size_t n = controls.size() - 3;
 
-    size_t n = controls.size() - 3;
+    for (size_t i = 0; i < n; i++)
+    {
+        const TransformVector vx = TransformVector::of_x(controls, i) * spline_matrix();
+        const TransformVector vy = TransformVector::of_y(controls, i) * spline_matrix();
 
-    for (size_t i = 0; i < n; i++) {
-        auto c1 = controls[i];
-        auto c2 = controls[i + 1];
-        auto c3 = controls[i + 2];
-        auto c4 = controls[i + 3];
+        const double step = 0.025;
+        TransformVector dx = delta_vector(vx, step);
+        TransformVector dy = delta_vector(vy, step);
 
-        double Ax, Bx, Cx, Dx, deltaX, delta2X, delta3X;
-        coefficients(c1.x(), c2.x(), c3.x(), c4.x(), Ax, Bx, Cx, Dx);
-        differences(Ax, Bx, Cx, Dx, step, step2, step3, deltaX, delta2X, delta3X);
+        Coord current(vx[3], vy[3]);
+        result.push_back(current);
 
-        double Ay, By, Cy, Dy, deltaY, delta2Y, delta3Y;
-        coefficients(c1.y(), c2.y(), c3.y(), c4.y(), Ay, By, Cy, Dy);
-        differences(Ay, By, Cy, Dy, step, step2, step3, deltaY, delta2Y, delta3Y);
+        for (double t = 0.0; t <= 1; t += step)
+        {
+            const Coord next = current.translated(dx[0], dy[0]);
+            result.push_back(next);
 
-        Coord oldCoord(Dx, Dy);
-        result.push_back(oldCoord);
+            dx = next_delta(dx);
+            dy = next_delta(dy);
 
-        for (double t = 0.0; t <= 1; t += step) {
-            Coord newCoord = oldCoord;
-            newCoord.x(newCoord.x() + deltaX);
-            newCoord.y(newCoord.y() + deltaY);
-
-            deltaX += delta2X;
-            delta2X += delta3X;
-
-            deltaY += delta2Y;
-            delta2Y += delta3Y;
-
-            result.push_back(newCoord);
-            oldCoord = newCoord;
+            current = next;
         }
     }
 
