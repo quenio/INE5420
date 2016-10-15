@@ -329,7 +329,7 @@ inline TransformMatrix delta_matrix()
         { 1.0, 1.0, 1.0, 0.0 },
         { 6.0, 2.0, 0.0, 0.0 },
         { 6.0, 0.0, 0.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
+        { 0.0, 0.0, 0.0, 1.0 }
     );
 }
 
@@ -358,6 +358,33 @@ inline TransformVector next_delta(const TransformVector &d)
             d[3]
         }
     );
+}
+
+// Generate vertices using forward-differences technique.
+inline void generate_fd_vertices(
+    list<Coord> &vertices,
+    const TransformVector &vx,
+    const TransformVector &vy,
+    const TransformMatrix &m)
+{
+    constexpr double step = 0.025;
+
+    TransformVector dx = delta_vector(vx * m, step);
+    TransformVector dy = delta_vector(vy * m, step);
+
+    Coord current(dx[3], dy[3]);
+    vertices.push_back(current);
+
+    for (double t = 0.0; t <= 1; t += step)
+    {
+        const Coord next = current.translated(dx[0], dy[0]);
+        vertices.push_back(next);
+
+        dx = next_delta(dx);
+        dy = next_delta(dy);
+
+        current = next;
+    }
 }
 
 // Transform coord using transformation matrix.
@@ -492,37 +519,21 @@ inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, co
 
 // Generate the vertices to represent a Spline curve.
 inline list<Coord> spline_vertices(vector<Coord> controls) {
+
+    constexpr size_t min_size = 4;
+
+    assert(controls.size() >= min_size);
+
     list<Coord> result;
 
-    if (controls.size() < 4) {
-        //TODO Houston we have a problem.
-        return result;
-    }
-
-    const size_t n = controls.size() - 3;
-
+    const size_t n = controls.size() - min_size + 1;
     for (size_t i = 0; i < n; i++)
     {
-        const TransformVector vx = TransformVector::of_x(controls, i) * spline_matrix();
-        const TransformVector vy = TransformVector::of_y(controls, i) * spline_matrix();
-
-        const double step = 0.025;
-        TransformVector dx = delta_vector(vx, step);
-        TransformVector dy = delta_vector(vy, step);
-
-        Coord current(vx[3], vy[3]);
-        result.push_back(current);
-
-        for (double t = 0.0; t <= 1; t += step)
-        {
-            const Coord next = current.translated(dx[0], dy[0]);
-            result.push_back(next);
-
-            dx = next_delta(dx);
-            dy = next_delta(dy);
-
-            current = next;
-        }
+        generate_fd_vertices(
+            result,
+            TransformVector::of_x(controls, i),
+            TransformVector::of_y(controls, i),
+            spline_matrix());
     }
 
     return result;
