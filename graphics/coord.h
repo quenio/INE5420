@@ -20,7 +20,7 @@ public:
     double y() const { return _y; }
 
     // Create TVector with the these coordinates.
-    TVector vector() const
+    operator TVector() const
     {
         return { _x, _y, 1, 0 };
     }
@@ -121,18 +121,6 @@ static inline TVector vector_of_step(double step)
     return { pow(step, 3), pow(step, 2), step, 1 };
 }
 
-// Scale coord by factor from center.
-inline void scale(double factor, Coord center, list<Coord *> coords)
-{
-    scale(factor, center.vector(), coords);
-}
-
-// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline void rotate(double degrees, Coord center, list<Coord *> coords)
-{
-    rotate(degrees, center.vector(), coords);
-}
-
 // Transform according to the matrix.
 inline void Coord::transform(TMatrix matrix)
 {
@@ -148,13 +136,13 @@ inline void Coord::translate(double dx, double dy)
 // Scale coord by factor from center.
 inline void Coord::scale(double factor, Coord center)
 {
-    ::scale(factor, center, { this });
+    ::scale<Coord>(factor, center, { this });
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline void Coord::rotate(double degrees, Coord center)
 {
-    ::rotate(degrees, center, { this });
+    ::rotate<Coord>(degrees, center, { this });
 }
 
 // Equidistant coord between a and b

@@ -160,12 +160,12 @@ inline TMatrix rotation(double degrees, TVector center)
 
 // Transform coord using matrix.
 template<class Coord>
-// Requires Coord to have:
-// - constructor: Coord(const TVector &)
-// - method: TVector vector() const
 inline Coord operator * (const Coord &coord, TMatrix matrix)
 {
-    return Coord(coord.vector() * matrix);
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+
+    return Coord(static_cast<TVector>(coord) * matrix);
 }
 
 // Transform coord using matrix, and assigns to lhs.
