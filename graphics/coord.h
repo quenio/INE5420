@@ -11,7 +11,10 @@ using namespace std;
 class Coord: public Transformable<Coord>
 {
 public:
-    Coord (double x, double y): _x(x), _y(y) {}
+
+    Coord(double x, double y): _x(x), _y(y) {}
+
+    Coord(const TVector &vector): _x(vector[0]), _y(vector[1]) {}
 
     double x() const { return _x; }
     double y() const { return _y; }
@@ -118,20 +121,6 @@ static inline TVector vector_of_step(double step)
     return { pow(step, 3), pow(step, 2), step, 1 };
 }
 
-// Transform coord using transformation matrix.
-inline Coord operator * (const Coord &coord, TMatrix matrix)
-{
-    const TVector vector = coord.vector() * matrix;
-    return Coord(vector[0], vector[1]);
-}
-
-// Transform coord using transformation matrix, and assigns to lhs.
-inline Coord& operator *= (Coord &lhs, TMatrix matrix)
-{
-    lhs = lhs * matrix;
-    return lhs;
-}
-
 // Scale coord by factor from center.
 inline void scale(double factor, Coord center, list<Coord *> coords)
 {
@@ -166,12 +155,6 @@ inline void Coord::scale(double factor, Coord center)
 inline void Coord::rotate(double degrees, Coord center)
 {
     ::rotate(degrees, center, { this });
-}
-
-// Equidistant double between a and b.
-inline double equidistant(double a, double b)
-{
-    return min(a, b) + (abs_diff(a, b) / 2);
 }
 
 // Equidistant coord between a and b

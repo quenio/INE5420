@@ -12,3 +12,10 @@ inline bool equals(double a, double b)
     constexpr double epsilon = 0.000001;
     return abs_diff(a, b) < epsilon;
 }
+
+// Equidistant double between a and b.
+inline double equidistant(double a, double b)
+{
+    return min(a, b) + (abs_diff(a, b) / 2);
+}
+

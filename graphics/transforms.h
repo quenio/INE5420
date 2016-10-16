@@ -158,9 +158,26 @@ inline TMatrix rotation(double degrees, TVector center)
     return inverse_translation(center) * rotation(degrees) * translation(center);
 }
 
+// Transform coord using matrix.
+template<class Coord>
+// Requires Coord to have:
+// - constructor: Coord(const TVector &)
+// - method: TVector vector() const
+inline Coord operator * (const Coord &coord, TMatrix matrix)
+{
+    return Coord(coord.vector() * matrix);
+}
+
+// Transform coord using matrix, and assigns to lhs.
+template<class Coord>
+inline Coord& operator *= (Coord &lhs, TMatrix matrix)
+{
+    lhs = lhs * matrix;
+    return lhs;
+}
+
 // Transform coords according to m.
 template<class Coord>
-// requires operation: Coord & *= (Coord &, TMatrix)
 inline void transform(TMatrix m, list<Coord *> coords)
 {
     for (auto c: coords)
