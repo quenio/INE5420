@@ -34,7 +34,7 @@ public:
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees, Coord center) override;
 
-    // Translated by dx horizontally, dy vertically
+    // New coord translated by dx horizontally, dy vertically
     Coord translated(double dx, double dy) const
     {
         Coord coord = *this;
@@ -42,7 +42,7 @@ public:
         return coord;
     }
 
-    // Scaled by factor from center
+    // New coord scaled by factor from center
     Coord scaled(double factor, Coord center) const
     {
         Coord coord = *this;
@@ -50,7 +50,7 @@ public:
         return coord;
     }
 
-    // Rotated by degrees at center (clockwise if angle positive or counter-clockwise if negative)
+    // New coord rotated by degrees at center (clockwise if angle positive or counter-clockwise if negative)
     Coord rotated(double degrees, Coord center) const
     {
         Coord coord = *this;
