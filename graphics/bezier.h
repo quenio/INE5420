@@ -38,6 +38,8 @@ inline TVector bezier_vertex(const TVector &vx, const TVector &vy, double step)
 template<class Coord>
 inline list<Coord> bezier_vertices(const Coord &edge1, const Coord &control1, const Coord &control2, const Coord &edge2)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+
     const TVector vx = vector_of<Coord>({ edge1, control1, control2, edge2 }, 0);
     const TVector vy = vector_of<Coord>({ edge1, control1, control2, edge2 }, 1);
 

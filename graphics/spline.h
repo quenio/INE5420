@@ -72,6 +72,8 @@ inline void generate_fd_vertices(
     const TVector &vy,
     const TMatrix &m)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+
     constexpr double step = 0.025;
 
     TVector dx = delta_vector(vx * m, step);
