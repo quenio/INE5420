@@ -31,17 +31,10 @@ public:
         return sqrt(pow(x() - coord.x(), 2) + pow(y() - coord.y(), 2));
     }
 
-    // Transform according to TransformationMatrix.
-    void transform(TMatrix m) override;
-
-    // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override;
-
-    // Scale by factor from center.
-    void scale(double factor, Coord center) override;
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override;
+    list<Coord *> controls() override
+    {
+        return { this };
+    }
 
     // New coord translated by dx horizontally, dy vertically
     Coord translated(double dx, double dy) const
@@ -84,30 +77,6 @@ private:
     double _x, _y;
 
 };
-
-// Transform according to the matrix.
-inline void Coord::transform(TMatrix matrix)
-{
-    ::transform<Coord>(matrix, { this });
-}
-
-// Translate coord by dx horizontally, dy vertically.
-inline void Coord::translate(double dx, double dy)
-{
-    ::translate<Coord>(dx, dy, { this });
-}
-
-// Scale coord by factor from center.
-inline void Coord::scale(double factor, Coord center)
-{
-    ::scale<Coord>(factor, center, { this });
-}
-
-// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline void Coord::rotate(double degrees, Coord center)
-{
-    ::rotate<Coord>(degrees, center, { this });
-}
 
 // Equidistant coord between a and b
 inline Coord equidistant(Coord a, Coord b)

@@ -253,16 +253,31 @@ public:
         static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
     }
 
-    // Transform according to TransformationMatrix.
-    virtual void transform(TMatrix matrix) = 0;
+    // Control coords
+    virtual list<Coord *> controls() = 0;
+
+    // Transform according to matrix.
+    virtual void transform(TMatrix matrix)
+    {
+        ::transform(matrix, controls());
+    }
 
     // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy) = 0;
+    virtual void translate(double dx, double dy)
+    {
+        ::translate(dx, dy, controls());
+    }
 
     // Scale by factor from center.
-    virtual void scale(double factor, Coord center) = 0;
+    virtual void scale(double factor, Coord center)
+    {
+        ::scale(factor, center, controls());
+    }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center) = 0;
+    virtual void rotate(double degrees, Coord center)
+    {
+        ::rotate(degrees, center, controls());
+    }
 
 };

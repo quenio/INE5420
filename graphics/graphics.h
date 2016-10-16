@@ -112,32 +112,6 @@ public:
     // Object's center
     virtual Coord center() = 0;
 
-    // Transform according to the matrix.
-    void transform(TMatrix matrix) override
-    {
-        ::transform(matrix, controls());
-    }
-
-    // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
-    {
-        ::translate(dx, dy, controls());
-    }
-
-    // Scale by factor from center.
-    void scale(double factor, Coord center) override
-    {
-        ::scale(factor, center, controls());
-    }
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
-    {
-        ::rotate(degrees, center, controls());
-    }
-
-    virtual list<Coord *> controls() = 0;
-
 private:
 
     int _id;
