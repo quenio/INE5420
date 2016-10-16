@@ -16,6 +16,12 @@ public:
     double x() const { return _x; }
     double y() const { return _y; }
 
+    // Create TVector with the these coordinates.
+    TVector vector() const
+    {
+        return { _x, _y, 1, 0 };
+    }
+
     // Distance to coord.
     double distance_to(Coord coord)
     {
@@ -76,12 +82,6 @@ private:
 
 };
 
-// Create TVector with the x and y coordinates of coord.
-static inline TVector vector_of_coord(const Coord &coord)
-{
-    return { coord.x(), coord.y(), 1, 0 };
-}
-
 // Create TVector with the x coordinates of a, b, c and d.
 static inline TVector vector_of_x(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
 {
@@ -121,7 +121,7 @@ static inline TVector vector_of_step(double step)
 // Transform coord using transformation matrix.
 inline Coord operator * (const Coord &coord, TMatrix matrix)
 {
-    const TVector vector = vector_of_coord(coord) * matrix;
+    const TVector vector = coord.vector() * matrix;
     return Coord(vector[0], vector[1]);
 }
 
@@ -135,13 +135,13 @@ inline Coord& operator *= (Coord &lhs, TMatrix matrix)
 // Scale coord by factor from center.
 inline void scale(double factor, Coord center, list<Coord *> coords)
 {
-    scale(factor, vector_of_coord(center), coords);
+    scale(factor, center.vector(), coords);
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline void rotate(double degrees, Coord center, list<Coord *> coords)
 {
-    rotate(degrees, vector_of_coord(center), coords);
+    rotate(degrees, center.vector(), coords);
 }
 
 // Transform according to the matrix.
