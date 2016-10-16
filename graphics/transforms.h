@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <list>
 #include <cmath>
 #include <cassert>
 
@@ -95,7 +96,7 @@ private:
     TVector _column[column_count];
 };
 
-// Translation as a matrix: translate by dx horizontally, dy vertically.
+// Translation matrix: translate by dx horizontally, dy vertically.
 inline TMatrix translation(double dx, double dy)
 {
     return TMatrix(
@@ -106,7 +107,19 @@ inline TMatrix translation(double dx, double dy)
     );
 }
 
-// Scaling as a matrix: scale x by factor sx, y by factor sy.
+// Translation matrix to delta.
+inline TMatrix translation(TVector delta)
+{
+    return translation(delta[0], delta[1]);
+}
+
+// Inverse translation matrix to delta.
+inline TMatrix inverse_translation(TVector delta)
+{
+    return translation(-delta[0], -delta[1]);
+}
+
+// Scaling matrix: scale x by factor sx, y by factor sy.
 inline TMatrix scaling(double sx, double sy)
 {
     return TMatrix(
@@ -117,9 +130,15 @@ inline TMatrix scaling(double sx, double sy)
     );
 }
 
+// Scaling matrix by factor from center.
+inline TMatrix scaling(double factor, TVector center)
+{
+    return inverse_translation(center) * scaling(factor, factor) * translation(center);
+}
+
 constexpr double PI = 3.14159265;
 
-// Rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+// Rotation matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
 inline TMatrix rotation(double degrees)
 {
     const double rad = degrees * PI / 180.0;
@@ -131,6 +150,42 @@ inline TMatrix rotation(double degrees)
         { 0.0, 0.0, 1.0, 0.0 },
         { 0.0, 0.0, 0.0, 0.0 }
     );
+}
+
+// Rotation matrix by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix rotation(double degrees, TVector center)
+{
+    return inverse_translation(center) * rotation(degrees) * translation(center);
+}
+
+// Transform coords according to m.
+template<class Coord>
+// requires operation: Coord & *= (Coord &, TMatrix)
+inline void transform(TMatrix m, list<Coord *> coords)
+{
+    for (auto c: coords)
+        *c *= m;
+}
+
+// Translate coord by dx horizontally, dy vertically.
+template<class Coord>
+inline void translate(double dx, double dy, list<Coord *> coords)
+{
+    transform(translation(dx, dy), coords);
+}
+
+// Scale coord by factor from center.
+template<class Coord>
+inline void scale(double factor, TVector center, list<Coord *> coords)
+{
+    transform(scaling(factor, center), coords);
+}
+
+// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+template<class Coord>
+inline void rotate(double degrees, TVector center, list<Coord *> coords)
+{
+    transform(rotation(degrees, center), coords);
 }
 
 // Transformable elements

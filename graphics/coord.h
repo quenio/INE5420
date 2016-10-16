@@ -3,8 +3,6 @@
 #include "transforms.h"
 #include "doubles.h"
 
-#include <vector>
-#include <list>
 #include <algorithm>
 
 using namespace std;
@@ -120,22 +118,6 @@ static inline TVector vector_of_step(double step)
     return { pow(step, 3), pow(step, 2), step, 1 };
 }
 
-// Scaling coord by factor from center.
-inline TMatrix scaling(double factor, Coord center)
-{
-    return translation(-center.x(), -center.y()) *
-           scaling(factor, factor) *
-           translation(center.x(), center.y());
-}
-
-// Rotation coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline TMatrix rotation(double degrees, Coord center)
-{
-    return translation(-center.x(), -center.y()) *
-           rotation(degrees) *
-           translation(center.x(), center.y());
-}
-
 // Transform coord using transformation matrix.
 inline Coord operator * (const Coord &coord, TMatrix matrix)
 {
@@ -150,41 +132,28 @@ inline Coord& operator *= (Coord &lhs, TMatrix matrix)
     return lhs;
 }
 
-// Transform coords according to m.
-inline void transform(TMatrix m, list<Coord *> coords)
-{
-    for (auto c: coords)
-        *c *= m;
-}
-
-// Translate coord by dx horizontally, dy vertically.
-inline void translate(double dx, double dy, list<Coord *> coords)
-{
-    transform(translation(dx, dy), coords);
-}
-
 // Scale coord by factor from center.
 inline void scale(double factor, Coord center, list<Coord *> coords)
 {
-    transform(scaling(factor, center), coords);
+    scale(factor, vector_of_coord(center), coords);
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline void rotate(double degrees, Coord center, list<Coord *> coords)
 {
-    transform(rotation(degrees, center), coords);
+    rotate(degrees, vector_of_coord(center), coords);
 }
 
 // Transform according to the matrix.
 inline void Coord::transform(TMatrix matrix)
 {
-    ::transform(matrix, { this });
+    ::transform<Coord>(matrix, { this });
 }
 
 // Translate coord by dx horizontally, dy vertically.
 inline void Coord::translate(double dx, double dy)
 {
-    ::translate(dx, dy, { this });
+    ::translate<Coord>(dx, dy, { this });
 }
 
 // Scale coord by factor from center.
