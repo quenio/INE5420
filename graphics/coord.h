@@ -10,29 +10,7 @@
 using namespace std;
 
 // 2D coordinates
-class Coord;
-
-// Transformable elements
-class Transformable
-{
-public:
-
-    // Transform according to TransformationMatrix.
-    virtual void transform(TMatrix m) = 0;
-
-    // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy) = 0;
-
-    // Scale by factor from center.
-    virtual void scale(double factor, Coord center) = 0;
-
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center) = 0;
-
-};
-
-// 2D coordinates
-class Coord: public Transformable
+class Coord: public Transformable<Coord>
 {
 public:
     Coord (double x, double y): _x(x), _y(y) {}

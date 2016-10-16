@@ -73,7 +73,7 @@ public:
 };
 
 // World objects
-class Object: public virtual Drawable, public Transformable
+class Object: public virtual Drawable, public Transformable<Coord>
 {
 public:
 
