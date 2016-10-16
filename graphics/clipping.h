@@ -2,6 +2,7 @@
 
 #include "clipping_cs.h"
 #include "clipping_lb.h"
+#include "coord.h"
 
 #include <memory>
 
@@ -26,13 +27,13 @@ public:
 };
 
 // Clippable objects
-template<typename T>
+template<class Object>
 class Clippable
 {
 public:
 
     // Provide clipped version of itself in area.
-    virtual shared_ptr<T> clipped_in(ClippingArea &area) = 0;
+    virtual shared_ptr<Object> clipped_in(ClippingArea &area) = 0;
 
 };
 
@@ -68,6 +69,9 @@ inline pair<Coord, Coord> clip_line(ClippingArea &area, const Coord &a, const Co
 // Determine the visibility in area for line between a and b.
 inline Visibility visibility(ClippingArea &area, const Coord &a, const Coord &b)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+
     if (clipping_method == ClippingMethod::NONE) return Visibility::FULL;
 
     const bool a_in_area = area.contains(a);

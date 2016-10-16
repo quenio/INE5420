@@ -1,9 +1,6 @@
 #pragma once
 
 #include "transforms.h"
-#include "doubles.h"
-
-#include <algorithm>
 
 using namespace std;
 
@@ -53,51 +50,6 @@ private:
     double _x, _y;
 
 };
-
-// Equidistant coord between a and b
-inline Coord equidistant(Coord a, Coord b)
-{
-    return Coord(equidistant(a.x(), b.x()), equidistant(a.y(), b.y()));
-}
-
-// Difference between a.x() and b.x()
-inline double delta_x(const Coord &a, const Coord &b)
-{
-    return a.x() - b.x();
-}
-
-// Difference between a.y() and b.y()
-inline double delta_y(const Coord &a, const Coord &b)
-{
-    return a.y() - b.y();
-}
-
-// Angular coefficient of line between a and b.
-inline double angular_coefficient(const Coord &a, const Coord &b)
-{
-    return delta_y(a, b) / delta_x(a, b);
-}
-
-// Determine point in line at x based on start and the angular coefficient m between start and the new point.
-inline Coord at_x(double x, const Coord &start, double m)
-{
-    return Coord(x, start.y() + (m * (x - start.x())));
-}
-
-// Determine point in line at y based on start and the angular coefficient m between start and the new point.
-inline Coord at_y(double y, const Coord &start, double m)
-{
-    return Coord(start.x() + ((1/m) * (y - start.y())), y);
-}
-
-// Determine point in line between point a and b.
-inline Coord at_step(double step, const Coord &start, const Coord &end)
-{
-    return Coord(
-        start.x() + (step * delta_x(end, start)),
-        start.y() + (step * delta_y(end, start))
-    );
-}
 
 // True if item is not found in container
 template<class Container, class T>

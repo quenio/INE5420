@@ -1,8 +1,9 @@
 #pragma once
 
+#include "doubles.h"
+
 #include <vector>
 #include <list>
-#include <cmath>
 #include <cassert>
 
 using namespace std;
@@ -37,6 +38,49 @@ public:
 private:
     vector<double> _vector;
 };
+
+// Equidistant vector between a and b
+inline TVector equidistant(TVector a, TVector b)
+{
+    return TVector({ equidistant(a[0], b[0]), equidistant(a[1], b[1]), 0, 0 });
+}
+
+// Determine vector in segment at x based on start and the angular coefficient m between start and the new point.
+inline TVector at_x(double x, const TVector &start, double m)
+{
+    return TVector({ x, start[1] + (m * (x - start[0])), 0, 0 });
+}
+
+// Determine point in line at y based on start and the angular coefficient m between start and the new point.
+inline TVector at_y(double y, const TVector &start, double m)
+{
+    return TVector({ start[0] + ((1/m) * (y - start[1])), y, 0, 0 });
+}
+
+// Difference between a and b at the i'th position.
+inline double delta(const TVector &a, const TVector &b, size_t i)
+{
+    return a[i] - b[i];
+}
+
+// Angular coefficient of line between a and b.
+inline double angular_coefficient(const TVector &a, const TVector &b)
+{
+    return delta(a, b, 1) / delta(a, b, 0);
+}
+
+// Determine point in line between point a and b.
+inline TVector at_step(double step, const TVector &start, const TVector &end)
+{
+    return TVector(
+        {
+            start[0] + (step * delta(end, start, 0)),
+            start[1] + (step * delta(end, start, 1)),
+            0,
+            0
+        }
+    );
+}
 
 // Transformations as a matrix
 class TMatrix

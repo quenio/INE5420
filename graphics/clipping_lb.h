@@ -2,30 +2,30 @@
 
 #pragma once
 
-#include "coord.h"
+#include "transforms.h"
 
 using namespace std;
 
 constexpr size_t LB_PARAM_SIZE = 4;
 typedef double LBParam[LB_PARAM_SIZE];
 
-// Calculate p based on Window Coord a and b.
-inline void lb_p(LBParam p, const Coord &a, const Coord &b)
+// Calculate p based on Window vector a and b.
+inline void lb_p(LBParam p, const TVector &a, const TVector &b)
 {
-    double dx = delta_x(b, a), dy = delta_y(b, a);
+    double dx = delta(b, a, 0), dy = delta(b, a, 1);
     p[0] = -dx;
     p[1] = dx;
     p[2] = -dy;
     p[3] = dy;
 }
 
-// Calculate q based on Window Coord a and b.
-inline void lb_q(LBParam q, const Coord &a)
+// Calculate q based on Window vector a and b.
+inline void lb_q(LBParam q, const TVector &a)
 {
-    q[0] = a.x() + 1;
-    q[1] = 1 - a.x();
-    q[2] = a.y() + 1;
-    q[3] = 1 - a.y();
+    q[0] = a[0] + 1;
+    q[1] = 1 - a[0];
+    q[2] = a[1] + 1;
+    q[3] = 1 - a[1];
 }
 
 // Calculate zeta-one based on p and q.
@@ -61,8 +61,12 @@ inline double zeta_two(const LBParam p, const LBParam q)
 }
 
 // Clip line between Window coord a and b using Liang-Barsky.
+template<class Coord>
 inline pair<Coord, Coord> clip_line_using_lb(const Coord &a, const Coord &b)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+
     LBParam p, q;
     lb_p(p, a, b);
     lb_q(q, a);

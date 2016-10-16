@@ -1,5 +1,10 @@
 #pragma once
 
+#include <cmath>
+#include <algorithm>
+
+using namespace std;
+
 // Absolute difference between a and b
 inline double abs_diff(double a, double b)
 {
