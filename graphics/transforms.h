@@ -140,7 +140,7 @@ class Transformable
 public:
 
     // Transform according to TransformationMatrix.
-    virtual void transform(TMatrix m) = 0;
+    virtual void transform(TMatrix matrix) = 0;
 
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy) = 0;
