@@ -18,12 +18,6 @@ public:
         assert(_vector.size() == count);
     }
 
-    // Create TVector of step.
-    static inline TVector of_step(double step)
-    {
-        return { pow(step, 3), pow(step, 2), step, 1 };
-    }
-
     // Retrieve the double at the i'th position.
     double operator [] (size_t i) const
     {
