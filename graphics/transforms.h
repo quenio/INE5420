@@ -281,3 +281,39 @@ public:
     }
 
 };
+
+// New object translated by dx horizontally, dy vertically
+template<class Coord, class Object>
+Object translated(const Object &object, double dx, double dy)
+{
+    static_assert(is_base_of<Transformable<Coord>, Object>::value, "Object must derive from Transformable<Coord>.");
+
+    Object new_object = object;
+    new_object.translate(dx, dy);
+
+    return new_object;
+}
+
+// New object scaled by factor from center
+template<class Coord, class Object>
+Object scaled(const Object &object, double factor, Coord center)
+{
+    static_assert(is_base_of<Transformable<Coord>, Object>::value, "Object must derive from Transformable<Coord>.");
+
+    Object new_object = object;
+    new_object.scale(factor, center);
+
+    return new_object;
+}
+
+// New object rotated by degrees at center (clockwise if angle positive or counter-clockwise if negative)
+template<class Coord, class Object>
+Object rotated(const Object &object, double degrees, Coord center)
+{
+    static_assert(is_base_of<Transformable<Coord>, Object>::value, "Object must derive from Transformable<Coord>.");
+
+    Object new_object = object;
+    new_object.rotate(degrees, center);
+
+    return new_object;
+}

@@ -36,30 +36,6 @@ public:
         return { this };
     }
 
-    // New coord translated by dx horizontally, dy vertically
-    Coord translated(double dx, double dy) const
-    {
-        Coord coord = *this;
-        coord.translate(dx, dy);
-        return coord;
-    }
-
-    // New coord scaled by factor from center
-    Coord scaled(double factor, Coord center) const
-    {
-        Coord coord = *this;
-        coord.scale(factor, center);
-        return coord;
-    }
-
-    // New coord rotated by degrees at center (clockwise if angle positive or counter-clockwise if negative)
-    Coord rotated(double degrees, Coord center) const
-    {
-        Coord coord = *this;
-        coord.rotate(degrees, center);
-        return coord;
-    }
-
     // True if a and b match.
     friend bool operator == (Coord a, Coord b)
     {

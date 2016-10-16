@@ -983,12 +983,12 @@ private:
     void render_cross(Canvas &canvas, const Coord &coord, double radius, const Color &color)
     {
         // Horizontal bar
-        canvas.move(coord.translated(-radius, 0));
-        canvas.draw_line(coord.translated(+radius, 0), color);
+        canvas.move(translated<Coord>(coord, -radius, 0));
+        canvas.draw_line(translated<Coord>(coord, +radius, 0), color);
 
         // Vertical bar
-        canvas.move(coord.translated(0, -radius));
-        canvas.draw_line(coord.translated(0, +radius), color);
+        canvas.move(translated<Coord>(coord, 0, -radius));
+        canvas.draw_line(translated<Coord>(coord, 0, +radius), color);
     }
 
     // Render the x axis and y axis.
