@@ -21,7 +21,7 @@ link_directories(${GTK3_LIBRARY_DIRS} ${GTKMM3_LIBRARY_DIRS})
 add_definitions(${GTK3_CFLAGS_OTHER} ${GTKMM3_CFLAGS_OTHER})
 
 # Main Target
-set(SOURCE_FILES ui.h graphics.h bezier.h spline.h clipping.h clipping_cs.h clipping_lb.h region.h coord.h)
+set(SOURCE_FILES ui.h graphics.h bezier.h spline.h clipping.h clipping_cs.h clipping_lb.h region.h transforms.h coord.h)
 add_executable(graphics main.cpp ${SOURCE_FILES})
 target_link_libraries(graphics ${GTK3_LIBRARIES})
 

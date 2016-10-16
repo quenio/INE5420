@@ -1,9 +1,9 @@
 #pragma once
 
+#include "transforms.h"
+
 #include <vector>
 #include <list>
-#include <cmath>
-#include <cassert>
 #include <algorithm>
 
 using namespace std;
@@ -26,16 +26,13 @@ inline bool equals(double a, double b)
 // 2D coordinates
 class Coord;
 
-// 2D transformations as a matrix
-class TransformMatrix;
-
 // Transformable elements
 class Transformable
 {
 public:
 
     // Transform according to TransformationMatrix.
-    virtual void transform(TransformMatrix m) = 0;
+    virtual void transform(TMatrix m) = 0;
 
     // Translate by dx horizontally, dy vertically.
     virtual void translate(double dx, double dy) = 0;
@@ -64,7 +61,7 @@ public:
     }
 
     // Transform according to TransformationMatrix.
-    void transform(TransformMatrix m) override;
+    void transform(TMatrix m) override;
 
     // Translate by dx horizontally, dy vertically.
     void translate(double dx, double dy) override;
@@ -117,181 +114,58 @@ private:
 
 };
 
-// Columns of TransformMatrix and representation of homogeneous coordinates
-class TransformVector
+// Create TVector with the x and y coordinates of coord.
+static inline TVector vector_of_coord(const Coord &coord)
 {
-public:
-    constexpr static size_t count = 4;
-    constexpr static size_t last_index = count - 1;
-
-    TransformVector(initializer_list<double> vector): _vector(vector)
-    {
-        assert(_vector.size() == count);
-    }
-
-    TransformVector(Coord coord): TransformVector({ coord.x(), coord.y(), 1, 0 }) {}
-
-    // Create TransformVector with the x coordinates of a, b, c and d.
-    static inline TransformVector of_x(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
-    {
-        return { a.x(), b.x(), c.x(), d.x() };
-    }
-
-    // Create TransformVector with the y coordinates of a, b, c and d.
-    static inline TransformVector of_y(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
-    {
-        return { a.y(), b.y(), c.y(), d.y() };
-    }
-
-    // Create TransformVector with the x coordinates of controls from i-3 to i.
-    static inline TransformVector of_x(const vector<Coord> &controls, size_t i)
-    {
-        assert(controls.size() >= count);
-        assert(i >= last_index && i < controls.size());
-
-        return { controls[i-3].x(), controls[i-2].x(), controls[i-1].x(), controls[i].x() };
-    }
-
-    // Create TransformVector with the y coordinates of controls from i-3 to i.
-    static inline TransformVector of_y(const vector<Coord> &controls, size_t i)
-    {
-        assert(controls.size() >= count);
-        assert(i >= last_index && i < controls.size());
-
-        return { controls[i-3].y(), controls[i-2].y(), controls[i-1].y(), controls[i].y() };
-    }
-
-    // Create TransformVector of step.
-    static inline TransformVector of_step(double step)
-    {
-        return { pow(step, 3), pow(step, 2), step, 1 };
-    }
-
-    // Retrieve the double at the i'th position.
-    double operator [] (size_t i) const
-    {
-        return _vector[i];
-    }
-
-    // Multiply this vector by other.
-    double operator * (const TransformVector other) const
-    {
-        double sum = 0;
-        for (size_t i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
-        return sum;
-    }
-
-private:
-    vector<double> _vector;
-};
-
-// Transformations as a matrix
-class TransformMatrix
-{
-public:
-    constexpr static size_t column_count = TransformVector::count;
-    constexpr static size_t row_count = TransformVector::count;
-
-    TransformMatrix(
-        initializer_list<double> column1,
-        initializer_list<double> column2,
-        initializer_list<double> column3,
-        initializer_list<double> column4)
-    : _column { column1, column2, column3, column4 } {}
-
-    // Transform vector using transformation matrix.
-    friend TransformVector operator * (TransformVector vector, TransformMatrix matrix)
-    {
-        return TransformVector({
-            vector * matrix.column(0),
-            vector * matrix.column(1),
-            vector * matrix.column(2),
-            vector * matrix.column(3)
-        });
-    }
-
-    // Multiply this matrix by other
-    TransformMatrix operator * (TransformMatrix other)
-    {
-        double m[column_count][row_count];
-
-        for (size_t c = 0; c < column_count; c++)
-            for (size_t r = 0; r < row_count; r++)
-                m[c][r] = row(r) * other.column(c);
-
-        return TransformMatrix(
-           { m[0][0], m[0][1], m[0][2], m[0][3] },
-           { m[1][0], m[1][1], m[1][2], m[1][3] },
-           { m[2][0], m[2][1], m[2][2], m[2][3] },
-           { m[3][0], m[3][1], m[3][2], m[3][3] }
-        );
-    }
-
-private:
-
-    // Vector representing row at the i'th position
-    TransformVector row(size_t i)
-    {
-        return TransformVector({ _column[0][i], _column[1][i], _column[2][i], _column[3][i] });
-    }
-
-    // Vector representing column at the i'th position
-    TransformVector column(size_t i)
-    {
-        return _column[i];
-    }
-
-    TransformVector _column[column_count];
-};
-
-// Translation as a matrix: translate by dx horizontally, dy vertically.
-inline TransformMatrix translation(double dx, double dy)
-{
-    return TransformMatrix(
-        { 1.0, 0.0,  dx, 0.0 },
-        { 0.0, 1.0,  dy, 0.0 },
-        { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
-    );
+    return { coord.x(), coord.y(), 1, 0 };
 }
 
-// Scaling as a matrix: scale x by factor sx, y by factor sy.
-inline TransformMatrix scaling(double sx, double sy)
+// Create TVector with the x coordinates of a, b, c and d.
+static inline TVector vector_of_x(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
 {
-    return TransformMatrix(
-        {  sx, 0.0, 0.0, 0.0 },
-        { 0.0,  sy, 0.0, 0.0 },
-        { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
-    );
+    return { a.x(), b.x(), c.x(), d.x() };
+}
+
+// Create TVector with the y coordinates of a, b, c and d.
+static inline TVector vector_of_y(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
+{
+    return { a.y(), b.y(), c.y(), d.y() };
+}
+
+// Create TVector with the x coordinates of controls from i-3 to i.
+static inline TVector vector_of_x(const vector<Coord> &controls, size_t i)
+{
+    assert(controls.size() >= TVector::count);
+    assert(i >= TVector::last_index && i < controls.size());
+
+    return { controls[i-3].x(), controls[i-2].x(), controls[i-1].x(), controls[i].x() };
+}
+
+// Create TVector with the y coordinates of controls from i-3 to i.
+static inline TVector vector_of_y(const vector<Coord> &controls, size_t i)
+{
+    assert(controls.size() >= TVector::count);
+    assert(i >= TVector::last_index && i < controls.size());
+
+    return { controls[i-3].y(), controls[i-2].y(), controls[i-1].y(), controls[i].y() };
+}
+
+// Create TVector of step.
+static inline TVector vector_of_step(double step)
+{
+    return { pow(step, 3), pow(step, 2), step, 1 };
 }
 
 // Scaling coord by factor from center.
-inline TransformMatrix scaling(double factor, Coord center)
+inline TMatrix scaling(double factor, Coord center)
 {
     return translation(-center.x(), -center.y()) *
            scaling(factor, factor) *
            translation(center.x(), center.y());
 }
 
-constexpr double PI = 3.14159265;
-
-// Rotation as a matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
-inline TransformMatrix rotation(double degrees)
-{
-    const double rad = degrees * PI / 180.0;
-    const double c = cos(rad);
-    const double s = sin(rad);
-    return TransformMatrix(
-        {   c,   s, 0.0, 0.0 },
-        {  -s,   c, 0.0, 0.0 },
-        { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
-    );
-}
-
 // Rotation coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline TransformMatrix rotation(double degrees, Coord center)
+inline TMatrix rotation(double degrees, Coord center)
 {
     return translation(-center.x(), -center.y()) *
            rotation(degrees) *
@@ -299,21 +173,21 @@ inline TransformMatrix rotation(double degrees, Coord center)
 }
 
 // Transform coord using transformation matrix.
-inline Coord operator * (const Coord &coord, TransformMatrix matrix)
+inline Coord operator * (const Coord &coord, TMatrix matrix)
 {
-    const TransformVector vector = TransformVector(coord) * matrix;
+    const TVector vector = vector_of_coord(coord) * matrix;
     return Coord(vector[0], vector[1]);
 }
 
 // Transform coord using transformation matrix, and assigns to lhs.
-inline Coord& operator *= (Coord &lhs, TransformMatrix matrix)
+inline Coord& operator *= (Coord &lhs, TMatrix matrix)
 {
     lhs = lhs * matrix;
     return lhs;
 }
 
 // Transform coords according to m.
-inline void transform(TransformMatrix m, list<Coord *> coords)
+inline void transform(TMatrix m, list<Coord *> coords)
 {
     for (auto c: coords)
         *c *= m;
@@ -337,10 +211,10 @@ inline void rotate(double degrees, Coord center, list<Coord *> coords)
     transform(rotation(degrees, center), coords);
 }
 
-// Transform according to TransformationMatrix.
-inline void Coord::transform(TransformMatrix m)
+// Transform according to the matrix.
+inline void Coord::transform(TMatrix matrix)
 {
-    ::transform(m, { this });
+    ::transform(matrix, { this });
 }
 
 // Translate coord by dx horizontally, dy vertically.

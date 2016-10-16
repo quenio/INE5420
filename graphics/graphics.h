@@ -110,10 +110,10 @@ public:
     // Object's center
     virtual Coord center() = 0;
 
-    // Transform according to TransformationMatrix.
-    void transform(TransformMatrix m) override
+    // Transform according to the matrix.
+    void transform(TMatrix matrix) override
     {
-        ::transform(m, controls());
+        ::transform(matrix, controls());
     }
 
     // Translate by dx horizontally, dy vertically.
@@ -690,10 +690,10 @@ public:
         translate(0, -ty);
     }
 
-    // Transform according to TransformationMatrix.
-    void transform(TransformMatrix m) override
+    // Transform according to the matrix.
+    void transform(TMatrix matrix) override
     {
-        Object::transform(m);
+        Object::transform(matrix);
 
         _center = equidistant(_leftBottom, _rightTop);
     }

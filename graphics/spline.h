@@ -3,9 +3,9 @@
 #include "coord.h"
 
 // Coefficient matrix used to calculate a Spline curve
-inline TransformMatrix spline_matrix()
+inline TMatrix spline_matrix()
 {
-    return TransformMatrix(
+    return TMatrix(
         { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
         {      0.5,     -1.0,     0.5,     0.0 },
         {     -0.5,      0.0,     0.5,     0.0 },
@@ -14,9 +14,9 @@ inline TransformMatrix spline_matrix()
 }
 
 // Matrix used to calculate initial deltas of forward differences
-inline TransformMatrix delta_matrix()
+inline TMatrix delta_matrix()
 {
-    return TransformMatrix(
+    return TMatrix(
         { 1, 1, 1, 0 },
         { 6, 2, 0, 0 },
         { 6, 0, 0, 0 },
@@ -25,10 +25,10 @@ inline TransformMatrix delta_matrix()
 }
 
 // Vector with initial deltas of forward differences
-inline TransformVector delta_vector(const TransformVector &v, double step)
+inline TVector delta_vector(const TVector &v, double step)
 {
-    const TransformVector sv = TransformVector::of_step(step);
-    return TransformVector(
+    const TVector sv = vector_of_step(step);
+    return TVector(
         {
             sv[0] * v[0],
             sv[1] * v[1],
@@ -39,9 +39,9 @@ inline TransformVector delta_vector(const TransformVector &v, double step)
 }
 
 // Calculate next delta vector based on previous one.
-inline TransformVector next_delta(const TransformVector &d)
+inline TVector next_delta(const TVector &d)
 {
-    return TransformVector(
+    return TVector(
         {
             d[0] + d[1],
             d[1] + d[2],
@@ -54,14 +54,14 @@ inline TransformVector next_delta(const TransformVector &d)
 // Generate vertices using forward-differences technique.
 inline void generate_fd_vertices(
     list<Coord> &vertices,
-    const TransformVector &vx,
-    const TransformVector &vy,
-    const TransformMatrix &m)
+    const TVector &vx,
+    const TVector &vy,
+    const TMatrix &m)
 {
     constexpr double step = 0.025;
 
-    TransformVector dx = delta_vector(vx * m, step);
-    TransformVector dy = delta_vector(vy * m, step);
+    TVector dx = delta_vector(vx * m, step);
+    TVector dy = delta_vector(vy * m, step);
 
     Coord current(dx[3], dy[3]);
     vertices.push_back(current);
@@ -81,7 +81,7 @@ inline void generate_fd_vertices(
 // Generate the vertices to represent a Spline curve.
 inline list<Coord> spline_vertices(vector<Coord> controls)
 {
-    constexpr size_t start = TransformVector::last_index;
+    constexpr size_t start = TVector::last_index;
 
     assert(controls.size() > start);
 
@@ -91,8 +91,8 @@ inline list<Coord> spline_vertices(vector<Coord> controls)
     {
         generate_fd_vertices(
             result,
-            TransformVector::of_x(controls, i),
-            TransformVector::of_y(controls, i),
+            vector_of_x(controls, i),
+            vector_of_y(controls, i),
             spline_matrix());
     }
 
