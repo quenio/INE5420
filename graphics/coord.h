@@ -85,42 +85,6 @@ private:
 
 };
 
-// Create TVector with the x coordinates of a, b, c and d.
-static inline TVector vector_of_x(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
-{
-    return { a.x(), b.x(), c.x(), d.x() };
-}
-
-// Create TVector with the y coordinates of a, b, c and d.
-static inline TVector vector_of_y(const Coord &a, const Coord &b, const Coord &c, const Coord &d)
-{
-    return { a.y(), b.y(), c.y(), d.y() };
-}
-
-// Create TVector with the x coordinates of controls from i-3 to i.
-static inline TVector vector_of_x(const vector<Coord> &controls, size_t i)
-{
-    assert(controls.size() >= TVector::count);
-    assert(i >= TVector::last_index && i < controls.size());
-
-    return { controls[i-3].x(), controls[i-2].x(), controls[i-1].x(), controls[i].x() };
-}
-
-// Create TVector with the y coordinates of controls from i-3 to i.
-static inline TVector vector_of_y(const vector<Coord> &controls, size_t i)
-{
-    assert(controls.size() >= TVector::count);
-    assert(i >= TVector::last_index && i < controls.size());
-
-    return { controls[i-3].y(), controls[i-2].y(), controls[i-1].y(), controls[i].y() };
-}
-
-// Create TVector of step.
-static inline TVector vector_of_step(double step)
-{
-    return { pow(step, 3), pow(step, 2), step, 1 };
-}
-
 // Transform according to the matrix.
 inline void Coord::transform(TMatrix matrix)
 {

@@ -12,6 +12,7 @@ class TVector
 {
 public:
     constexpr static size_t count = 4;
+    constexpr static size_t first_index = 0;
     constexpr static size_t last_index = count - 1;
 
     TVector(initializer_list<double> vector): _vector(vector)
@@ -165,7 +166,7 @@ inline Coord operator * (const Coord &coord, TMatrix matrix)
     static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
     static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
 
-    return Coord(static_cast<TVector>(coord) * matrix);
+    return Coord(TVector(coord) * matrix);
 }
 
 // Transform coord using matrix, and assigns to lhs.
@@ -205,11 +206,48 @@ inline void rotate(double degrees, TVector center, list<Coord *> coords)
     transform(rotation(degrees, center), coords);
 }
 
+// Create TVector with the coordinates of controls from i-3 to i, in the j-th position.
+template<class Coord>
+static inline TVector vector_of(const vector<Coord> &controls, size_t i, size_t j)
+{
+    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+
+    assert(controls.size() >= TVector::count);
+    assert(i >= TVector::last_index && i < controls.size());
+    assert(j >= TVector::first_index && j <= TVector::last_index);
+
+    return {
+        TVector(controls[i-3])[j],
+        TVector(controls[i-2])[j],
+        TVector(controls[i-1])[j],
+        TVector(controls[i])[j]
+    };
+}
+
+// Create TVector with the coordinates of controls from 0 to 3, in the j-th position.
+template<class Coord>
+static inline TVector vector_of(const vector<Coord> &controls, size_t j)
+{
+    return vector_of(controls, TVector::last_index, j);
+}
+
+// Create TVector of step.
+static inline TVector vector_of_step(double step)
+{
+    return { pow(step, 3), pow(step, 2), step, 1 };
+}
+
 // Transformable elements
 template<class Coord>
 class Transformable
 {
 public:
+
+    Transformable()
+    {
+        static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+        static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+    }
 
     // Transform according to TransformationMatrix.
     virtual void transform(TMatrix matrix) = 0;
