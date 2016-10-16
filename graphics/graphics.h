@@ -11,6 +11,8 @@
 #include <list>
 #include <sstream>
 
+#define UNUSED __attribute__ ((unused))
+
 using namespace std;
 
 class Color
