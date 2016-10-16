@@ -194,15 +194,19 @@ inline void translate(double dx, double dy, list<Coord *> coords)
 
 // Scale coord by factor from center.
 template<class Coord>
-inline void scale(double factor, TVector center, list<Coord *> coords)
+inline void scale(double factor, Coord center, list<Coord *> coords)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+
     transform(scaling(factor, center), coords);
 }
 
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 template<class Coord>
-inline void rotate(double degrees, TVector center, list<Coord *> coords)
+inline void rotate(double degrees, Coord center, list<Coord *> coords)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+
     transform(rotation(degrees, center), coords);
 }
 
