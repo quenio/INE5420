@@ -6,6 +6,7 @@
 #include "clipping_lb.h"
 #include "bezier.h"
 #include "spline.h"
+#include "graphics.h"
 
 #include <memory>
 #include <vector>
@@ -136,51 +137,13 @@ inline Visibility visibility(ClippingArea &area, const Coord2D &a, const Coord2D
     }
 }
 
-class Color
-{
-public:
-
-    Color(double red, double green, double blue): _red(red), _green(green), _blue(blue) {}
-
-    double red() const { return _red; }
-    double green() const { return _green; }
-    double blue() const { return _blue; }
-
-private:
-
-    double _red, _green, _blue;
-
-};
-
-const Color BLACK = Color(0, 0, 0);
-const Color RED = Color(1, 0, 0);
-const Color GREEN = Color(0, 1, 0);
-const Color BLUE = Color(0, 0, 1);
-const Color CONTROL = Color(1, 0, 1);
-
-// Drawable area of the screen
-class Canvas
-{
-public:
-
-    // Move to destination.
-    virtual void move(const Coord2D &destination) = 0;
-
-    // Draw line from current position to destination.
-    virtual void draw_line(const Coord2D &destination, const Color &color) = 0;
-
-    // Draw circle with the specified center, radius and color.
-    virtual void draw_circle(const Coord2D &center, const double radius, const Color &color) = 0;
-
-};
-
 // Drawable objects
 class Drawable
 {
 public:
 
     // Draw something in canvas.
-    virtual void draw(Canvas &canvas) = 0;
+    virtual void draw(Canvas<Coord2D> &canvas) = 0;
 
     // Color used to draw.
     virtual Color color() const = 0;
@@ -249,7 +212,7 @@ public:
     Point(Coord2D coord): _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
-    void draw(Canvas &canvas) override
+    void draw(Canvas<Coord2D> &canvas) override
     {
         canvas.draw_circle(_coord, 1.5, color());
     }
@@ -292,7 +255,7 @@ public:
     Line(const Color &color, Coord2D a, Coord2D b): Object(color), _a(a), _b(b) {}
 
     // Draw line in canvas.
-    void draw(Canvas &canvas) override
+    void draw(Canvas<Coord2D> &canvas) override
     {
         canvas.move(_a);
         canvas.draw_line(_b, color());
@@ -354,7 +317,7 @@ public:
     virtual shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const = 0;
 
     // Draw the sequence of lines in canvas.
-    void draw(Canvas &canvas) override
+    void draw(Canvas<Coord2D> &canvas) override
     {
         Coord2D const *previous = initial_vertex();
         for (auto &current: vertices())

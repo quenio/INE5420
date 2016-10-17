@@ -2,6 +2,22 @@
 
 #include "graphics2d.h"
 
+// Viewport Coordinates
+class VC: public XYCoord<VC>
+{
+public:
+
+    VC(double x, double y): XYCoord(x, y) {}
+
+    VC(const TVector &vector): XYCoord(vector) {}
+
+    list<VC *> controls() override
+    {
+        return { this };
+    }
+
+};
+
 // Visible area on a canvas
 class Viewport
 {
@@ -92,7 +108,7 @@ public:
     }
 
     // Translate coord from Viewport to Window.
-    PPC from_viewport(Coord2D coord, const Viewport &viewport) const
+    PPC from_viewport(VC coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x(), viewport.height() - coord.y()) *
                translation(-viewport.left(), -viewport.top()) *
@@ -101,7 +117,7 @@ public:
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
-    Coord2D to_viewport(PPC coord, const Viewport &viewport) const
+    VC to_viewport(PPC coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
                scaling(viewport.content_width() / norm_width, viewport.content_height() / norm_height) *
@@ -206,7 +222,7 @@ public:
     }
 
     // Draw a square in canvas.
-    void draw(Canvas &canvas) override
+    void draw(Canvas<Coord2D> &canvas) override
     {
         canvas.move(leftBottom());
         canvas.draw_line(leftTop(), color());
@@ -234,11 +250,11 @@ private:
 };
 
 // Area on a screen to execute display commands
-class ViewportCanvas: public Canvas, public Viewport, public ClippingArea
+class ViewportCanvas: public Canvas<Coord2D>, public Viewport, public ClippingArea
 {
 public:
 
-    ViewportCanvas(double width, double height, shared_ptr<Window> window, Canvas &canvas)
+    ViewportCanvas(double width, double height, shared_ptr<Window> window, Canvas<VC> &canvas)
         : Viewport(width, height), _window(window), _canvas(canvas) {}
 
     // True if area contains world coord.
@@ -260,7 +276,7 @@ public:
     }
 
     // Translate coord from world to viewport
-    Coord2D translate(const Coord2D &coord) const
+    VC world_to_viewport(const Coord2D &coord) const
     {
         return _window->to_viewport(_window->from_world(coord), *this);
     }
@@ -268,25 +284,25 @@ public:
     // Move to destination.
     void move(const Coord2D &destination) override
     {
-        _canvas.move(translate(destination));
+        _canvas.move(world_to_viewport(destination));
     }
 
     // Draw line from current position to destination.
     void draw_line(const Coord2D &destination, const Color &color) override
     {
-        _canvas.draw_line(translate(destination), color);
+        _canvas.draw_line(world_to_viewport(destination), color);
     }
 
     // Draw circle with the specified center, radius and color.
     void draw_circle(const Coord2D &center, const double radius, const Color &color) override
     {
-        _canvas.draw_circle(translate(center), radius, color);
+        _canvas.draw_circle(world_to_viewport(center), radius, color);
     }
 
 private:
 
     shared_ptr<Window> _window;
-    Canvas &_canvas;
+    Canvas<VC> &_canvas;
 
 };
 
@@ -458,7 +474,7 @@ public:
     }
 
     // Set the new center from viewport coordinates
-    void set_center_from_viewport(Coord2D center, const Viewport &viewport)
+    void set_center_from_viewport(VC center, const Viewport &viewport)
     {
         _center = _window->to_world(_window->from_viewport(center, viewport));
     }
@@ -466,7 +482,7 @@ public:
 private:
 
     // Render a cross at center with radius, using color.
-    void render_cross(Canvas &canvas, const Coord2D &coord, double radius, const Color &color)
+    void render_cross(Canvas<Coord2D> &canvas, const Coord2D &coord, double radius, const Color &color)
     {
         // Horizontal bar
         canvas.move(translated<Coord2D>(coord, -radius, 0));
@@ -478,7 +494,7 @@ private:
     }
 
     // Render the x axis and y axis.
-    void render_axis(Canvas &canvas)
+    void render_axis(Canvas<Coord2D> &canvas)
     {
         const Coord2D center = Coord2D(0, 0);
         const int radius = 10000;
@@ -487,7 +503,7 @@ private:
     }
 
     // Render controls of selected objects.
-    void render_controls(Canvas &canvas)
+    void render_controls(Canvas<Coord2D> &canvas)
     {
         const int radius = 2;
 
@@ -501,7 +517,7 @@ private:
     }
 
     // Render the center as a little cross.
-    void render_center(Canvas &canvas)
+    void render_center(Canvas<Coord2D> &canvas)
     {
         const int radius = 2;
 
