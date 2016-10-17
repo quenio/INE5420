@@ -55,26 +55,26 @@ public:
     // True if Window contains World coord.
     bool contains(Coord2D coord) const override
     {
-        Coord2D wc = from_world(coord);
+        PPC wc = from_world(coord);
         double x = wc.x(), y = wc.y();
         return ((x > -1 && x < +1) || equals(x, -1) || equals(x, +1)) &&
                ((y > -1 && y < +1) || equals(y, -1) || equals(y, +1));
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    Coord2D world_to_window(Coord2D coord) const override
+    PPC world_to_window(Coord2D coord) const override
     {
         return from_world(coord);
     }
 
     // Translate coord from Window to World.
-    Coord2D window_to_world(Coord2D coord) const override
+    Coord2D window_to_world(PPC coord) const override
     {
         return to_world(coord);
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    Coord2D from_world(Coord2D coord) const
+    PPC from_world(Coord2D coord) const
     {
         return coord *
                translation(-_center.x(), -_center.y()) *
@@ -83,7 +83,7 @@ public:
     }
 
     // Translate coord from Window to World.
-    Coord2D to_world(Coord2D coord) const
+    Coord2D to_world(PPC coord) const
     {
         return coord *
                rotation(-_up_angle) *
@@ -92,7 +92,7 @@ public:
     }
 
     // Translate coord from Viewport to Window.
-    Coord2D from_viewport(Coord2D coord, const Viewport &viewport) const
+    PPC from_viewport(Coord2D coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x(), viewport.height() - coord.y()) *
                translation(-viewport.left(), -viewport.top()) *
@@ -101,7 +101,7 @@ public:
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
-    Coord2D to_viewport(Coord2D coord, const Viewport &viewport) const
+    Coord2D to_viewport(PPC coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
                scaling(viewport.content_width() / norm_width, viewport.content_height() / norm_height) *
@@ -248,13 +248,13 @@ public:
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    Coord2D world_to_window(Coord2D coord) const override
+    PPC world_to_window(Coord2D coord) const override
     {
         return _window->world_to_window(coord);
     }
 
     // Translate coord from Window to World.
-    Coord2D window_to_world(Coord2D coord) const override
+    Coord2D window_to_world(PPC coord) const override
     {
         return _window->window_to_world(coord);
     }

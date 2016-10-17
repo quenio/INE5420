@@ -32,6 +32,22 @@ public:
 
 };
 
+// Plane Project Coordinates
+class PPC: public XYCoord<PPC>
+{
+public:
+
+    PPC(double x, double y): XYCoord(x, y) {}
+
+    PPC(const TVector &vector): XYCoord(vector) {}
+
+    list<PPC *> controls() override
+    {
+        return { this };
+    }
+
+};
+
 enum class Visibility { FULL, PARTIAL, NONE };
 
 // Area in world that may be clipped
@@ -43,10 +59,10 @@ public:
     virtual bool contains(Coord2D coord) const = 0;
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    virtual Coord2D world_to_window(Coord2D coord) const = 0;
+    virtual PPC world_to_window(Coord2D coord) const = 0;
 
     // Translate coord from Window to World.
-    virtual Coord2D window_to_world(Coord2D coord) const = 0;
+    virtual Coord2D window_to_world(PPC coord) const = 0;
 
 };
 
@@ -65,8 +81,8 @@ enum class ClippingMethod { COHEN_SUTHERLAND, LIANG_BARSKY, NONE };
 
 static ClippingMethod clipping_method = ClippingMethod::COHEN_SUTHERLAND;
 
-// Clip line between World coord a and b.
-inline pair<Coord2D, Coord2D> clip_line(const Coord2D &a, const Coord2D &b)
+// Clip line between Window coord a and b.
+inline pair<PPC, PPC> clip_line(const PPC &a, const PPC &b)
 {
     switch (clipping_method)
     {
@@ -79,10 +95,10 @@ inline pair<Coord2D, Coord2D> clip_line(const Coord2D &a, const Coord2D &b)
 // Clip line between World coord a and b into the area.
 inline pair<Coord2D, Coord2D> clip_line(ClippingArea &area, const Coord2D &a, const Coord2D &b)
 {
-    const Coord2D window_a = area.world_to_window(a);
-    const Coord2D window_b = area.world_to_window(b);
+    const PPC window_a = area.world_to_window(a);
+    const PPC window_b = area.world_to_window(b);
 
-    const pair<Coord2D, Coord2D> clipped_line = clip_line(window_a, window_b);
+    const pair<PPC, PPC> clipped_line = clip_line(window_a, window_b);
 
     return make_pair(
         area.window_to_world(clipped_line.first),
@@ -413,15 +429,15 @@ public:
 
                     case Visibility::NONE:
                     {
-                        const Coord2D window_a = area.world_to_window(*previous);
-                        const Coord2D window_b = area.world_to_window(current);
+                        const PPC window_a = area.world_to_window(*previous);
+                        const PPC window_b = area.world_to_window(current);
 
                         if (region(window_a) != region(window_b))
                         {
                             // Determine closest corner
                             const double x = min(window_a.x(), window_b.x()) < -1 ? -1 : +1;
                             const double y = min(window_a.y(), window_b.y()) < -1 ? -1 : +1;
-                            const Coord2D corner = area.window_to_world(Coord2D(x, y));
+                            const Coord2D corner = area.window_to_world(PPC(x, y));
 
                             if (area.contains(corner) && new_vertices.back() != corner)
                                 new_vertices.push_back(corner);

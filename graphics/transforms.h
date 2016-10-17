@@ -258,20 +258,13 @@ inline TMatrix rotation(double degrees, TVector center)
     return inverse_translation(center) * rotation(degrees) * translation(center);
 }
 
-// Transform coord using matrix.
-template<class Coord>
-inline Coord operator * (const Coord &coord, TMatrix matrix)
-{
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
-
-    return Coord(TVector(coord) * matrix);
-}
-
 // Transform coord using matrix, and assigns to lhs.
 template<class Coord>
 inline Coord& operator *= (Coord &lhs, TMatrix matrix)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+
     lhs = lhs * matrix;
     return lhs;
 }
