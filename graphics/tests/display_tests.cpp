@@ -1,5 +1,5 @@
 #include "min_unit.h"
-#include "../graphics2d.h"
+#include "../display.h"
 
 static void print(Coord2D coord)
 {

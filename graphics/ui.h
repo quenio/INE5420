@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics2d.h"
+#include "display.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdocumentation-unknown-command"
