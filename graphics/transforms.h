@@ -23,6 +23,22 @@ public:
         assert(_vector.size() == count);
     }
 
+    // Sum all components of this vector.
+    double sum() const
+    {
+        double sum = 0;
+        for (size_t i = 0; i < count; i++) sum += _vector[i];
+        return sum;
+    }
+
+    // Calculate the power of each component of this vector.
+    TVector pow(double n) const
+    {
+        TVector p;
+        for (size_t i = 0; i < count; i++) p._vector[i] = ::pow(_vector[i], n);
+        return p;
+    }
+
     // Retrieve the double at the i'th position.
     double operator [] (size_t i) const
     {
@@ -35,6 +51,14 @@ public:
         TVector sum;
         for (size_t i = 0; i < count; i++) sum._vector[i] = _vector[i] + other._vector[i];
         return sum;
+    }
+
+    // Difference of this vector from another.
+    TVector operator - (const TVector &other) const
+    {
+        TVector diff;
+        for (size_t i = 0; i < count; i++) diff._vector[i] = _vector[i] - other._vector[i];
+        return diff;
     }
 
     // Divide this vector by divisor.
@@ -62,6 +86,12 @@ inline TVector& operator += (TVector &lhs, const TVector &rhs)
 {
     lhs = lhs + rhs;
     return lhs;
+}
+
+// Distance between a and b.
+inline double distance(const TVector &a, const TVector &b)
+{
+    return sqrt((a - b).pow(2).sum());
 }
 
 // Equidistant vector between a and b

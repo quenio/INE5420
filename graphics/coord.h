@@ -22,12 +22,6 @@ public:
         return { _x, _y, 1, 0 };
     }
 
-    // Distance to coord.
-    double distance_to(Coord coord)
-    {
-        return sqrt(pow(x() - coord.x(), 2) + pow(y() - coord.y(), 2));
-    }
-
     list<Coord *> controls() override
     {
         return { this };

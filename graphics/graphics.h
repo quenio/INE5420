@@ -548,8 +548,8 @@ public:
     Coord rightTop() const { return _rightTop; }
     Coord rightBottom() const { return _rightBottom; }
 
-    double width() const { return leftBottom().distance_to(rightBottom()); }
-    double height() const { return leftBottom().distance_to(leftTop()); }
+    double width() const { return distance(leftBottom(), rightBottom()); }
+    double height() const { return distance(leftBottom(), leftTop()); }
 
     // True if Window contains World coord.
     bool contains(Coord coord) const override
