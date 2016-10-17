@@ -33,7 +33,7 @@ public:
 
 };
 
-// Plane Project Coordinates
+// Plane Projection Coordinates
 class PPC: public XYCoord<PPC>
 {
 public:
