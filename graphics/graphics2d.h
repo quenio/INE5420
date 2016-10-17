@@ -17,43 +17,18 @@
 using namespace std;
 
 // 2D coordinates
-class Coord2D: public Transformable<Coord2D>
+class Coord2D: public XYCoord<Coord2D>
 {
 public:
 
-    Coord2D(double x, double y): _x(x), _y(y) {}
+    Coord2D(double x, double y): XYCoord(x, y) {}
 
-    Coord2D(const TVector &vector): _x(vector[0]), _y(vector[1]) {}
-
-    double x() const { return _x; }
-    double y() const { return _y; }
-
-    // Create TVector with the these coordinates.
-    operator TVector() const
-    {
-        return { _x, _y, 1, 0 };
-    }
+    Coord2D(const TVector &vector): XYCoord(vector) {}
 
     list<Coord2D *> controls() override
     {
         return { this };
     }
-
-    // True if a and b match.
-    friend bool operator == (Coord2D a, Coord2D b)
-    {
-        return equals(a._x, b._x) && equals(a._y, b._y);
-    }
-
-    // True if a and b do not match.
-    friend bool operator != (Coord2D a, Coord2D b)
-    {
-        return !equals(a._x, b._x) || !equals(a._y, b._y);
-    }
-
-private:
-
-    double _x, _y;
 
 };
 
@@ -118,8 +93,8 @@ inline pair<Coord2D, Coord2D> clip_line(ClippingArea &area, const Coord2D &a, co
 // Determine the visibility in area for line between a and b.
 inline Visibility visibility(ClippingArea &area, const Coord2D &a, const Coord2D &b)
 {
-    static_assert(is_convertible<TVector, Coord2D>::value, "Coord must have constructor: Coord(const TVector &)");
-    static_assert(is_convertible<Coord2D, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+    static_assert(is_convertible<TVector, Coord2D>::value, "Coord2D must have constructor: Coord2D(const TVector &)");
+    static_assert(is_convertible<Coord2D, TVector>::value, "Coord2D must have conversion operator: operator TVector() const");
 
     if (clipping_method == ClippingMethod::NONE) return Visibility::FULL;
 

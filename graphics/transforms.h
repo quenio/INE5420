@@ -452,3 +452,46 @@ Object rotated(const Object &object, double degrees, Coord center)
 
     return new_object;
 }
+
+// (x, y) coordinates
+template<class Coord>
+class XYCoord: public Transformable<Coord>
+{
+public:
+
+    XYCoord(double x, double y): _x(x), _y(y)
+    {
+        static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
+    }
+
+    XYCoord(const TVector &vector): _x(vector[0]), _y(vector[1])
+    {
+        static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
+    }
+
+    double x() const { return _x; }
+    double y() const { return _y; }
+
+    // Create TVector with the these coordinates.
+    operator TVector() const
+    {
+        return { _x, _y, 1, 0 };
+    }
+
+    // True if a and b match.
+    friend bool operator == (Coord a, Coord b)
+    {
+        return equals(a._x, b._x) && equals(a._y, b._y);
+    }
+
+    // True if a and b do not match.
+    friend bool operator != (Coord a, Coord b)
+    {
+        return !equals(a._x, b._x) || !equals(a._y, b._y);
+    }
+
+private:
+
+    double _x, _y;
+
+};
