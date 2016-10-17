@@ -109,9 +109,6 @@ public:
         return _color;
     }
 
-    // Object's center
-    virtual Coord center() = 0;
-
 private:
 
     int _id;
@@ -362,12 +359,6 @@ public:
         return "Polygon";
     }
 
-    // Center of all vertices
-    Coord center() override
-    {
-        return ::center(_vertices);
-    }
-
     // New drawable from clipped_vertices
     shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
     {
@@ -481,12 +472,6 @@ public:
     string type() const override
     {
         return "Spline";
-    }
-
-    // Center of all controls
-    Coord center() override
-    {
-        return ::center(_controls);
     }
 
     // Vertices to use when drawing the lines

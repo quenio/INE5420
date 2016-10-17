@@ -16,6 +16,8 @@ public:
     constexpr static size_t first_index = 0;
     constexpr static size_t last_index = count - 1;
 
+    TVector(): TVector({ 0, 0, 0, 0}) {}
+
     TVector(initializer_list<double> vector): _vector(vector)
     {
         assert(_vector.size() == count);
@@ -27,8 +29,24 @@ public:
         return _vector[i];
     }
 
+    // Sum this vector with another.
+    TVector operator + (const TVector &other) const
+    {
+        TVector sum;
+        for (size_t i = 0; i < count; i++) sum._vector[i] = _vector[i] + other._vector[i];
+        return sum;
+    }
+
+    // Divide this vector by divisor.
+    TVector operator / (double divisor) const
+    {
+        TVector quotient;
+        for (size_t i = 0; i < count; i++) quotient._vector[i] = _vector[i] / divisor;
+        return quotient;
+    }
+
     // Multiply this vector by other.
-    double operator * (const TVector other) const
+    double operator * (const TVector &other) const
     {
         double sum = 0;
         for (size_t i = 0; i < count; i++) sum += _vector[i] * other._vector[i];
@@ -38,6 +56,13 @@ public:
 private:
     vector<double> _vector;
 };
+
+// Sum rhs to lhs.
+inline TVector& operator += (TVector &lhs, const TVector &rhs)
+{
+    lhs = lhs + rhs;
+    return lhs;
+}
 
 // Equidistant vector between a and b
 inline TVector equidistant(TVector a, TVector b)
@@ -285,6 +310,36 @@ static inline TVector vector_of_step(double step)
     return { pow(step, 3), pow(step, 2), step, 1 };
 }
 
+// True if item is not found in container
+template<class Container, class Item>
+inline bool missing(const Container &container, const Item &item)
+{
+    return find(container.begin(), container.end(), item) == container.end();
+}
+
+// Center of all vertices
+template<class Coord>
+inline Coord center(const list<Coord *> &vertices)
+{
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+
+    list<Coord> accounted;
+
+    TVector sum;
+    for (const Coord *coord: vertices)
+    {
+        if (missing(accounted, *coord))
+        {
+            sum += *coord;
+
+            accounted.push_back(*coord);
+        }
+    }
+
+    return Coord(sum / accounted.size());
+}
+
 // Transformable elements
 template<class Coord>
 class Transformable
@@ -299,6 +354,12 @@ public:
 
     // Control coords
     virtual list<Coord *> controls() = 0;
+
+    // Center of all controls
+    virtual Coord center()
+    {
+        return ::center(controls());
+    }
 
     // Transform according to matrix.
     virtual void transform(TMatrix matrix)
