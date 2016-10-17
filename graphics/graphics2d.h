@@ -1,8 +1,9 @@
 #pragma once
 
-#include "coord.h"
+#include "transforms.h"
 #include "region.h"
-#include "clipping.h"
+#include "clipping_cs.h"
+#include "clipping_lb.h"
 #include "bezier.h"
 #include "spline.h"
 
@@ -14,6 +15,135 @@
 #define UNUSED __attribute__ ((unused))
 
 using namespace std;
+
+// 2D coordinates
+class Coord2D: public Transformable<Coord2D>
+{
+public:
+
+    Coord2D(double x, double y): _x(x), _y(y) {}
+
+    Coord2D(const TVector &vector): _x(vector[0]), _y(vector[1]) {}
+
+    double x() const { return _x; }
+    double y() const { return _y; }
+
+    // Create TVector with the these coordinates.
+    operator TVector() const
+    {
+        return { _x, _y, 1, 0 };
+    }
+
+    list<Coord2D *> controls() override
+    {
+        return { this };
+    }
+
+    // True if a and b match.
+    friend bool operator == (Coord2D a, Coord2D b)
+    {
+        return equals(a._x, b._x) && equals(a._y, b._y);
+    }
+
+    // True if a and b do not match.
+    friend bool operator != (Coord2D a, Coord2D b)
+    {
+        return !equals(a._x, b._x) || !equals(a._y, b._y);
+    }
+
+private:
+
+    double _x, _y;
+
+};
+
+enum class Visibility { FULL, PARTIAL, NONE };
+
+// Area in world that may be clipped
+class ClippingArea
+{
+public:
+
+    // True if area contains World coord.
+    virtual bool contains(Coord2D coord) const = 0;
+
+    // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
+    virtual Coord2D world_to_window(Coord2D coord) const = 0;
+
+    // Translate coord from Window to World.
+    virtual Coord2D window_to_world(Coord2D coord) const = 0;
+
+};
+
+// Clippable objects
+template<class Object>
+class Clippable
+{
+public:
+
+    // Provide clipped version of itself in area.
+    virtual shared_ptr<Object> clipped_in(ClippingArea &area) = 0;
+
+};
+
+enum class ClippingMethod { COHEN_SUTHERLAND, LIANG_BARSKY, NONE };
+
+static ClippingMethod clipping_method = ClippingMethod::COHEN_SUTHERLAND;
+
+// Clip line between World coord a and b.
+inline pair<Coord2D, Coord2D> clip_line(const Coord2D &a, const Coord2D &b)
+{
+    switch (clipping_method)
+    {
+        case ClippingMethod::COHEN_SUTHERLAND: return clip_line_using_cs(a, b);
+        case ClippingMethod::LIANG_BARSKY: return clip_line_using_lb(a, b);
+        case ClippingMethod::NONE: return make_pair(a, b);
+    }
+}
+
+// Clip line between World coord a and b into the area.
+inline pair<Coord2D, Coord2D> clip_line(ClippingArea &area, const Coord2D &a, const Coord2D &b)
+{
+    const Coord2D window_a = area.world_to_window(a);
+    const Coord2D window_b = area.world_to_window(b);
+
+    const pair<Coord2D, Coord2D> clipped_line = clip_line(window_a, window_b);
+
+    return make_pair(
+        area.window_to_world(clipped_line.first),
+        area.window_to_world(clipped_line.second)
+    );
+}
+
+// Determine the visibility in area for line between a and b.
+inline Visibility visibility(ClippingArea &area, const Coord2D &a, const Coord2D &b)
+{
+    static_assert(is_convertible<TVector, Coord2D>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord2D, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+
+    if (clipping_method == ClippingMethod::NONE) return Visibility::FULL;
+
+    const bool a_in_area = area.contains(a);
+    const bool b_in_area = area.contains(b);
+
+    if (a_in_area && b_in_area)
+    {
+        return Visibility::FULL;
+    }
+    else if (a_in_area || b_in_area || area.contains(equidistant(a, b)))
+    {
+        return Visibility::PARTIAL;
+    }
+    else if (in_one_super_region(area.world_to_window(a), area.world_to_window(b)))
+    {
+        return Visibility::NONE;
+    }
+    else
+    {
+        const pair<Coord2D, Coord2D> clipped = clip_line(area, a, b);
+        return area.contains(clipped.first) || area.contains(clipped.second) ? Visibility::PARTIAL : Visibility::NONE;
+    }
+}
 
 class Color
 {

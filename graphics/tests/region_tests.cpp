@@ -1,6 +1,6 @@
 #include "min_unit.h"
 #include "../region.h"
-#include "../coord.h"
+#include "../graphics2d.h"
 
 static const char * test_region()
 {
