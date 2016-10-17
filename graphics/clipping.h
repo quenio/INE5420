@@ -16,13 +16,13 @@ class ClippingArea
 public:
 
     // True if area contains World coord.
-    virtual bool contains(Coord coord) const = 0;
+    virtual bool contains(Coord2D coord) const = 0;
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    virtual Coord world_to_window(Coord coord) const = 0;
+    virtual Coord2D world_to_window(Coord2D coord) const = 0;
 
     // Translate coord from Window to World.
-    virtual Coord window_to_world(Coord coord) const = 0;
+    virtual Coord2D window_to_world(Coord2D coord) const = 0;
 
 };
 
@@ -42,7 +42,7 @@ enum class ClippingMethod { COHEN_SUTHERLAND, LIANG_BARSKY, NONE };
 static ClippingMethod clipping_method = ClippingMethod::COHEN_SUTHERLAND;
 
 // Clip line between World coord a and b.
-inline pair<Coord, Coord> clip_line(const Coord &a, const Coord &b)
+inline pair<Coord2D, Coord2D> clip_line(const Coord2D &a, const Coord2D &b)
 {
     switch (clipping_method)
     {
@@ -53,12 +53,12 @@ inline pair<Coord, Coord> clip_line(const Coord &a, const Coord &b)
 }
 
 // Clip line between World coord a and b into the area.
-inline pair<Coord, Coord> clip_line(ClippingArea &area, const Coord &a, const Coord &b)
+inline pair<Coord2D, Coord2D> clip_line(ClippingArea &area, const Coord2D &a, const Coord2D &b)
 {
-    const Coord window_a = area.world_to_window(a);
-    const Coord window_b = area.world_to_window(b);
+    const Coord2D window_a = area.world_to_window(a);
+    const Coord2D window_b = area.world_to_window(b);
 
-    const pair<Coord, Coord> clipped_line = clip_line(window_a, window_b);
+    const pair<Coord2D, Coord2D> clipped_line = clip_line(window_a, window_b);
 
     return make_pair(
         area.window_to_world(clipped_line.first),
@@ -67,10 +67,10 @@ inline pair<Coord, Coord> clip_line(ClippingArea &area, const Coord &a, const Co
 }
 
 // Determine the visibility in area for line between a and b.
-inline Visibility visibility(ClippingArea &area, const Coord &a, const Coord &b)
+inline Visibility visibility(ClippingArea &area, const Coord2D &a, const Coord2D &b)
 {
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+    static_assert(is_convertible<TVector, Coord2D>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord2D, TVector>::value, "Coord must have conversion operator: operator TVector() const");
 
     if (clipping_method == ClippingMethod::NONE) return Visibility::FULL;
 
@@ -91,7 +91,7 @@ inline Visibility visibility(ClippingArea &area, const Coord &a, const Coord &b)
     }
     else
     {
-        const pair<Coord, Coord> clipped = clip_line(area, a, b);
+        const pair<Coord2D, Coord2D> clipped = clip_line(area, a, b);
         return area.contains(clipped.first) || area.contains(clipped.second) ? Visibility::PARTIAL : Visibility::NONE;
     }
 }

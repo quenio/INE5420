@@ -5,13 +5,13 @@
 using namespace std;
 
 // 2D coordinates
-class Coord: public Transformable<Coord>
+class Coord2D: public Transformable<Coord2D>
 {
 public:
 
-    Coord(double x, double y): _x(x), _y(y) {}
+    Coord2D(double x, double y): _x(x), _y(y) {}
 
-    Coord(const TVector &vector): _x(vector[0]), _y(vector[1]) {}
+    Coord2D(const TVector &vector): _x(vector[0]), _y(vector[1]) {}
 
     double x() const { return _x; }
     double y() const { return _y; }
@@ -22,19 +22,19 @@ public:
         return { _x, _y, 1, 0 };
     }
 
-    list<Coord *> controls() override
+    list<Coord2D *> controls() override
     {
         return { this };
     }
 
     // True if a and b match.
-    friend bool operator == (Coord a, Coord b)
+    friend bool operator == (Coord2D a, Coord2D b)
     {
         return equals(a._x, b._x) && equals(a._y, b._y);
     }
 
     // True if a and b do not match.
-    friend bool operator != (Coord a, Coord b)
+    friend bool operator != (Coord2D a, Coord2D b)
     {
         return !equals(a._x, b._x) || !equals(a._y, b._y);
     }

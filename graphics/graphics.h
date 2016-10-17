@@ -43,13 +43,13 @@ class Canvas
 public:
 
     // Move to destination.
-    virtual void move(const Coord &destination) = 0;
+    virtual void move(const Coord2D &destination) = 0;
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination, const Color &color) = 0;
+    virtual void draw_line(const Coord2D &destination, const Color &color) = 0;
 
     // Draw circle with the specified center, radius and color.
-    virtual void draw_circle(const Coord &center, const double radius, const Color &color) = 0;
+    virtual void draw_circle(const Coord2D &center, const double radius, const Color &color) = 0;
 
 };
 
@@ -73,7 +73,7 @@ public:
 };
 
 // World objects
-class Object: public virtual Drawable, public Transformable<Coord>
+class Object: public virtual Drawable, public Transformable<Coord2D>
 {
 public:
 
@@ -125,7 +125,7 @@ class Point: public Object
 {
 public:
 
-    Point(Coord coord): _coord(coord) {}
+    Point(Coord2D coord): _coord(coord) {}
 
     // Draw a point in canvas at position (x, y).
     void draw(Canvas &canvas) override
@@ -140,7 +140,7 @@ public:
     }
 
     // Coord of the Point itself
-    Coord center() override
+    Coord2D center() override
     {
         return _coord;
     }
@@ -151,14 +151,14 @@ public:
         return area.contains(_coord) ? Visibility::FULL : Visibility::NONE;
     }
 
-    list<Coord *> controls() override
+    list<Coord2D *> controls() override
     {
         return { &_coord };
     }
 
 private:
 
-    Coord _coord;
+    Coord2D _coord;
 
 };
 
@@ -167,8 +167,8 @@ class Line: public Object, public Clippable<Drawable>
 {
 public:
 
-    Line(Coord a, Coord b): _a(a), _b(b) {}
-    Line(const Color &color, Coord a, Coord b): Object(color), _a(a), _b(b) {}
+    Line(Coord2D a, Coord2D b): _a(a), _b(b) {}
+    Line(const Color &color, Coord2D a, Coord2D b): Object(color), _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas &canvas) override
@@ -184,7 +184,7 @@ public:
     }
 
     // Midpoint between a and b
-    Coord center() override
+    Coord2D center() override
     {
         return equidistant(_a, _b);
     }
@@ -198,19 +198,19 @@ public:
     // Provide clipped version of itself in area.
     shared_ptr<Drawable> clipped_in(ClippingArea &area) override
     {
-        const pair<Coord, Coord> clipped_line = clip_line(area, _a, _b);
+        const pair<Coord2D, Coord2D> clipped_line = clip_line(area, _a, _b);
 
         return make_shared<Line>(color(), clipped_line.first, clipped_line.second);
     }
 
-    list<Coord *> controls() override
+    list<Coord2D *> controls() override
     {
         return { &_a, &_b };
     }
 
 private:
 
-    Coord _a, _b;
+    Coord2D _a, _b;
 
 };
 
@@ -220,22 +220,22 @@ class Polyline: public virtual Drawable, public Clippable<Drawable>
 public:
 
     // Vertices to use when drawing the lines.
-    virtual list<Coord> vertices() const = 0;
+    virtual list<Coord2D> vertices() const = 0;
 
     // Initial vertex of the first line to be drawn
     // nullptr if should start from first vertex in the list of vertices
-    virtual Coord const * initial_vertex() const
+    virtual Coord2D const * initial_vertex() const
     {
         return nullptr;
     }
 
     // New drawable from clipped_vertices
-    virtual shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const = 0;
+    virtual shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const = 0;
 
     // Draw the sequence of lines in canvas.
     void draw(Canvas &canvas) override
     {
-        Coord const *previous = initial_vertex();
+        Coord2D const *previous = initial_vertex();
         for (auto &current: vertices())
         {
             if (previous != nullptr)
@@ -252,7 +252,7 @@ public:
     {
         Visibility result = Visibility::NONE;
 
-        Coord const *previous = initial_vertex();
+        Coord2D const *previous = initial_vertex();
         for (auto &current: vertices())
         {
             if (previous != nullptr)
@@ -276,9 +276,9 @@ public:
     // Provide clipped version of itself in area.
     shared_ptr<Drawable> clipped_in(ClippingArea &area) override
     {
-        list<Coord> new_vertices;
+        list<Coord2D> new_vertices;
 
-        Coord const *previous = initial_vertex();
+        Coord2D const *previous = initial_vertex();
         for (auto &current: vertices())
         {
             if (previous != nullptr)
@@ -296,7 +296,7 @@ public:
 
                     case Visibility::PARTIAL:
                     {
-                        const pair<Coord, Coord> clipped_line = clip_line(area, *previous, current);
+                        const pair<Coord2D, Coord2D> clipped_line = clip_line(area, *previous, current);
 
                         if (area.contains(clipped_line.first) && new_vertices.back() != clipped_line.first)
                             new_vertices.push_back(clipped_line.first);
@@ -308,15 +308,15 @@ public:
 
                     case Visibility::NONE:
                     {
-                        const Coord window_a = area.world_to_window(*previous);
-                        const Coord window_b = area.world_to_window(current);
+                        const Coord2D window_a = area.world_to_window(*previous);
+                        const Coord2D window_b = area.world_to_window(current);
 
                         if (region(window_a) != region(window_b))
                         {
                             // Determine closest corner
                             const double x = min(window_a.x(), window_b.x()) < -1 ? -1 : +1;
                             const double y = min(window_a.y(), window_b.y()) < -1 ? -1 : +1;
-                            const Coord corner = area.window_to_world(Coord(x, y));
+                            const Coord2D corner = area.window_to_world(Coord2D(x, y));
 
                             if (area.contains(corner) && new_vertices.back() != corner)
                                 new_vertices.push_back(corner);
@@ -338,17 +338,17 @@ class Polygon: public Object, public Polyline
 {
 public:
 
-    Polygon(initializer_list<Coord> vertices): _vertices(vertices) {}
-    Polygon(const Color &color, list<Coord> vertices): Object(color), _vertices(vertices) {}
+    Polygon(initializer_list<Coord2D> vertices): _vertices(vertices) {}
+    Polygon(const Color &color, list<Coord2D> vertices): Object(color), _vertices(vertices) {}
 
     // Vertices to use when drawing the lines.
-    list<Coord> vertices() const override
+    list<Coord2D> vertices() const override
     {
         return _vertices;
     }
 
     // Initial vertex of the first line to be drawn.
-    Coord const * initial_vertex() const override
+    Coord2D const * initial_vertex() const override
     {
         return &_vertices.back();
     }
@@ -360,14 +360,14 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<Polygon>(color, clipped_vertices);
     }
 
-    list<Coord *> controls() override
+    list<Coord2D *> controls() override
     {
-        list<Coord *> vertices;
+        list<Coord2D *> vertices;
 
         for (auto &v: _vertices)
             vertices.push_back(&v);
@@ -377,7 +377,7 @@ public:
 
 private:
 
-    list<Coord> _vertices;
+    list<Coord2D> _vertices;
 
 };
 
@@ -385,7 +385,7 @@ class ClippedPolyline: public Polyline
 {
 public:
 
-    ClippedPolyline(const Color &color, list<Coord> vertices): _color(color), _vertices(vertices) {}
+    ClippedPolyline(const Color &color, list<Coord2D> vertices): _color(color), _vertices(vertices) {}
 
     // Color used to draw.
     Color color() const override
@@ -394,13 +394,13 @@ public:
     }
 
     // Vertices to use when drawing the lines.
-    list<Coord> vertices() const override
+    list<Coord2D> vertices() const override
     {
         return _vertices;
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
@@ -408,7 +408,7 @@ public:
 private:
 
     Color _color;
-    list<Coord> _vertices;
+    list<Coord2D> _vertices;
 
 };
 
@@ -417,10 +417,10 @@ class Bezier: public Object, public Polyline
 {
 public:
 
-    Bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
+    Bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
         : Bezier(BLACK, edge1, control1, edge2, control2) {}
 
-    Bezier(const Color &color, Coord edge1, Coord control1, Coord edge2, Coord control2)
+    Bezier(const Color &color, Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
         : Object(color), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
 
     // Type used in the name
@@ -430,32 +430,32 @@ public:
     }
 
     // Midpoint between both edges
-    Coord center() override
+    Coord2D center() override
     {
         return equidistant(_edge1, _edge2);
     }
 
     // Vertices to use when drawing the lines.
-    list<Coord> vertices() const override
+    list<Coord2D> vertices() const override
     {
         return bezier_vertices(_edge1, _control1, _control2, _edge2);
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
 
-    list<Coord *> controls() override
+    list<Coord2D *> controls() override
     {
         return { &_edge1, &_control1, &_edge2, &_control2 };
     }
 
 private:
 
-    Coord _edge1, _control1;
-    Coord _edge2, _control2;
+    Coord2D _edge1, _control1;
+    Coord2D _edge2, _control2;
 
 };
 
@@ -464,9 +464,9 @@ class Spline: public Object, public Polyline
 {
 public:
 
-    Spline(initializer_list<Coord> controls): Spline(BLACK, controls) {}
+    Spline(initializer_list<Coord2D> controls): Spline(BLACK, controls) {}
 
-    Spline(const Color &color, initializer_list<Coord> controls): Object(color), _controls(controls) {}
+    Spline(const Color &color, initializer_list<Coord2D> controls): Object(color), _controls(controls) {}
 
     // Type used in the name
     string type() const override
@@ -475,20 +475,20 @@ public:
     }
 
     // Vertices to use when drawing the lines
-    list<Coord> vertices() const override
+    list<Coord2D> vertices() const override
     {
         return spline_vertices(_controls);
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord> clipped_vertices) const override
+    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
 
-    list<Coord *> controls() override
+    list<Coord2D *> controls() override
     {
-        list<Coord *> result;
+        list<Coord2D *> result;
         for (auto coord = _controls.begin(); coord != _controls.end(); ++coord)
         {
             result.push_back(&(*coord));
@@ -498,7 +498,7 @@ public:
 
 private:
 
-    vector<Coord> _controls;
+    vector<Coord2D> _controls;
 };
 
 // Visible area on a canvas
@@ -543,37 +543,37 @@ public:
          _center(equidistant(_leftBottom, _rightTop)),
          _up_angle(0) {}
 
-    Coord leftBottom() const { return _leftBottom; }
-    Coord leftTop() const { return _leftTop; }
-    Coord rightTop() const { return _rightTop; }
-    Coord rightBottom() const { return _rightBottom; }
+    Coord2D leftBottom() const { return _leftBottom; }
+    Coord2D leftTop() const { return _leftTop; }
+    Coord2D rightTop() const { return _rightTop; }
+    Coord2D rightBottom() const { return _rightBottom; }
 
     double width() const { return distance(leftBottom(), rightBottom()); }
     double height() const { return distance(leftBottom(), leftTop()); }
 
     // True if Window contains World coord.
-    bool contains(Coord coord) const override
+    bool contains(Coord2D coord) const override
     {
-        Coord wc = from_world(coord);
+        Coord2D wc = from_world(coord);
         double x = wc.x(), y = wc.y();
         return ((x > -1 && x < +1) || equals(x, -1) || equals(x, +1)) &&
                ((y > -1 && y < +1) || equals(y, -1) || equals(y, +1));
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    Coord world_to_window(Coord coord) const override
+    Coord2D world_to_window(Coord2D coord) const override
     {
         return from_world(coord);
     }
 
     // Translate coord from Window to World.
-    Coord window_to_world(Coord coord) const override
+    Coord2D window_to_world(Coord2D coord) const override
     {
         return to_world(coord);
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    Coord from_world(Coord coord) const
+    Coord2D from_world(Coord2D coord) const
     {
         return coord *
             translation(-_center.x(), -_center.y()) *
@@ -582,7 +582,7 @@ public:
     }
 
     // Translate coord from Window to World.
-    Coord to_world(Coord coord) const
+    Coord2D to_world(Coord2D coord) const
     {
         return coord *
             rotation(-_up_angle) *
@@ -591,18 +591,18 @@ public:
     }
 
     // Translate coord from Viewport to Window.
-    Coord from_viewport(Coord coord, const Viewport &viewport) const
+    Coord2D from_viewport(Coord2D coord, const Viewport &viewport) const
     {
-        return Coord(coord.x(), viewport.height() - coord.y()) *
+        return Coord2D(coord.x(), viewport.height() - coord.y()) *
                translation(-viewport.left(), -viewport.top()) *
                scaling(norm_width / viewport.content_width(), norm_height / viewport.content_height()) *
                translation(norm_left, norm_bottom);
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
-    Coord to_viewport(Coord coord, const Viewport &viewport) const
+    Coord2D to_viewport(Coord2D coord, const Viewport &viewport) const
     {
-        return Coord(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
+        return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
             scaling(viewport.content_width() / norm_width, viewport.content_height() / norm_height) *
             translation(viewport.left(), viewport.top());
     }
@@ -668,7 +668,7 @@ public:
     }
 
     // Scale by factor from center.
-    void scale(double factor, Coord center) override
+    void scale(double factor, Coord2D center) override
     {
         Object::scale(factor, center);
 
@@ -676,7 +676,7 @@ public:
     }
 
     // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord center) override
+    void rotate(double degrees, Coord2D center) override
     {
         Object::rotate(-degrees, center);
 
@@ -685,7 +685,7 @@ public:
     }
 
     // Window's center
-    Coord center() override
+    Coord2D center() override
     {
         return _center;
     }
@@ -720,14 +720,14 @@ public:
         canvas.draw_line(leftBottom(), color());
     }
 
-    list<Coord *> controls() override
+    list<Coord2D *> controls() override
     {
         return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
     }
 
 private:
 
-    Coord _leftBottom, _leftTop, _rightTop, _rightBottom, _center;
+    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom, _center;
     double _up_angle; // degrees
 
 };
@@ -741,43 +741,43 @@ public:
         : Viewport(width, height), _window(window), _canvas(canvas) {}
 
     // True if area contains world coord.
-    bool contains(Coord coord) const override
+    bool contains(Coord2D coord) const override
     {
         return _window->contains(coord);
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    Coord world_to_window(Coord coord) const override
+    Coord2D world_to_window(Coord2D coord) const override
     {
         return _window->world_to_window(coord);
     }
 
     // Translate coord from Window to World.
-    Coord window_to_world(Coord coord) const override
+    Coord2D window_to_world(Coord2D coord) const override
     {
         return _window->window_to_world(coord);
     }
 
     // Translate coord from world to viewport
-    Coord translate(const Coord &coord) const
+    Coord2D translate(const Coord2D &coord) const
     {
         return _window->to_viewport(_window->from_world(coord), *this);
     }
 
     // Move to destination.
-    void move(const Coord &destination) override
+    void move(const Coord2D &destination) override
     {
         _canvas.move(translate(destination));
     }
 
     // Draw line from current position to destination.
-    void draw_line(const Coord &destination, const Color &color) override
+    void draw_line(const Coord2D &destination, const Color &color) override
     {
         _canvas.draw_line(translate(destination), color);
     }
 
     // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord &center, const double radius, const Color &color) override
+    void draw_circle(const Coord2D &center, const double radius, const Color &color) override
     {
         _canvas.draw_circle(translate(center), radius, color);
     }
@@ -923,7 +923,7 @@ public:
     {
         for(auto &object: _selected_objects) object->highlight_off();
         _selected_objects.clear();
-        _center = Coord(0, 0);
+        _center = Coord2D(0, 0);
     }
 
     // True if any objects is selected.
@@ -957,7 +957,7 @@ public:
     }
 
     // Set the new center from viewport coordinates
-    void set_center_from_viewport(Coord center, const Viewport &viewport)
+    void set_center_from_viewport(Coord2D center, const Viewport &viewport)
     {
         _center = _window->to_world(_window->from_viewport(center, viewport));
     }
@@ -965,21 +965,21 @@ public:
 private:
 
     // Render a cross at center with radius, using color.
-    void render_cross(Canvas &canvas, const Coord &coord, double radius, const Color &color)
+    void render_cross(Canvas &canvas, const Coord2D &coord, double radius, const Color &color)
     {
         // Horizontal bar
-        canvas.move(translated<Coord>(coord, -radius, 0));
-        canvas.draw_line(translated<Coord>(coord, +radius, 0), color);
+        canvas.move(translated<Coord2D>(coord, -radius, 0));
+        canvas.draw_line(translated<Coord2D>(coord, +radius, 0), color);
 
         // Vertical bar
-        canvas.move(translated<Coord>(coord, 0, -radius));
-        canvas.draw_line(translated<Coord>(coord, 0, +radius), color);
+        canvas.move(translated<Coord2D>(coord, 0, -radius));
+        canvas.draw_line(translated<Coord2D>(coord, 0, +radius), color);
     }
 
     // Render the x axis and y axis.
     void render_axis(Canvas &canvas)
     {
-        const Coord center = Coord(0, 0);
+        const Coord2D center = Coord2D(0, 0);
         const int radius = 10000;
 
         render_cross(canvas, center, radius, GREEN);
@@ -1010,31 +1010,31 @@ private:
     shared_ptr<Window> _window;
     DisplayFile _display_file;
     list<shared_ptr<Object>> _selected_objects;
-    Coord _center;
+    Coord2D _center;
 
 };
 
-inline shared_ptr<DrawCommand> draw_point(Coord a)
+inline shared_ptr<DrawCommand> draw_point(Coord2D a)
 {
     return make_shared<DrawCommand>(make_shared<Point>(a));
 }
 
-inline shared_ptr<DrawCommand> draw_line(Coord a, Coord b)
+inline shared_ptr<DrawCommand> draw_line(Coord2D a, Coord2D b)
 {
     return make_shared<DrawCommand>(make_shared<Line>(a, b));
 }
 
-inline shared_ptr<DrawCommand> draw_square(Coord a, Coord b, Coord c, Coord d)
+inline shared_ptr<DrawCommand> draw_square(Coord2D a, Coord2D b, Coord2D c, Coord2D d)
 {
     return make_shared<DrawCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
 }
 
-inline shared_ptr<DrawCommand> draw_bezier(Coord edge1, Coord control1, Coord edge2, Coord control2)
+inline shared_ptr<DrawCommand> draw_bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
 {
     return make_shared<DrawCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
 }
 
-inline shared_ptr<DrawCommand> draw_spline(initializer_list<Coord> controls)
+inline shared_ptr<DrawCommand> draw_spline(initializer_list<Coord2D> controls)
 {
     return make_shared<DrawCommand>(make_shared<Spline>(Spline(controls)));
 }

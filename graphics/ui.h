@@ -40,13 +40,13 @@ public:
     }
 
     // Move to destination.
-    virtual void move(const Coord &destination)
+    virtual void move(const Coord2D &destination)
     {
         cairo_move_to(cr, destination.x(), destination.y());
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination, const Color &color)
+    virtual void draw_line(const Coord2D &destination, const Color &color)
     {
         cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
@@ -55,7 +55,7 @@ public:
     }
 
     // Draw circle with the specified center, radius and color.
-    virtual void draw_circle(const Coord &center, const double radius, const Color &color)
+    virtual void draw_circle(const Coord2D &center, const double radius, const Color &color)
     {
         cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
@@ -130,7 +130,7 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
     if (event->button == 1) {
         gtk_widget_grab_focus(canvas);
 
-        const Coord new_center = Coord(event->x, event->y);
+        const Coord2D new_center = Coord2D(event->x, event->y);
         const int widget_width = gtk_widget_get_allocated_width(canvas);
         const int widget_height = gtk_widget_get_allocated_height(canvas);
         const Viewport viewport(widget_width, widget_height);
