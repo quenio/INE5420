@@ -1,10 +1,10 @@
 #include "min_unit.h"
 #include "../display.h"
 
-static void print(Coord2D coord)
-{
-    printf("(%f,%f)\n", coord.x(), coord.y());
-}
+//static void print(Coord2D coord)
+//{
+//    printf("(%f,%f)\n", coord.x(), coord.y());
+//}
 
 static const char * to_world()
 {
