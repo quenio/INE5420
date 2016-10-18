@@ -80,6 +80,13 @@ static const char * delta()
     return nullptr;
 }
 
+static const char * transformations()
+{
+    mu_assert(Coord3D(1, 0, 0) * translation(Coord3D(1, 0, 0)) * rotation(90) * scaling(Coord3D(1, 3, 1)) == Coord3D(0, -6, 0));
+
+    return nullptr;
+}
+
 void all_tests()
 {
     mu_test(at_index);
@@ -90,5 +97,6 @@ void all_tests()
     mu_test(pow);
     mu_test(equidistant);
     mu_test(delta);
+    mu_test(transformations);
 }
 
