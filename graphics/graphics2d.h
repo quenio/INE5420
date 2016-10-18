@@ -1,6 +1,5 @@
 #pragma once
 
-#include "transforms.h"
 #include "region.h"
 #include "clipping_cs.h"
 #include "clipping_lb.h"
@@ -11,7 +10,6 @@
 #include <memory>
 #include <vector>
 #include <list>
-#include <sstream>
 
 #define UNUSED __attribute__ ((unused))
 
@@ -32,6 +30,9 @@ public:
     }
 
 };
+
+template<>
+int Object<Coord2D>::_count = 0;
 
 // Plane Projection Coordinates
 class PPC: public XYCoord<PPC>
@@ -137,16 +138,10 @@ inline Visibility visibility(ClippingArea &area, const Coord2D &a, const Coord2D
     }
 }
 
-// Drawable objects
-class Drawable
+// 2D drawable objects
+class Drawable2D: public virtual Drawable<Coord2D>
 {
 public:
-
-    // Draw something in canvas.
-    virtual void draw(Canvas<Coord2D> &canvas) = 0;
-
-    // Color used to draw.
-    virtual Color color() const = 0;
 
     // Determine the visibility in area.
     virtual Visibility visibility_in(ClippingArea UNUSED &area) const
@@ -156,56 +151,17 @@ public:
 
 };
 
-// World objects
-class Object: public virtual Drawable, public Transformable<Coord2D>
+// 2D objects
+class Object2D: public Object<Coord2D>, public virtual Drawable2D
 {
 public:
 
-    Object(const Color &color = BLACK): _color(color), _regular_color(color)
-    {
-        _id = ++_count;
-    }
-
-    // Type used in the name
-    virtual string type() const = 0;
-
-    // Name displayed on the UI
-    virtual string name() const
-    {
-        stringstream ss;
-        ss << type() << _id;
-        return ss.str();
-    }
-
-    void highlight_on()
-    {
-        _color = RED;
-    }
-
-    void highlight_off()
-    {
-        _color = _regular_color;
-    }
-
-    // Color used to draw.
-    Color color() const override
-    {
-        return _color;
-    }
-
-private:
-
-    int _id;
-    Color _color, _regular_color;
-
-    static int _count;
+    Object2D(const Color &color = BLACK): Object<Coord2D>(color) {}
 
 };
 
-int Object::_count = 0;
-
 // Two-dimensional points
-class Point: public Object
+class Point: public Object2D
 {
 public:
 
@@ -247,12 +203,12 @@ private:
 };
 
 // Straight one-dimensional figure delimited by two points
-class Line: public Object, public Clippable<Drawable>
+class Line: public Object2D, public Clippable<Drawable2D>
 {
 public:
 
     Line(Coord2D a, Coord2D b): _a(a), _b(b) {}
-    Line(const Color &color, Coord2D a, Coord2D b): Object(color), _a(a), _b(b) {}
+    Line(const Color &color, Coord2D a, Coord2D b): Object2D(color), _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas<Coord2D> &canvas) override
@@ -280,7 +236,7 @@ public:
     }
 
     // Provide clipped version of itself in area.
-    shared_ptr<Drawable> clipped_in(ClippingArea &area) override
+    shared_ptr<Drawable2D> clipped_in(ClippingArea &area) override
     {
         const pair<Coord2D, Coord2D> clipped_line = clip_line(area, _a, _b);
 
@@ -299,7 +255,7 @@ private:
 };
 
 // Sequence of lines drawn from the given vertices.
-class Polyline: public virtual Drawable, public Clippable<Drawable>
+class Polyline: public virtual Drawable2D, public Clippable<Drawable2D>
 {
 public:
 
@@ -314,7 +270,7 @@ public:
     }
 
     // New drawable from clipped_vertices
-    virtual shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const = 0;
+    virtual shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const = 0;
 
     // Draw the sequence of lines in canvas.
     void draw(Canvas<Coord2D> &canvas) override
@@ -358,7 +314,7 @@ public:
     }
 
     // Provide clipped version of itself in area.
-    shared_ptr<Drawable> clipped_in(ClippingArea &area) override
+    shared_ptr<Drawable2D> clipped_in(ClippingArea &area) override
     {
         list<Coord2D> new_vertices;
 
@@ -418,12 +374,12 @@ public:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Object, public Polyline
+class Polygon: public Object2D, public Polyline
 {
 public:
 
     Polygon(initializer_list<Coord2D> vertices): _vertices(vertices) {}
-    Polygon(const Color &color, list<Coord2D> vertices): Object(color), _vertices(vertices) {}
+    Polygon(const Color &color, list<Coord2D> vertices): Object2D(color), _vertices(vertices) {}
 
     // Vertices to use when drawing the lines.
     list<Coord2D> vertices() const override
@@ -444,7 +400,7 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<Polygon>(color, clipped_vertices);
     }
@@ -484,7 +440,7 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
@@ -497,7 +453,7 @@ private:
 };
 
 // Curve defined by two edge coords and two internal control points
-class Bezier: public Object, public Polyline
+class Bezier: public Object2D, public Polyline
 {
 public:
 
@@ -505,7 +461,7 @@ public:
         : Bezier(BLACK, edge1, control1, edge2, control2) {}
 
     Bezier(const Color &color, Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
-        : Object(color), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
+        : Object2D(color), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
 
     // Type used in the name
     string type() const override
@@ -526,7 +482,7 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
@@ -544,13 +500,13 @@ private:
 };
 
 // B-Spline curve defined by a list of control coords.
-class Spline: public Object, public Polyline
+class Spline: public Object2D, public Polyline
 {
 public:
 
     Spline(initializer_list<Coord2D> controls): Spline(BLACK, controls) {}
 
-    Spline(const Color &color, initializer_list<Coord2D> controls): Object(color), _controls(controls) {}
+    Spline(const Color &color, initializer_list<Coord2D> controls): Object2D(color), _controls(controls) {}
 
     // Type used in the name
     string type() const override
@@ -565,7 +521,7 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }

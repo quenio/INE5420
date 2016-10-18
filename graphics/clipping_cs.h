@@ -14,6 +14,7 @@ inline Coord clip_point_in_line_using_cs(const Coord &a, const Coord &b, double 
 {
     static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
     static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+    static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
 
     switch (region(a))
     {
@@ -35,7 +36,7 @@ inline Coord clip_point_in_line_using_cs(const Coord &a, const Coord &b, double 
 template<class Coord>
 inline pair<Coord, Coord> clip_line_using_cs(const Coord &a, const Coord &b)
 {
-    double m = angular_coefficient(a, b);
+    double m = angular_coefficient(a, b, 1, 0);
 
     return make_pair(
         clip_point_in_line_using_cs(a, b, m),

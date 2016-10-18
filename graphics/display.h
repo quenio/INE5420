@@ -27,6 +27,7 @@ public:
 
     Viewport(double width, double height): _width(width), _height(height), _margin(_width * margin_percentage) {}
 
+    Coord2D topLeft() const { return Coord2D(left(), top()); }
     double top() const { return _margin; }
     double left() const { return _margin; }
 
@@ -45,17 +46,17 @@ private:
 };
 
 // Visible area of the world
-class Window: public Object, public ClippingArea
+class Window: public Object2D, public ClippingArea
 {
 public:
 
-    constexpr static int norm_left = -1;
-    constexpr static int norm_bottom = -1;
-    constexpr static int norm_width = 2;
-    constexpr static int norm_height = 2;
+    constexpr static double norm_left = -1;
+    constexpr static double norm_bottom = -1;
+    constexpr static double norm_width = 2;
+    constexpr static double norm_height = 2;
 
     Window(double left, double bottom, double right, double top)
-        :Object(BLUE),
+        :Object2D(BLUE),
          _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
          _up_angle(0) {}
@@ -67,6 +68,19 @@ public:
 
     double width() const { return distance(leftBottom(), rightBottom()); }
     double height() const { return distance(leftBottom(), leftTop()); }
+
+    Coord2D window_ratios() const { return Coord2D(norm_width / width(), norm_height / height()); }
+    Coord2D world_ratios() const { return Coord2D(width() / norm_width, height() / norm_height); }
+
+    Coord2D window_ratios(const Viewport &viewport) const
+    {
+        return Coord2D(norm_width / viewport.content_width(), norm_height / viewport.content_height());
+    }
+
+    Coord2D viewport_ratios(const Viewport &viewport) const
+    {
+        return Coord2D(viewport.content_width() / norm_width, viewport.content_height() / norm_height);
+    }
 
     // True if Window contains World coord.
     bool contains(Coord2D coord) const override
@@ -92,36 +106,30 @@ public:
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
     PPC from_world(Coord2D coord) const
     {
-        return coord *
-               translation(-_center.x(), -_center.y()) *
-               rotation(_up_angle) *
-               scaling(norm_width / width(), norm_height / height());
+        return coord * inverse_translation(_center) * rotation(_up_angle) * scaling(window_ratios());
     }
 
     // Translate coord from Window to World.
     Coord2D to_world(PPC coord) const
     {
-        return coord *
-               rotation(-_up_angle) *
-               scaling(width() / norm_width, height() / norm_height) *
-               translation(_center.x(), _center.y());
+        return coord * rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
     }
 
     // Translate coord from Viewport to Window.
     PPC from_viewport(VC coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x(), viewport.height() - coord.y()) *
-               translation(-viewport.left(), -viewport.top()) *
-               scaling(norm_width / viewport.content_width(), norm_height / viewport.content_height()) *
-               translation(norm_left, norm_bottom);
+               inverse_translation(viewport.topLeft()) *
+               scaling(window_ratios(viewport)) *
+               translation(Coord2D(norm_left, norm_bottom));
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
     VC to_viewport(PPC coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
-               scaling(viewport.content_width() / norm_width, viewport.content_height() / norm_height) *
-               translation(viewport.left(), viewport.top());
+               scaling(viewport_ratios(viewport)) *
+               translation(viewport.topLeft());
     }
 
     // Zoom out by factor
@@ -141,7 +149,7 @@ public:
     {
         double tx = width() * factor;
 
-        translate(-tx, 0);
+        translate(Coord2D(-tx, 0));
     }
 
     // Pan right by factor
@@ -149,7 +157,7 @@ public:
     {
         double tx = width() * factor;
 
-        translate(+tx, 0);
+        translate(Coord2D(+tx, 0));
     }
 
     // Pan up by factor
@@ -157,7 +165,7 @@ public:
     {
         double ty = height() * factor;
 
-        translate(0, +ty);
+        translate(Coord2D(0, +ty));
     }
 
     // Pan down by factor
@@ -165,7 +173,7 @@ public:
     {
         double ty = height() * factor;
 
-        translate(0, -ty);
+        translate(Coord2D(0, -ty));
     }
 
     // Transform according to the matrix.
@@ -176,10 +184,10 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
-    // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
+    // Translate by delta.
+    void translate(Coord2D delta) override
     {
-        Object::translate(dx, dy);
+        Object::translate(delta);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -321,7 +329,7 @@ class DrawCommand: public DisplayCommand
 {
 public:
 
-    DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
+    DrawCommand(shared_ptr<Drawable2D> drawable): _drawable(drawable) {}
 
     // Render drawable on canvas if visible.
     void render(ViewportCanvas &canvas) override
@@ -332,36 +340,36 @@ public:
             {
                 _drawable->draw(canvas);
             }
-                break;
+            break;
 
             case Visibility::PARTIAL:
             {
-                shared_ptr<Clippable<Drawable>> clippable = dynamic_pointer_cast<Clippable<Drawable>>(_drawable);
+                shared_ptr<Clippable<Drawable2D>> clippable = dynamic_pointer_cast<Clippable<Drawable2D>>(_drawable);
                 if (clippable == nullptr)
                     _drawable->draw(canvas);
                 else
                 {
-                    shared_ptr<Drawable> clipped = clippable->clipped_in(canvas);
+                    shared_ptr<Drawable2D> clipped = clippable->clipped_in(canvas);
                     if (clipped->visibility_in(canvas) == Visibility::FULL)
                     {
                         clipped->draw(canvas);
                     }
                 }
             }
-                break;
+            break;
 
             case Visibility::NONE:;
                 // Nothing to draw.
         }
     }
 
-    shared_ptr<Object> object()
+    shared_ptr<Object2D> object()
     {
-        return dynamic_pointer_cast<Object>(_drawable);
+        return dynamic_pointer_cast<Object2D>(_drawable);
     }
 
 private:
-    shared_ptr<Drawable> _drawable;
+    shared_ptr<Drawable2D> _drawable;
 };
 
 // List of commands to be executed in order to display an output image
@@ -397,8 +405,8 @@ public:
     shared_ptr<Window> window() { return _window; }
 
     // Objects from command list
-    vector<shared_ptr<Object>> objects() {
-        vector<shared_ptr<Object>> vector;
+    vector<shared_ptr<Object2D>> objects() {
+        vector<shared_ptr<Object2D>> vector;
 
         vector.push_back(_window);
 
@@ -429,7 +437,7 @@ public:
     {
         assert(index >= 0 && index < objects().size());
 
-        shared_ptr<Object> object = objects().at(index);
+        shared_ptr<Object2D> object = objects().at(index);
         object->highlight_on();
         _selected_objects.push_back(object);
         _center = object->center();
@@ -452,9 +460,9 @@ public:
     // Move the selected objects by dx horizontally, dy vertically.
     void translate_selected(double dx, double dy)
     {
-        for (shared_ptr<Object> object: _selected_objects)
+        for (shared_ptr<Object2D> object: _selected_objects)
         {
-            object->translate(dx, dy);
+            object->translate(Coord2D(dx, dy));
             _center = object->center();
         }
     }
@@ -462,14 +470,14 @@ public:
     // Scale the selected objects by factor.
     void scale_selected(double factor)
     {
-        for (shared_ptr<Object> object: _selected_objects)
+        for (shared_ptr<Object2D> object: _selected_objects)
             object->scale(factor, _center);
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate_selected(double degrees)
     {
-        for (shared_ptr<Object> object: _selected_objects)
+        for (shared_ptr<Object2D> object: _selected_objects)
             object->rotate(degrees, _center);
     }
 
@@ -482,15 +490,15 @@ public:
 private:
 
     // Render a cross at center with radius, using color.
-    void render_cross(Canvas<Coord2D> &canvas, const Coord2D &coord, double radius, const Color &color)
+    void render_cross(Canvas<Coord2D> &canvas, const Coord2D &center, double radius, const Color &color)
     {
         // Horizontal bar
-        canvas.move(translated<Coord2D>(coord, -radius, 0));
-        canvas.draw_line(translated<Coord2D>(coord, +radius, 0), color);
+        canvas.move(translated<Coord2D>(center, Coord2D(-radius, 0)));
+        canvas.draw_line(translated<Coord2D>(center, Coord2D(+radius, 0)), color);
 
         // Vertical bar
-        canvas.move(translated<Coord2D>(coord, 0, -radius));
-        canvas.draw_line(translated<Coord2D>(coord, 0, +radius), color);
+        canvas.move(translated<Coord2D>(center, Coord2D(0, -radius)));
+        canvas.draw_line(translated<Coord2D>(center, Coord2D(0, +radius)), color);
     }
 
     // Render the x axis and y axis.
@@ -526,7 +534,7 @@ private:
 
     shared_ptr<Window> _window;
     DisplayFile _display_file;
-    list<shared_ptr<Object>> _selected_objects;
+    list<shared_ptr<Object2D>> _selected_objects;
     Coord2D _center;
 
 };

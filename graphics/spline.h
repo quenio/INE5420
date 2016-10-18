@@ -61,7 +61,7 @@ inline TVector initial_fd_vector(TVector dx, TVector dy)
 template<class Coord>
 inline TVector next_fd_vector(const Coord &coord, TVector dx, TVector dy)
 {
-    return coord * translation(dx[0], dy[0]);
+    return coord * translation(dx[0], dy[0], 1);
 }
 
 // Generate vertices using forward-differences technique.

@@ -88,6 +88,13 @@ inline TVector& operator += (TVector &lhs, const TVector &rhs)
     return lhs;
 }
 
+// Diff rhs from lhs.
+inline TVector& operator -= (TVector &lhs, const TVector &rhs)
+{
+    lhs = lhs - rhs;
+    return lhs;
+}
+
 // Distance between a and b.
 inline double distance(const TVector &a, const TVector &b)
 {
@@ -97,31 +104,31 @@ inline double distance(const TVector &a, const TVector &b)
 // Equidistant vector between a and b
 inline TVector equidistant(TVector a, TVector b)
 {
-    return TVector({ equidistant(a[0], b[0]), equidistant(a[1], b[1]), 0, 0 });
-}
-
-// Determine vector in segment at x based on start and the angular coefficient m between start and the new point.
-inline TVector at_x(double x, const TVector &start, double m)
-{
-    return TVector({ x, start[1] + (m * (x - start[0])), 0, 0 });
-}
-
-// Determine point in line at y based on start and the angular coefficient m between start and the new point.
-inline TVector at_y(double y, const TVector &start, double m)
-{
-    return TVector({ start[0] + ((1/m) * (y - start[1])), y, 0, 0 });
+    return TVector(
+        {
+           equidistant(a[0], b[0]),
+           equidistant(a[1], b[1]),
+           equidistant(a[2], b[2]),
+           1
+        }
+    );
 }
 
 // Difference between a and b at the i'th position.
 inline double delta(const TVector &a, const TVector &b, size_t i)
 {
+    assert(i >= TVector::first_index && i <= TVector::last_index);
+
     return a[i] - b[i];
 }
 
-// Angular coefficient of line between a and b.
-inline double angular_coefficient(const TVector &a, const TVector &b)
+// Angular coefficient of line between a and b from axis in slot from_axis on plane formed with axis in slot on_axis.
+inline double angular_coefficient(const TVector &a, const TVector &b, size_t on_axis, size_t from_axis)
 {
-    return delta(a, b, 1) / delta(a, b, 0);
+    assert(on_axis >= TVector::first_index && on_axis < TVector::last_index);
+    assert(from_axis >= TVector::first_index && from_axis < TVector::last_index);
+
+    return delta(a, b, on_axis) / delta(a, b, from_axis);
 }
 
 // Determine point in line between point a and b.
@@ -131,8 +138,8 @@ inline TVector at_step(double step, const TVector &start, const TVector &end)
         {
             start[0] + (step * delta(end, start, 0)),
             start[1] + (step * delta(end, start, 1)),
-            0,
-            0
+            start[2] + (step * delta(end, start, 2)),
+            1
         }
     );
 }
@@ -196,44 +203,50 @@ private:
     TVector _column[column_count];
 };
 
-// Translation matrix: translate by dx horizontally, dy vertically.
-inline TMatrix translation(double dx, double dy)
+// Translation matrix: translate by dx horizontally, dy vertically, dz in depth.
+inline TMatrix translation(double dx, double dy, double dz)
 {
     return TMatrix(
-        { 1.0, 0.0,  dx, 0.0 },
-        { 0.0, 1.0,  dy, 0.0 },
-        { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
+        { 1.0, 0.0, 0.0,  dx },
+        { 0.0, 1.0, 0.0,  dy },
+        { 0.0, 0.0, 1.0,  dz },
+        { 0.0, 0.0, 0.0, 1.0 }
     );
 }
 
 // Translation matrix to delta.
 inline TMatrix translation(TVector delta)
 {
-    return translation(delta[0], delta[1]);
+    return translation(delta[0], delta[1], delta[2]);
 }
 
 // Inverse translation matrix to delta.
 inline TMatrix inverse_translation(TVector delta)
 {
-    return translation(-delta[0], -delta[1]);
+    return translation(-delta[0], -delta[1], -delta[2]);
 }
 
-// Scaling matrix: scale x by factor sx, y by factor sy.
-inline TMatrix scaling(double sx, double sy)
+// Scaling matrix: scale x by factor sx, y by factor sy, z by factor sz.
+inline TMatrix scaling(double sx, double sy, double sz)
 {
     return TMatrix(
         {  sx, 0.0, 0.0, 0.0 },
         { 0.0,  sy, 0.0, 0.0 },
-        { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
+        { 0.0, 0.0,  sz, 0.0 },
+        { 0.0, 0.0, 0.0, 1.0 }
     );
+}
+
+// Scaling matrix: scale x by factor[0], y by factor[1], z by factor[2].
+inline TMatrix scaling(TVector factor)
+{
+    return scaling(factor[0], factor[1], factor[2]);
 }
 
 // Scaling matrix by factor from center.
 inline TMatrix scaling(double factor, TVector center)
 {
-    return inverse_translation(center) * scaling(factor, factor) * translation(center);
+    return inverse_translation(center) * scaling(factor, factor, factor) * translation(center);
 }
 
 constexpr double PI = 3.14159265;
@@ -248,7 +261,7 @@ inline TMatrix rotation(double degrees)
         {   c,   s, 0.0, 0.0 },
         {  -s,   c, 0.0, 0.0 },
         { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
+        { 0.0, 0.0, 0.0, 1.0 }
     );
 }
 
@@ -277,11 +290,11 @@ inline void transform(TMatrix m, list<Coord *> coords)
         *c *= m;
 }
 
-// Translate coord by dx horizontally, dy vertically.
+// Translate coord by dx horizontally, dy vertically, dz in depth.
 template<class Coord>
-inline void translate(double dx, double dy, list<Coord *> coords)
+inline void translate(Coord delta, list<Coord *> coords)
 {
-    transform(translation(dx, dy), coords);
+    transform(translation(delta), coords);
 }
 
 // Scale coord by factor from center.
@@ -390,10 +403,10 @@ public:
         ::transform(matrix, controls());
     }
 
-    // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy)
+    // Translate by delta.
+    virtual void translate(Coord delta)
     {
-        ::translate(dx, dy, controls());
+        ::translate(delta, controls());
     }
 
     // Scale by factor from center.
@@ -410,14 +423,14 @@ public:
 
 };
 
-// New object translated by dx horizontally, dy vertically
+// New object translated by delta
 template<class Coord, class Object>
-Object translated(const Object &object, double dx, double dy)
+Object translated(const Object &object, Coord delta)
 {
     static_assert(is_base_of<Transformable<Coord>, Object>::value, "Object must derive from Transformable<Coord>.");
 
     Object new_object = object;
-    new_object.translate(dx, dy);
+    new_object.translate(delta);
 
     return new_object;
 }
@@ -468,7 +481,7 @@ public:
     // Create TVector with the these coordinates.
     operator TVector() const
     {
-        return { _x, _y, 1, 0 };
+        return { _x, _y, 1, 1 };
     }
 
     // True if a and b match.
@@ -486,5 +499,67 @@ public:
 private:
 
     double _x, _y;
+
+};
+
+// Determine vector in segment at x based on start and the angular coefficient m between start and the new point.
+template<class Coord>
+inline Coord at_x(double x, const Coord &start, double m)
+{
+    static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
+
+    return { x, start.y() + (m * (x - start.x())) };
+}
+
+// Determine point in line at y based on start and the angular coefficient m between start and the new point.
+template<class Coord>
+inline Coord at_y(double y, const Coord &start, double m)
+{
+    static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
+
+    return { start.x() + ((1/m) * (y - start.y())), y };
+}
+
+// (x, y, z) coordinates
+template<class Coord>
+class XYZCoord: public Transformable<Coord>
+{
+public:
+
+    XYZCoord(double x, double y, double z): _x(x), _y(y), _z(z)
+    {
+        static_assert(is_base_of<XYZCoord<Coord>, Coord>::value, "Coord must derive from XYZCoord<Coord>");
+    }
+
+    XYZCoord(const TVector &vector): _x(vector[0]), _y(vector[1]), _z(vector[2])
+    {
+        static_assert(is_base_of<XYZCoord<Coord>, Coord>::value, "Coord must derive from XYZCoord<Coord>");
+    }
+
+    double x() const { return _x; }
+    double y() const { return _y; }
+    double z() const { return _z; }
+
+    // Create TVector with the these coordinates.
+    operator TVector() const
+    {
+        return { _x, _y, _z, 1 };
+    }
+
+    // True if a and b match.
+    friend bool operator == (Coord a, Coord b)
+    {
+        return equals(a._x, b._x) && equals(a._y, b._y) && equals(a._z, b._z);
+    }
+
+    // True if a and b do not match.
+    friend bool operator != (Coord a, Coord b)
+    {
+        return !equals(a._x, b._x) || !equals(a._y, b._y) || !equals(a._z, b._z);
+    }
+
+private:
+
+    double _x, _y, _z;
 
 };
