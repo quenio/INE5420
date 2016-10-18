@@ -46,7 +46,7 @@ private:
 };
 
 // Visible area of the world
-class Window: public Object, public ClippingArea
+class Window: public Object2D, public ClippingArea
 {
 public:
 
@@ -56,7 +56,7 @@ public:
     constexpr static double norm_height = 2;
 
     Window(double left, double bottom, double right, double top)
-        :Object(BLUE),
+        :Object2D(BLUE),
          _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
          _up_angle(0) {}
@@ -329,7 +329,7 @@ class DrawCommand: public DisplayCommand
 {
 public:
 
-    DrawCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
+    DrawCommand(shared_ptr<Drawable2D> drawable): _drawable(drawable) {}
 
     // Render drawable on canvas if visible.
     void render(ViewportCanvas &canvas) override
@@ -340,36 +340,36 @@ public:
             {
                 _drawable->draw(canvas);
             }
-                break;
+            break;
 
             case Visibility::PARTIAL:
             {
-                shared_ptr<Clippable<Drawable>> clippable = dynamic_pointer_cast<Clippable<Drawable>>(_drawable);
+                shared_ptr<Clippable<Drawable2D>> clippable = dynamic_pointer_cast<Clippable<Drawable2D>>(_drawable);
                 if (clippable == nullptr)
                     _drawable->draw(canvas);
                 else
                 {
-                    shared_ptr<Drawable> clipped = clippable->clipped_in(canvas);
+                    shared_ptr<Drawable2D> clipped = clippable->clipped_in(canvas);
                     if (clipped->visibility_in(canvas) == Visibility::FULL)
                     {
                         clipped->draw(canvas);
                     }
                 }
             }
-                break;
+            break;
 
             case Visibility::NONE:;
                 // Nothing to draw.
         }
     }
 
-    shared_ptr<Object> object()
+    shared_ptr<Object2D> object()
     {
-        return dynamic_pointer_cast<Object>(_drawable);
+        return dynamic_pointer_cast<Object2D>(_drawable);
     }
 
 private:
-    shared_ptr<Drawable> _drawable;
+    shared_ptr<Drawable2D> _drawable;
 };
 
 // List of commands to be executed in order to display an output image
@@ -405,8 +405,8 @@ public:
     shared_ptr<Window> window() { return _window; }
 
     // Objects from command list
-    vector<shared_ptr<Object>> objects() {
-        vector<shared_ptr<Object>> vector;
+    vector<shared_ptr<Object2D>> objects() {
+        vector<shared_ptr<Object2D>> vector;
 
         vector.push_back(_window);
 
@@ -437,7 +437,7 @@ public:
     {
         assert(index >= 0 && index < objects().size());
 
-        shared_ptr<Object> object = objects().at(index);
+        shared_ptr<Object2D> object = objects().at(index);
         object->highlight_on();
         _selected_objects.push_back(object);
         _center = object->center();
@@ -460,7 +460,7 @@ public:
     // Move the selected objects by dx horizontally, dy vertically.
     void translate_selected(double dx, double dy)
     {
-        for (shared_ptr<Object> object: _selected_objects)
+        for (shared_ptr<Object2D> object: _selected_objects)
         {
             object->translate(Coord2D(dx, dy));
             _center = object->center();
@@ -470,14 +470,14 @@ public:
     // Scale the selected objects by factor.
     void scale_selected(double factor)
     {
-        for (shared_ptr<Object> object: _selected_objects)
+        for (shared_ptr<Object2D> object: _selected_objects)
             object->scale(factor, _center);
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate_selected(double degrees)
     {
-        for (shared_ptr<Object> object: _selected_objects)
+        for (shared_ptr<Object2D> object: _selected_objects)
             object->rotate(degrees, _center);
     }
 
@@ -534,7 +534,7 @@ private:
 
     shared_ptr<Window> _window;
     DisplayFile _display_file;
-    list<shared_ptr<Object>> _selected_objects;
+    list<shared_ptr<Object2D>> _selected_objects;
     Coord2D _center;
 
 };

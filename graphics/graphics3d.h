@@ -1,6 +1,6 @@
 #pragma once
 
-#include "transforms.h"
+#include "graphics.h"
 
 // 3D coordinates
 class Coord3D: public XYZCoord<Coord3D>
@@ -17,3 +17,6 @@ public:
     }
 
 };
+
+template<>
+int Object<Coord3D>::_count = 0;

@@ -146,7 +146,7 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
 
 static const double step = 0.1; // 10 percent
 
-static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object>> objects) {
+static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object2D>> objects) {
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
 

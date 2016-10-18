@@ -1,5 +1,9 @@
 #pragma once
 
+#include "transforms.h"
+
+#include <sstream>
+
 class Color
 {
 public:
@@ -36,6 +40,67 @@ public:
 
     // Draw circle with the specified center, radius and color.
     virtual void draw_circle(const Coord &center, const double radius, const Color &color) = 0;
+
+};
+
+// Drawable objects
+template<class Coord>
+class Drawable
+{
+public:
+
+    // Draw something in canvas.
+    virtual void draw(Canvas<Coord> &canvas) = 0;
+
+    // Color used to draw.
+    virtual Color color() const = 0;
+
+};
+
+// World objects
+template<class Coord>
+class Object: public virtual Drawable<Coord>, public Transformable<Coord>
+{
+public:
+
+    Object(const Color &color = BLACK): _color(color), _regular_color(color)
+    {
+        _id = ++_count;
+    }
+
+    // Type used in the name
+    virtual string type() const = 0;
+
+    // Name displayed on the UI
+    virtual string name() const
+    {
+        stringstream ss;
+        ss << type() << _id;
+        return ss.str();
+    }
+
+    void highlight_on()
+    {
+        _color = RED;
+    }
+
+    void highlight_off()
+    {
+        _color = _regular_color;
+    }
+
+    // Color used to draw.
+    Color color() const override
+    {
+        return _color;
+    }
+
+private:
+
+    int _id;
+    Color _color, _regular_color;
+
+    static int _count;
 
 };
 
