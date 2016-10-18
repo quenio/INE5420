@@ -122,7 +122,7 @@ inline double delta(const TVector &a, const TVector &b, size_t i)
     return a[i] - b[i];
 }
 
-// Angular coefficient of line between a and b on axis in slot on_axis from axis in slot from_axis.
+// Angular coefficient of line between a and b from axis in slot from_axis on plane formed with axis in slot on_axis.
 inline double angular_coefficient(const TVector &a, const TVector &b, size_t on_axis, size_t from_axis)
 {
     assert(on_axis >= TVector::first_index && on_axis < TVector::last_index);
