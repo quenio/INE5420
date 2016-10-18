@@ -88,6 +88,13 @@ inline TVector& operator += (TVector &lhs, const TVector &rhs)
     return lhs;
 }
 
+// Diff rhs from lhs.
+inline TVector& operator -= (TVector &lhs, const TVector &rhs)
+{
+    lhs = lhs - rhs;
+    return lhs;
+}
+
 // Distance between a and b.
 inline double distance(const TVector &a, const TVector &b)
 {
@@ -97,31 +104,31 @@ inline double distance(const TVector &a, const TVector &b)
 // Equidistant vector between a and b
 inline TVector equidistant(TVector a, TVector b)
 {
-    return TVector({ equidistant(a[0], b[0]), equidistant(a[1], b[1]), 0, 0 });
-}
-
-// Determine vector in segment at x based on start and the angular coefficient m between start and the new point.
-inline TVector at_x(double x, const TVector &start, double m)
-{
-    return TVector({ x, start[1] + (m * (x - start[0])), 0, 0 });
-}
-
-// Determine point in line at y based on start and the angular coefficient m between start and the new point.
-inline TVector at_y(double y, const TVector &start, double m)
-{
-    return TVector({ start[0] + ((1/m) * (y - start[1])), y, 0, 0 });
+    return TVector(
+        {
+           equidistant(a[0], b[0]),
+           equidistant(a[1], b[1]),
+           equidistant(a[2], b[2]),
+           1
+        }
+    );
 }
 
 // Difference between a and b at the i'th position.
 inline double delta(const TVector &a, const TVector &b, size_t i)
 {
+    assert(i >= TVector::first_index && i <= TVector::last_index);
+
     return a[i] - b[i];
 }
 
-// Angular coefficient of line between a and b.
-inline double angular_coefficient(const TVector &a, const TVector &b)
+// Angular coefficient of line between a and b on axis in slot on_axis from axis in slot from_axis.
+inline double angular_coefficient(const TVector &a, const TVector &b, size_t on_axis, size_t from_axis)
 {
-    return delta(a, b, 1) / delta(a, b, 0);
+    assert(on_axis >= TVector::first_index && on_axis < TVector::last_index);
+    assert(from_axis >= TVector::first_index && from_axis < TVector::last_index);
+
+    return delta(a, b, on_axis) / delta(a, b, from_axis);
 }
 
 // Determine point in line between point a and b.
@@ -131,8 +138,8 @@ inline TVector at_step(double step, const TVector &start, const TVector &end)
         {
             start[0] + (step * delta(end, start, 0)),
             start[1] + (step * delta(end, start, 1)),
-            0,
-            0
+            start[2] + (step * delta(end, start, 2)),
+            1
         }
     );
 }
@@ -468,7 +475,7 @@ public:
     // Create TVector with the these coordinates.
     operator TVector() const
     {
-        return { _x, _y, 1, 0 };
+        return { _x, _y, 1, 1 };
     }
 
     // True if a and b match.
@@ -488,6 +495,24 @@ private:
     double _x, _y;
 
 };
+
+// Determine vector in segment at x based on start and the angular coefficient m between start and the new point.
+template<class Coord>
+inline Coord at_x(double x, const Coord &start, double m)
+{
+    static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
+
+    return { x, start.y() + (m * (x - start.x())) };
+}
+
+// Determine point in line at y based on start and the angular coefficient m between start and the new point.
+template<class Coord>
+inline Coord at_y(double y, const Coord &start, double m)
+{
+    static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
+
+    return { start.x() + ((1/m) * (y - start.y())), y };
+}
 
 // (x, y, z) coordinates
 template<class Coord>
@@ -512,7 +537,7 @@ public:
     // Create TVector with the these coordinates.
     operator TVector() const
     {
-        return { _x, _y, _z, 0 };
+        return { _x, _y, _z, 1 };
     }
 
     // True if a and b match.
