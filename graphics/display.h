@@ -69,6 +69,19 @@ public:
     double width() const { return distance(leftBottom(), rightBottom()); }
     double height() const { return distance(leftBottom(), leftTop()); }
 
+    Coord2D window_ratios() const { return Coord2D(norm_width / width(), norm_height / height()); }
+    Coord2D world_ratios() const { return Coord2D(width() / norm_width, height() / norm_height); }
+
+    Coord2D window_ratios(const Viewport &viewport) const
+    {
+        return Coord2D(norm_width / viewport.content_width(), norm_height / viewport.content_height());
+    }
+
+    Coord2D viewport_ratios(const Viewport &viewport) const
+    {
+        return Coord2D(viewport.content_width() / norm_width, viewport.content_height() / norm_height);
+    }
+
     // True if Window contains World coord.
     bool contains(Coord2D coord) const override
     {
@@ -93,19 +106,13 @@ public:
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
     PPC from_world(Coord2D coord) const
     {
-        return coord *
-               inverse_translation(_center) *
-               rotation(_up_angle) *
-               scaling(norm_width / width(), norm_height / height());
+        return coord * inverse_translation(_center) * rotation(_up_angle) * scaling(window_ratios());
     }
 
     // Translate coord from Window to World.
     Coord2D to_world(PPC coord) const
     {
-        return coord *
-               rotation(-_up_angle) *
-               scaling(width() / norm_width, height() / norm_height) *
-               translation(_center);
+        return coord * rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
     }
 
     // Translate coord from Viewport to Window.
@@ -113,7 +120,7 @@ public:
     {
         return Coord2D(coord.x(), viewport.height() - coord.y()) *
                inverse_translation(viewport.topLeft()) *
-               scaling(norm_width / viewport.content_width(), norm_height / viewport.content_height()) *
+               scaling(window_ratios(viewport)) *
                translation(Coord2D(norm_left, norm_bottom));
     }
 
@@ -121,7 +128,7 @@ public:
     VC to_viewport(PPC coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
-               scaling(viewport.content_width() / norm_width, viewport.content_height() / norm_height) *
+               scaling(viewport_ratios(viewport)) *
                translation(viewport.topLeft());
     }
 

@@ -210,7 +210,7 @@ inline TMatrix translation(double dx, double dy, double dz)
         { 1.0, 0.0, 0.0,  dx },
         { 0.0, 1.0, 0.0,  dy },
         { 0.0, 0.0, 1.0,  dz },
-        { 0.0, 0.0, 0.0, 0.0 }
+        { 0.0, 0.0, 0.0, 1.0 }
     );
 }
 
@@ -226,21 +226,27 @@ inline TMatrix inverse_translation(TVector delta)
     return translation(-delta[0], -delta[1], -delta[2]);
 }
 
-// Scaling matrix: scale x by factor sx, y by factor sy.
-inline TMatrix scaling(double sx, double sy)
+// Scaling matrix: scale x by factor sx, y by factor sy, z by factor sz.
+inline TMatrix scaling(double sx, double sy, double sz)
 {
     return TMatrix(
         {  sx, 0.0, 0.0, 0.0 },
         { 0.0,  sy, 0.0, 0.0 },
-        { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
+        { 0.0, 0.0,  sz, 0.0 },
+        { 0.0, 0.0, 0.0, 1.0 }
     );
+}
+
+// Scaling matrix: scale x by factor[0], y by factor[1], z by factor[2].
+inline TMatrix scaling(TVector factor)
+{
+    return scaling(factor[0], factor[1], factor[2]);
 }
 
 // Scaling matrix by factor from center.
 inline TMatrix scaling(double factor, TVector center)
 {
-    return inverse_translation(center) * scaling(factor, factor) * translation(center);
+    return inverse_translation(center) * scaling(factor, factor, factor) * translation(center);
 }
 
 constexpr double PI = 3.14159265;
@@ -255,7 +261,7 @@ inline TMatrix rotation(double degrees)
         {   c,   s, 0.0, 0.0 },
         {  -s,   c, 0.0, 0.0 },
         { 0.0, 0.0, 1.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
+        { 0.0, 0.0, 0.0, 1.0 }
     );
 }
 

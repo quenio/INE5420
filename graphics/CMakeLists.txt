@@ -28,5 +28,6 @@ target_link_libraries(graphics ${GTK3_LIBRARIES})
 # Unit Tests
 set(MIN_UNIT_FILES ./tests/min_unit.cpp ./tests/min_unit.h ./tests/timer.cpp ./tests/timer.h)
 add_executable(region_tests tests/region_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
+add_executable(graphics2d_tests tests/graphics2d_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
 add_executable(graphics3d_tests tests/graphics3d_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
 add_executable(display_tests tests/display_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
