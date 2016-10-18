@@ -27,6 +27,7 @@ public:
 
     Viewport(double width, double height): _width(width), _height(height), _margin(_width * margin_percentage) {}
 
+    Coord2D topLeft() const { return Coord2D(left(), top()); }
     double top() const { return _margin; }
     double left() const { return _margin; }
 
@@ -49,10 +50,10 @@ class Window: public Object, public ClippingArea
 {
 public:
 
-    constexpr static int norm_left = -1;
-    constexpr static int norm_bottom = -1;
-    constexpr static int norm_width = 2;
-    constexpr static int norm_height = 2;
+    constexpr static double norm_left = -1;
+    constexpr static double norm_bottom = -1;
+    constexpr static double norm_width = 2;
+    constexpr static double norm_height = 2;
 
     Window(double left, double bottom, double right, double top)
         :Object(BLUE),
@@ -93,7 +94,7 @@ public:
     PPC from_world(Coord2D coord) const
     {
         return coord *
-               translation(-_center.x(), -_center.y()) *
+               inverse_translation(_center) *
                rotation(_up_angle) *
                scaling(norm_width / width(), norm_height / height());
     }
@@ -104,16 +105,16 @@ public:
         return coord *
                rotation(-_up_angle) *
                scaling(width() / norm_width, height() / norm_height) *
-               translation(_center.x(), _center.y());
+               translation(_center);
     }
 
     // Translate coord from Viewport to Window.
     PPC from_viewport(VC coord, const Viewport &viewport) const
     {
         return Coord2D(coord.x(), viewport.height() - coord.y()) *
-               translation(-viewport.left(), -viewport.top()) *
+               inverse_translation(viewport.topLeft()) *
                scaling(norm_width / viewport.content_width(), norm_height / viewport.content_height()) *
-               translation(norm_left, norm_bottom);
+               translation(Coord2D(norm_left, norm_bottom));
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
@@ -121,7 +122,7 @@ public:
     {
         return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
                scaling(viewport.content_width() / norm_width, viewport.content_height() / norm_height) *
-               translation(viewport.left(), viewport.top());
+               translation(viewport.topLeft());
     }
 
     // Zoom out by factor
@@ -141,7 +142,7 @@ public:
     {
         double tx = width() * factor;
 
-        translate(-tx, 0);
+        translate(Coord2D(-tx, 0));
     }
 
     // Pan right by factor
@@ -149,7 +150,7 @@ public:
     {
         double tx = width() * factor;
 
-        translate(+tx, 0);
+        translate(Coord2D(+tx, 0));
     }
 
     // Pan up by factor
@@ -157,7 +158,7 @@ public:
     {
         double ty = height() * factor;
 
-        translate(0, +ty);
+        translate(Coord2D(0, +ty));
     }
 
     // Pan down by factor
@@ -165,7 +166,7 @@ public:
     {
         double ty = height() * factor;
 
-        translate(0, -ty);
+        translate(Coord2D(0, -ty));
     }
 
     // Transform according to the matrix.
@@ -176,10 +177,10 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
-    // Translate by dx horizontally, dy vertically.
-    void translate(double dx, double dy) override
+    // Translate by delta.
+    void translate(Coord2D delta) override
     {
-        Object::translate(dx, dy);
+        Object::translate(delta);
 
         _center = equidistant(_leftBottom, _rightTop);
     }
@@ -454,7 +455,7 @@ public:
     {
         for (shared_ptr<Object> object: _selected_objects)
         {
-            object->translate(dx, dy);
+            object->translate(Coord2D(dx, dy));
             _center = object->center();
         }
     }
@@ -482,15 +483,15 @@ public:
 private:
 
     // Render a cross at center with radius, using color.
-    void render_cross(Canvas<Coord2D> &canvas, const Coord2D &coord, double radius, const Color &color)
+    void render_cross(Canvas<Coord2D> &canvas, const Coord2D &center, double radius, const Color &color)
     {
         // Horizontal bar
-        canvas.move(translated<Coord2D>(coord, -radius, 0));
-        canvas.draw_line(translated<Coord2D>(coord, +radius, 0), color);
+        canvas.move(translated<Coord2D>(center, Coord2D(-radius, 0)));
+        canvas.draw_line(translated<Coord2D>(center, Coord2D(+radius, 0)), color);
 
         // Vertical bar
-        canvas.move(translated<Coord2D>(coord, 0, -radius));
-        canvas.draw_line(translated<Coord2D>(coord, 0, +radius), color);
+        canvas.move(translated<Coord2D>(center, Coord2D(0, -radius)));
+        canvas.draw_line(translated<Coord2D>(center, Coord2D(0, +radius)), color);
     }
 
     // Render the x axis and y axis.

@@ -203,13 +203,13 @@ private:
     TVector _column[column_count];
 };
 
-// Translation matrix: translate by dx horizontally, dy vertically.
-inline TMatrix translation(double dx, double dy)
+// Translation matrix: translate by dx horizontally, dy vertically, dz in depth.
+inline TMatrix translation(double dx, double dy, double dz)
 {
     return TMatrix(
-        { 1.0, 0.0,  dx, 0.0 },
-        { 0.0, 1.0,  dy, 0.0 },
-        { 0.0, 0.0, 1.0, 0.0 },
+        { 1.0, 0.0, 0.0,  dx },
+        { 0.0, 1.0, 0.0,  dy },
+        { 0.0, 0.0, 1.0,  dz },
         { 0.0, 0.0, 0.0, 0.0 }
     );
 }
@@ -217,13 +217,13 @@ inline TMatrix translation(double dx, double dy)
 // Translation matrix to delta.
 inline TMatrix translation(TVector delta)
 {
-    return translation(delta[0], delta[1]);
+    return translation(delta[0], delta[1], delta[2]);
 }
 
 // Inverse translation matrix to delta.
 inline TMatrix inverse_translation(TVector delta)
 {
-    return translation(-delta[0], -delta[1]);
+    return translation(-delta[0], -delta[1], -delta[2]);
 }
 
 // Scaling matrix: scale x by factor sx, y by factor sy.
@@ -284,11 +284,11 @@ inline void transform(TMatrix m, list<Coord *> coords)
         *c *= m;
 }
 
-// Translate coord by dx horizontally, dy vertically.
+// Translate coord by dx horizontally, dy vertically, dz in depth.
 template<class Coord>
-inline void translate(double dx, double dy, list<Coord *> coords)
+inline void translate(Coord delta, list<Coord *> coords)
 {
-    transform(translation(dx, dy), coords);
+    transform(translation(delta), coords);
 }
 
 // Scale coord by factor from center.
@@ -397,10 +397,10 @@ public:
         ::transform(matrix, controls());
     }
 
-    // Translate by dx horizontally, dy vertically.
-    virtual void translate(double dx, double dy)
+    // Translate by delta.
+    virtual void translate(Coord delta)
     {
-        ::translate(dx, dy, controls());
+        ::translate(delta, controls());
     }
 
     // Scale by factor from center.
@@ -417,14 +417,14 @@ public:
 
 };
 
-// New object translated by dx horizontally, dy vertically
+// New object translated by delta
 template<class Coord, class Object>
-Object translated(const Object &object, double dx, double dy)
+Object translated(const Object &object, Coord delta)
 {
     static_assert(is_base_of<Transformable<Coord>, Object>::value, "Object must derive from Transformable<Coord>.");
 
     Object new_object = object;
-    new_object.translate(dx, dy);
+    new_object.translate(delta);
 
     return new_object;
 }
