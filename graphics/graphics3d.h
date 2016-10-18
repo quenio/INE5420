@@ -39,6 +39,13 @@ public:
         return { &_a, &_b };
     }
 
+    // Draw line in canvas.
+    void draw(Canvas<Coord3D> &canvas, Color color)
+    {
+        canvas.move(_a);
+        canvas.draw_line(_b, color);
+    }
+
 private:
 
     Coord3D _a, _b;
@@ -58,10 +65,29 @@ public:
         return "Object3D";
     }
 
+    // Draw the sequence of segments in canvas.
+    void draw(Canvas<Coord3D> &canvas) override
+    {
+        for (auto &s: _segments)
+        {
+            s.draw(canvas, color());
+        }
+    }
+
+    list<Coord3D *> controls() override
+    {
+        list<Coord3D *> controls;
+
+        for (auto &s: _segments)
+            for (auto c: s.controls())
+                controls.push_back(c);
+
+        return controls;
+    }
+
 private:
 
     list<Segment3D> _segments;
 
 };
-
 

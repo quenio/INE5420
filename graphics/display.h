@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics2d.h"
+#include "graphics3d.h"
 
 // Viewport Coordinates
 class VC: public XYCoord<VC>
@@ -314,7 +315,7 @@ private:
 
 };
 
-// Commands to draw 2D objects
+// Command to draw 2D objects
 class Draw2DCommand: public DisplayCommand<Coord2D>
 {
 public:
@@ -373,8 +374,82 @@ public:
     }
 
 private:
+
     shared_ptr<Drawable2D> _drawable;
+
 };
+
+// Command to draw 3D objects
+class Draw3DCommand: public DisplayCommand<Coord3D>
+{
+public:
+
+    using Drawable = ::Drawable<Coord3D>;
+    using Canvas = ::Canvas<Coord3D>;
+
+    Draw3DCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
+
+    // Render drawable on canvas if visible.
+    void render(Canvas &canvas) override
+    {
+        _drawable->draw(canvas);
+    }
+
+
+    shared_ptr<Object> object() const override
+    {
+        return dynamic_pointer_cast<Object3D>(_drawable);
+    }
+
+private:
+
+    shared_ptr<Drawable> _drawable;
+
+};
+
+template<class Coord>
+class ProjectionCanvas: public Canvas<Coord>
+{
+public:
+
+    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
+
+    // Move to destination.
+    void move(const Coord &destination) override
+    {
+        _canvas.move(TVector(destination));
+    }
+
+    // Draw line from current position to destination.
+    void draw_line(const Coord &destination, const Color &color) override
+    {
+        _canvas.draw_line(TVector(destination), color);
+    }
+
+    // Draw circle with the specified center, radius and color.
+    void draw_circle(const Coord &center, const double radius, const Color &color) override
+    {
+        _canvas.draw_circle(TVector(center), radius, color);
+    }
+
+private:
+
+    Canvas<Coord2D> &_canvas;
+
+};
+
+// Render a cross at center with radius, using color.
+template<class Coord>
+void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &color)
+{
+    // Horizontal bar
+    canvas.move(translated<Coord>(center, TVector(Coord2D(-radius, 0))));
+    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(+radius, 0))), color);
+
+    // Vertical bar
+    canvas.move(translated<Coord>(center, TVector(Coord2D(0, -radius))));
+    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(0, +radius))), color);
+}
 
 template<class Coord>
 class World
@@ -393,7 +468,9 @@ public:
     vector<shared_ptr<Object>> objects() {
         vector<shared_ptr<Object>> vector;
 
+#ifdef WORLD_2D
         vector.push_back(_window);
+#endif
 
         for (auto &command: _display_file.commands())
         {
@@ -407,11 +484,21 @@ public:
     }
 
     // Render DisplayFile, the center, the x axis and y axis on canvas.
-    void render(Canvas<Coord> &canvas)
+    void render(Canvas<Coord2D> &canvas)
     {
         render_axis(canvas);
+
+#ifdef WORLD_2D
         _display_file.render(canvas);
         render_controls(canvas);
+#endif
+
+#ifdef WORLD_3D
+        ProjectionCanvas<Coord> projectionCanvas(canvas);
+        _display_file.render(projectionCanvas);
+        render_controls(projectionCanvas);
+#endif
+
         render_center(canvas);
         _window->draw(canvas);
     }
@@ -424,7 +511,7 @@ public:
         shared_ptr<Object> object = objects().at(index);
         object->highlight_on();
         _selected_objects.push_back(object);
-        _center = object->center();
+        _center = TVector(object->center());
     }
 
     // Remove all from the list of selected objects.
@@ -446,8 +533,8 @@ public:
     {
         for (shared_ptr<Object> object: _selected_objects)
         {
-            object->translate(Coord2D(dx, dy));
-            _center = object->center();
+            object->translate(TVector(Coord2D(dx, dy)));
+            _center = TVector(object->center());
         }
     }
 
@@ -455,35 +542,23 @@ public:
     void scale_selected(double factor)
     {
         for (shared_ptr<Object> object: _selected_objects)
-            object->scale(factor, _center);
+            object->scale(factor, TVector(_center));
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate_selected(double degrees)
     {
         for (shared_ptr<Object> object: _selected_objects)
-            object->rotate(degrees, _center);
+            object->rotate(degrees, TVector(_center));
     }
 
     // Set the new center from viewport coordinates
     void set_center_from_viewport(VC center, const Viewport &viewport)
     {
-        _center = _window->to_world(_window->from_viewport(center, viewport));
+        _center = TVector(_window->to_world(_window->from_viewport(center, viewport)));
     }
 
 private:
-
-    // Render a cross at center with radius, using color.
-    void render_cross(Canvas<Coord2D> &canvas, const Coord2D &center, double radius, const Color &color)
-    {
-        // Horizontal bar
-        canvas.move(translated<Coord2D>(center, Coord2D(-radius, 0)));
-        canvas.draw_line(translated<Coord2D>(center, Coord2D(+radius, 0)), color);
-
-        // Vertical bar
-        canvas.move(translated<Coord2D>(center, Coord2D(0, -radius)));
-        canvas.draw_line(translated<Coord2D>(center, Coord2D(0, +radius)), color);
-    }
 
     // Render the x axis and y axis.
     void render_axis(Canvas<Coord2D> &canvas)
@@ -495,7 +570,7 @@ private:
     }
 
     // Render controls of selected objects.
-    void render_controls(Canvas<Coord2D> &canvas)
+    void render_controls(Canvas<Coord> &canvas)
     {
         const int radius = 2;
 
@@ -519,7 +594,7 @@ private:
     shared_ptr<Window> _window;
     DisplayFile _display_file;
     list<shared_ptr<Object>> _selected_objects;
-    Coord _center;
+    Coord2D _center;
 
 };
 
@@ -546,4 +621,28 @@ inline shared_ptr<Draw2DCommand> draw_bezier(Coord2D edge1, Coord2D control1, Co
 inline shared_ptr<Draw2DCommand> draw_spline(initializer_list<Coord2D> controls)
 {
     return make_shared<Draw2DCommand>(make_shared<Spline>(Spline(controls)));
+}
+
+inline Segment3D x_segment(Coord3D start, double length)
+{
+    return Segment3D(start, start * translation(length, 0, 0));
+}
+
+inline Segment3D y_segment(Coord3D start, double length)
+{
+    return Segment3D(start, start * translation(0, length, 0));
+}
+
+inline Segment3D z_segment(Coord3D start, double length)
+{
+    return Segment3D(start, start * translation(0, 0, length));
+}
+
+inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double width, double height, double depth)
+{
+    return make_shared<Draw3DCommand>(make_shared<Object3D>(Object3D({
+        x_segment(base, width),
+        y_segment(base, height),
+        z_segment(base, depth)
+    })));
 }

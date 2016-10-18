@@ -1,19 +1,33 @@
+//#define WORLD_2D
+#define WORLD_3D
+
 #include "ui.h"
 
 using namespace std;
 
-static World<Coord2D> world(
+#ifdef WORLD_2D
+static UserWorld world(
     make_shared<Window>(-20, -20, 120, 120),
     DisplayFile<Coord2D>({
-        draw_point(Coord2D(25, 50)),
-        draw_point(Coord2D(75, 50)),
-        draw_line(Coord2D(10, 10), Coord2D(90, 90)),
-        draw_square(Coord2D(10, 10), Coord2D(10, 90), Coord2D(90, 90), Coord2D(90, 10)),
-        draw_bezier(Coord2D(10, 10), Coord2D(10, 90), Coord2D(90, 90), Coord2D(90, 10)),
-        draw_spline({ Coord2D(50, 10), Coord2D(20, 30), Coord2D(20, 70), Coord2D(50, 90), Coord2D(80, 70), Coord2D(80, 30),
-                      Coord2D(50, 10), Coord2D(20, 30), Coord2D(20, 70) })
+         draw_point(Coord2D(25, 50)),
+         draw_point(Coord2D(75, 50)),
+         draw_line(Coord2D(10, 10), Coord2D(90, 90)),
+         draw_square(Coord2D(10, 10), Coord2D(10, 90), Coord2D(90, 90), Coord2D(90, 10)),
+         draw_bezier(Coord2D(10, 10), Coord2D(10, 90), Coord2D(90, 90), Coord2D(90, 10)),
+         draw_spline({
+             Coord2D(50, 10), Coord2D(20, 30), Coord2D(20, 70), Coord2D(50, 90), Coord2D(80, 70), Coord2D(80, 30),
+             Coord2D(50, 10), Coord2D(20, 30), Coord2D(20, 70)
+         })
     })
 );
+#endif
+
+#ifdef WORLD_3D
+static UserWorld world(
+    make_shared<Window>(-20, -20, 120, 120),
+    DisplayFile<Coord3D>({ draw_cube(Coord3D(10, 10, 10), 90, 90, 90) })
+);
+#endif
 
 static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
