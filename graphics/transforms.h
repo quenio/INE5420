@@ -488,3 +488,47 @@ private:
     double _x, _y;
 
 };
+
+// (x, y, z) coordinates
+template<class Coord>
+class XYZCoord: public Transformable<Coord>
+{
+public:
+
+    XYZCoord(double x, double y, double z): _x(x), _y(y), _z(z)
+    {
+        static_assert(is_base_of<XYZCoord<Coord>, Coord>::value, "Coord must derive from XYZCoord<Coord>");
+    }
+
+    XYZCoord(const TVector &vector): _x(vector[0]), _y(vector[1]), _z(vector[2])
+    {
+        static_assert(is_base_of<XYZCoord<Coord>, Coord>::value, "Coord must derive from XYZCoord<Coord>");
+    }
+
+    double x() const { return _x; }
+    double y() const { return _y; }
+    double z() const { return _z; }
+
+    // Create TVector with the these coordinates.
+    operator TVector() const
+    {
+        return { _x, _y, _z, 0 };
+    }
+
+    // True if a and b match.
+    friend bool operator == (Coord a, Coord b)
+    {
+        return equals(a._x, b._x) && equals(a._y, b._y) && equals(a._z, b._z);
+    }
+
+    // True if a and b do not match.
+    friend bool operator != (Coord a, Coord b)
+    {
+        return !equals(a._x, b._x) || !equals(a._y, b._y) || !equals(a._z, b._z);
+    }
+
+private:
+
+    double _x, _y, _z;
+
+};
