@@ -93,7 +93,7 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
     SurfaceCanvas canvas(surface);
     canvas.clear(Color(1, 1, 1));
 
-    World &world = *(World*)data;
+    World<Coord2D> &world = *(World<Coord2D>*)data;
     ViewportCanvas viewport(widget_width, widget_height, world.window(), canvas);
     world.render(viewport);
 
@@ -102,7 +102,7 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
     return true;
 }
 
-static void refresh_canvas(GtkWidget *canvas, World &world)
+static void refresh_canvas(GtkWidget *canvas, World<Coord2D> &world)
 {
     refresh_surface(GTK_WIDGET(canvas), nullptr, &world);
 }
@@ -135,7 +135,7 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
         const int widget_height = gtk_widget_get_allocated_height(canvas);
         const Viewport viewport(widget_width, widget_height);
 
-        World &world = *(World*)data;
+        World<Coord2D> &world = *(World<Coord2D>*)data;
         world.set_center_from_viewport(new_center, viewport);
 
         refresh_canvas(canvas, world);
@@ -146,7 +146,7 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
 
 static const double step = 0.1; // 10 percent
 
-static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object2D>> objects) {
+static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<World<Coord2D>::Object>> objects) {
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
 
@@ -200,7 +200,7 @@ static GtkWidget * new_grid(GtkWidget *gtk_window)
     return grid;
 }
 
-static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_press)
+static GtkWidget * new_canvas(GtkWidget *grid, World<Coord2D> &world, GCallback on_key_press)
 {
     GtkWidget *canvas = gtk_drawing_area_new();
 
@@ -218,7 +218,7 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
     return canvas;
 }
 
-static void new_list_box(GtkWidget *grid, GtkWidget *canvas, World &world, GCallback select_object)
+static void new_list_box(GtkWidget *grid, GtkWidget *canvas, World<Coord2D> &world, GCallback select_object)
 {
     GtkWidget *list_box = gtk_list_box_new();
     add_objects_to_list_box(GTK_LIST_BOX(list_box), world.objects());

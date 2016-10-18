@@ -2,9 +2,9 @@
 
 using namespace std;
 
-static World world(
+static World<Coord2D> world(
     make_shared<Window>(-20, -20, 120, 120),
-    DisplayFile({
+    DisplayFile<Coord2D>({
         draw_point(Coord2D(25, 50)),
         draw_point(Coord2D(75, 50)),
         draw_line(Coord2D(10, 10), Coord2D(90, 90)),
