@@ -25,7 +25,7 @@ static UserWorld world(
 #ifdef WORLD_3D
 static UserWorld world(
     make_shared<Window>(-20, -20, 120, 120),
-    DisplayFile<Coord3D>({ draw_cube(Coord3D(10, 10, 10), 90, 90, 90) })
+    DisplayFile<Coord3D>({ draw_cube(Coord3D(20, 20, 20), 50) })
 );
 #endif
 

@@ -162,11 +162,11 @@ public:
     friend TVector operator * (TVector vector, TMatrix matrix)
     {
         return TVector({
-                                   vector * matrix.column(0),
-                                   vector * matrix.column(1),
-                                   vector * matrix.column(2),
-                                   vector * matrix.column(3)
-                               });
+           vector * matrix.column(0),
+           vector * matrix.column(1),
+           vector * matrix.column(2),
+           vector * matrix.column(3)
+        });
     }
 
     // Multiply this matrix by other
@@ -251,24 +251,52 @@ inline TMatrix scaling(double factor, TVector center)
 
 constexpr double PI = 3.14159265;
 
-// Rotation matrix: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
-inline TMatrix rotation(double degrees)
+// Rotation matrix on x axis: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix x_rotation(double degrees)
 {
     const double rad = degrees * PI / 180.0;
     const double c = cos(rad);
     const double s = sin(rad);
     return TMatrix(
-        {   c,   s, 0.0, 0.0 },
-        {  -s,   c, 0.0, 0.0 },
+        { 1.0, 0.0, 0.0, 0.0 },
+        { 0.0,  +c,  +s, 0.0 },
+        { 0.0,  -s,  +c, 0.0 },
+        { 0.0, 0.0, 0.0, 1.0 }
+    );
+}
+
+// Rotation matrix on z axis: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix y_rotation(double degrees)
+{
+    const double rad = degrees * PI / 180.0;
+    const double c = cos(rad);
+    const double s = sin(rad);
+    return TMatrix(
+        {  +c, 0.0,  -s, 0.0 },
+        { 0.0, 1.0, 0.0, 0.0 },
+        {  +s, 0.0,  +c, 0.0 },
+        { 0.0, 0.0, 0.0, 1.0 }
+    );
+}
+
+// Rotation matrix on z axis: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix z_rotation(double degrees)
+{
+    const double rad = degrees * PI / 180.0;
+    const double c = cos(rad);
+    const double s = sin(rad);
+    return TMatrix(
+        {  +c,  +s, 0.0, 0.0 },
+        {  -s,  +c, 0.0, 0.0 },
         { 0.0, 0.0, 1.0, 0.0 },
         { 0.0, 0.0, 0.0, 1.0 }
     );
 }
 
-// Rotation matrix by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-inline TMatrix rotation(double degrees, TVector center)
+// Rotation matrix on z axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix z_rotation(double degrees, TVector center)
 {
-    return inverse_translation(center) * rotation(degrees) * translation(center);
+    return inverse_translation(center) * z_rotation(degrees) * translation(center);
 }
 
 // Transform coord using matrix, and assigns to lhs.
@@ -312,7 +340,7 @@ inline void rotate(double degrees, Coord center, list<Coord *> coords)
 {
     static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
 
-    transform(rotation(degrees, center), coords);
+    transform(z_rotation(degrees, center), coords);
 }
 
 // Create TVector with the coordinates of controls from i-3 to i, in the j-th position.
