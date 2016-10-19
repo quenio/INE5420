@@ -7,13 +7,7 @@
 #include "spline.h"
 #include "graphics.h"
 
-#include <memory>
-#include <vector>
-#include <list>
-
 #define UNUSED __attribute__ ((unused))
-
-using namespace std;
 
 // 2D coordinates
 class Coord2D: public XYCoord<Coord2D>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics2d.h"
+#include "graphics3d.h"
 
 // Viewport Coordinates
 class VC: public XYCoord<VC>
@@ -314,31 +315,35 @@ private:
 
 };
 
-// Command to be executed in order to display an output image
-class DisplayCommand
+// Command to draw 2D objects
+class Draw2DCommand: public DisplayCommand<Coord2D>
 {
 public:
 
-    // Render an object (image or figure) on canvas.
-    virtual void render(ViewportCanvas &canvas) = 0;
-
-};
-
-// Commands to draw objects
-class DrawCommand: public DisplayCommand
-{
-public:
-
-    DrawCommand(shared_ptr<Drawable2D> drawable): _drawable(drawable) {}
+    Draw2DCommand(shared_ptr<Drawable2D> drawable): _drawable(drawable) {}
 
     // Render drawable on canvas if visible.
-    void render(ViewportCanvas &canvas) override
+    void render(Canvas<Coord2D> &canvas) override
     {
-        switch (_drawable->visibility_in(canvas))
+        ViewportCanvas *viewportCanvas = dynamic_cast<ViewportCanvas *>(&canvas);
+
+        if (viewportCanvas == nullptr)
+        {
+            _drawable->draw(canvas);
+        }
+        else
+        {
+            render_on_viewport(*viewportCanvas);
+        }
+    }
+
+    void render_on_viewport(ViewportCanvas &viewportCanvas) const
+    {
+        switch (_drawable->visibility_in(viewportCanvas))
         {
             case Visibility::FULL:
             {
-                _drawable->draw(canvas);
+                _drawable->draw(viewportCanvas);
             }
             break;
 
@@ -346,13 +351,13 @@ public:
             {
                 shared_ptr<Clippable<Drawable2D>> clippable = dynamic_pointer_cast<Clippable<Drawable2D>>(_drawable);
                 if (clippable == nullptr)
-                    _drawable->draw(canvas);
+                    _drawable->draw(viewportCanvas);
                 else
                 {
-                    shared_ptr<Drawable2D> clipped = clippable->clipped_in(canvas);
-                    if (clipped->visibility_in(canvas) == Visibility::FULL)
+                    shared_ptr<Drawable2D> clipped = clippable->clipped_in(viewportCanvas);
+                    if (clipped->visibility_in(viewportCanvas) == Visibility::FULL)
                     {
-                        clipped->draw(canvas);
+                        clipped->draw(viewportCanvas);
                     }
                 }
             }
@@ -363,59 +368,115 @@ public:
         }
     }
 
-    shared_ptr<Object2D> object()
+    shared_ptr<Object> object() const override
     {
         return dynamic_pointer_cast<Object2D>(_drawable);
     }
 
 private:
+
     shared_ptr<Drawable2D> _drawable;
+
 };
 
-// List of commands to be executed in order to display an output image
-class DisplayFile
+// Command to draw 3D objects
+class Draw3DCommand: public DisplayCommand<Coord3D>
 {
 public:
 
-    DisplayFile(initializer_list<shared_ptr<DisplayCommand>> commands): _commands(commands) {}
+    using Drawable = ::Drawable<Coord3D>;
+    using Canvas = ::Canvas<Coord3D>;
 
-    // Commands to be executed
-    list<shared_ptr<DisplayCommand>> commands()
+    Draw3DCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
+
+    // Render drawable on canvas if visible.
+    void render(Canvas &canvas) override
     {
-        return _commands;
+        _drawable->draw(canvas);
     }
 
-    // Render all commands on canvas.
-    void render(ViewportCanvas &canvas)
+
+    shared_ptr<Object> object() const override
     {
-        for (auto &command: _commands) command->render(canvas);
+        return dynamic_pointer_cast<Object3D>(_drawable);
     }
 
 private:
-    // Commands to be executed
-    list<shared_ptr<DisplayCommand>> _commands;
+
+    shared_ptr<Drawable> _drawable;
+
 };
 
+template<class Coord>
+class ProjectionCanvas: public Canvas<Coord>
+{
+public:
+
+    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
+
+    // Move to destination.
+    void move(const Coord &destination) override
+    {
+        _canvas.move(TVector(destination));
+    }
+
+    // Draw line from current position to destination.
+    void draw_line(const Coord &destination, const Color &color) override
+    {
+        _canvas.draw_line(TVector(destination), color);
+    }
+
+    // Draw circle with the specified center, radius and color.
+    void draw_circle(const Coord &center, const double radius, const Color &color) override
+    {
+        _canvas.draw_circle(TVector(center), radius, color);
+    }
+
+private:
+
+    Canvas<Coord2D> &_canvas;
+
+};
+
+// Render a cross at center with radius, using color.
+template<class Coord>
+void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &color)
+{
+    // Horizontal bar
+    canvas.move(translated<Coord>(center, TVector(Coord2D(-radius, 0))));
+    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(+radius, 0))), color);
+
+    // Vertical bar
+    canvas.move(translated<Coord>(center, TVector(Coord2D(0, -radius))));
+    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(0, +radius))), color);
+}
+
+template<class Coord>
 class World
 {
 public:
+
+    using DisplayFile = ::DisplayFile<Coord>;
+    using Object = ::Object<Coord>;
+
     World(shared_ptr<Window> window, DisplayFile display_file)
         : _window(window), _display_file(display_file), _center(0, 0) {}
 
     shared_ptr<Window> window() { return _window; }
 
     // Objects from command list
-    vector<shared_ptr<Object2D>> objects() {
-        vector<shared_ptr<Object2D>> vector;
+    vector<shared_ptr<Object>> objects() {
+        vector<shared_ptr<Object>> vector;
 
+#ifdef WORLD_2D
         vector.push_back(_window);
+#endif
 
         for (auto &command: _display_file.commands())
         {
-            shared_ptr<DrawCommand> drawCommand = dynamic_pointer_cast<DrawCommand>(command);
-            if (drawCommand && drawCommand->object())
+            if (command->object())
             {
-                vector.push_back(drawCommand->object());
+                vector.push_back(command->object());
             }
         }
 
@@ -423,11 +484,21 @@ public:
     }
 
     // Render DisplayFile, the center, the x axis and y axis on canvas.
-    void render(ViewportCanvas &canvas)
+    void render(Canvas<Coord2D> &canvas)
     {
         render_axis(canvas);
+
+#ifdef WORLD_2D
         _display_file.render(canvas);
         render_controls(canvas);
+#endif
+
+#ifdef WORLD_3D
+        ProjectionCanvas<Coord> projectionCanvas(canvas);
+        _display_file.render(projectionCanvas);
+        render_controls(projectionCanvas);
+#endif
+
         render_center(canvas);
         _window->draw(canvas);
     }
@@ -437,10 +508,10 @@ public:
     {
         assert(index >= 0 && index < objects().size());
 
-        shared_ptr<Object2D> object = objects().at(index);
+        shared_ptr<Object> object = objects().at(index);
         object->highlight_on();
         _selected_objects.push_back(object);
-        _center = object->center();
+        _center = TVector(object->center());
     }
 
     // Remove all from the list of selected objects.
@@ -460,46 +531,34 @@ public:
     // Move the selected objects by dx horizontally, dy vertically.
     void translate_selected(double dx, double dy)
     {
-        for (shared_ptr<Object2D> object: _selected_objects)
+        for (shared_ptr<Object> object: _selected_objects)
         {
-            object->translate(Coord2D(dx, dy));
-            _center = object->center();
+            object->translate(TVector(Coord2D(dx, dy)));
+            _center = TVector(object->center());
         }
     }
 
     // Scale the selected objects by factor.
     void scale_selected(double factor)
     {
-        for (shared_ptr<Object2D> object: _selected_objects)
-            object->scale(factor, _center);
+        for (shared_ptr<Object> object: _selected_objects)
+            object->scale(factor, TVector(_center));
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate_selected(double degrees)
     {
-        for (shared_ptr<Object2D> object: _selected_objects)
-            object->rotate(degrees, _center);
+        for (shared_ptr<Object> object: _selected_objects)
+            object->rotate(degrees, TVector(_center));
     }
 
     // Set the new center from viewport coordinates
     void set_center_from_viewport(VC center, const Viewport &viewport)
     {
-        _center = _window->to_world(_window->from_viewport(center, viewport));
+        _center = TVector(_window->to_world(_window->from_viewport(center, viewport)));
     }
 
 private:
-
-    // Render a cross at center with radius, using color.
-    void render_cross(Canvas<Coord2D> &canvas, const Coord2D &center, double radius, const Color &color)
-    {
-        // Horizontal bar
-        canvas.move(translated<Coord2D>(center, Coord2D(-radius, 0)));
-        canvas.draw_line(translated<Coord2D>(center, Coord2D(+radius, 0)), color);
-
-        // Vertical bar
-        canvas.move(translated<Coord2D>(center, Coord2D(0, -radius)));
-        canvas.draw_line(translated<Coord2D>(center, Coord2D(0, +radius)), color);
-    }
 
     // Render the x axis and y axis.
     void render_axis(Canvas<Coord2D> &canvas)
@@ -511,7 +570,7 @@ private:
     }
 
     // Render controls of selected objects.
-    void render_controls(Canvas<Coord2D> &canvas)
+    void render_controls(Canvas<Coord> &canvas)
     {
         const int radius = 2;
 
@@ -534,32 +593,56 @@ private:
 
     shared_ptr<Window> _window;
     DisplayFile _display_file;
-    list<shared_ptr<Object2D>> _selected_objects;
+    list<shared_ptr<Object>> _selected_objects;
     Coord2D _center;
 
 };
 
-inline shared_ptr<DrawCommand> draw_point(Coord2D a)
+inline shared_ptr<Draw2DCommand> draw_point(Coord2D a)
 {
-    return make_shared<DrawCommand>(make_shared<Point>(a));
+    return make_shared<Draw2DCommand>(make_shared<Point>(a));
 }
 
-inline shared_ptr<DrawCommand> draw_line(Coord2D a, Coord2D b)
+inline shared_ptr<Draw2DCommand> draw_line(Coord2D a, Coord2D b)
 {
-    return make_shared<DrawCommand>(make_shared<Line>(a, b));
+    return make_shared<Draw2DCommand>(make_shared<Line>(a, b));
 }
 
-inline shared_ptr<DrawCommand> draw_square(Coord2D a, Coord2D b, Coord2D c, Coord2D d)
+inline shared_ptr<Draw2DCommand> draw_square(Coord2D a, Coord2D b, Coord2D c, Coord2D d)
 {
-    return make_shared<DrawCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
+    return make_shared<Draw2DCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
 }
 
-inline shared_ptr<DrawCommand> draw_bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
+inline shared_ptr<Draw2DCommand> draw_bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
 {
-    return make_shared<DrawCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
+    return make_shared<Draw2DCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
 }
 
-inline shared_ptr<DrawCommand> draw_spline(initializer_list<Coord2D> controls)
+inline shared_ptr<Draw2DCommand> draw_spline(initializer_list<Coord2D> controls)
 {
-    return make_shared<DrawCommand>(make_shared<Spline>(Spline(controls)));
+    return make_shared<Draw2DCommand>(make_shared<Spline>(Spline(controls)));
+}
+
+inline Segment3D x_segment(Coord3D start, double length)
+{
+    return Segment3D(start, start * translation(length, 0, 0));
+}
+
+inline Segment3D y_segment(Coord3D start, double length)
+{
+    return Segment3D(start, start * translation(0, length, 0));
+}
+
+inline Segment3D z_segment(Coord3D start, double length)
+{
+    return Segment3D(start, start * translation(0, 0, length));
+}
+
+inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double width, double height, double depth)
+{
+    return make_shared<Draw3DCommand>(make_shared<Object3D>(Object3D({
+        x_segment(base, width),
+        y_segment(base, height),
+        z_segment(base, depth)
+    })));
 }

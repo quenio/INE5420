@@ -2,6 +2,7 @@
 
 #include "transforms.h"
 
+#include <memory>
 #include <sstream>
 
 class Color
@@ -101,6 +102,50 @@ private:
     Color _color, _regular_color;
 
     static int _count;
+
+};
+
+// Command to be executed in order to display an output image
+template<class Coord>
+class DisplayCommand
+{
+public:
+
+    using Object = ::Object<Coord>;
+
+    // Render an object (image or figure) on canvas.
+    virtual void render(Canvas<Coord> &canvas) = 0;
+
+    virtual shared_ptr<Object> object() const = 0;
+
+};
+
+// List of commands to be executed in order to display an output image
+template<class Coord>
+class DisplayFile
+{
+public:
+
+    using Command = DisplayCommand<Coord>;
+
+    DisplayFile(initializer_list<shared_ptr<Command>> commands): _commands(commands) {}
+
+    // Commands to be executed
+    list<shared_ptr<Command>> commands()
+    {
+        return _commands;
+    }
+
+    // Render all commands on canvas.
+    void render(Canvas<Coord> &canvas)
+    {
+        for (auto &command: _commands) command->render(canvas);
+    }
+
+private:
+
+    // Commands to be executed
+    list<shared_ptr<Command>> _commands;
 
 };
 
