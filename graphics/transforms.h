@@ -446,9 +446,6 @@ public:
         static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
     }
 
-    // Control coords
-    virtual list<Coord *> controls() = 0;
-
     // Center of all controls
     virtual Coord center()
     {
@@ -490,6 +487,11 @@ public:
     {
         ::rotate_z(degrees, center, controls());
     }
+
+protected:
+
+    // Control coords
+    virtual list<Coord *> controls() = 0;
 
 };
 

@@ -58,10 +58,15 @@ public:
 
 };
 
+// Groups of objects
+template<class Coord> class Group;
+
 // World objects
 template<class Coord>
 class Object: public virtual Drawable<Coord>, public Transformable<Coord>
 {
+    friend Group<Coord>;
+
 public:
 
     Object(const Color &color = BLACK): _color(color), _regular_color(color)
