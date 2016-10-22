@@ -228,13 +228,13 @@ public:
         return _objects;
     }
 
-    // Add new_object to group.
-    void push_back(shared_ptr<Object> new_object)
+    // Add object to back of the group.
+    void add(shared_ptr<Object> object)
     {
-        _objects.push_back(new_object);
+        _objects.push_back(object);
     }
 
-    // Remove all objects.
+    // Remove all objects in the group.
     void removeAll()
     {
         _objects.clear();

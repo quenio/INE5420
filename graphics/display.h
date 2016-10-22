@@ -509,7 +509,7 @@ public:
 
         shared_ptr<Object> object = objects().at(index);
         object->highlight_on();
-        _selected_group.push_back(object);
+        _selected_group.add(object);
         _center = TVector(object->center());
     }
 
