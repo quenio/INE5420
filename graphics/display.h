@@ -107,13 +107,13 @@ public:
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
     PPC from_world(Coord2D coord) const
     {
-        return coord * inverse_translation(_center) * rotation(_up_angle) * scaling(window_ratios());
+        return coord * inverse_translation(_center) * z_rotation(_up_angle) * scaling(window_ratios());
     }
 
     // Translate coord from Window to World.
     Coord2D to_world(PPC coord) const
     {
-        return coord * rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
+        return coord * z_rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
     }
 
     // Translate coord from Viewport to Window.
@@ -638,11 +638,37 @@ inline Segment3D z_segment(Coord3D start, double length)
     return Segment3D(start, start * translation(0, 0, length));
 }
 
-inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double width, double height, double depth)
+inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
 {
-    return make_shared<Draw3DCommand>(make_shared<Object3D>(Object3D({
-        x_segment(base, width),
-        y_segment(base, height),
-        z_segment(base, depth)
-    })));
+    Coord3D base1 = base;
+    Coord3D base2 = base * translation(length, length, length);
+    Coord3D base3 = base * translation(0.0, length, 0.0);
+    Coord3D base4 = base * translation(0.0, 0.0, length);
+    Coord3D base5 = base * translation(length, 0.0, length);
+    Coord3D base6 = base * translation(length, length, 0.0);
+
+    Object3D cube({
+        x_segment(base1, length),
+        y_segment(base1, length),
+        z_segment(base1, length),
+        x_segment(base2, -length),
+        y_segment(base2, -length),
+        z_segment(base2, -length),
+        x_segment(base3, length),
+        y_segment(base3, -length),
+        z_segment(base3, length),
+        x_segment(base4, length),
+        y_segment(base4, length),
+        z_segment(base4, -length),
+        x_segment(base5, -length),
+        y_segment(base5, length),
+        z_segment(base5, -length),
+        x_segment(base6, -length),
+        y_segment(base6, -length),
+        z_segment(base6, length)
+    });
+
+    cube.transform(x_rotation(30) * y_rotation(30) * z_rotation(30));
+
+    return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }

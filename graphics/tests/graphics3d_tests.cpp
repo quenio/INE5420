@@ -82,7 +82,7 @@ static const char * delta()
 
 static const char * transformations()
 {
-    mu_assert(Coord3D(1, 0, 0) * translation(Coord3D(1, 0, 0)) * rotation(90) * scaling(Coord3D(1, 3, 1)) == Coord3D(0, -6, 0));
+    mu_assert(Coord3D(1, 0, 0) * translation(Coord3D(1, 0, 0)) * z_rotation(90) * scaling(Coord3D(1, 3, 1)) == Coord3D(0, -6, 0));
 
     return nullptr;
 }
