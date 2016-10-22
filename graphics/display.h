@@ -185,29 +185,12 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
-    // Translate by delta.
-    void translate(Coord2D delta) override
-    {
-        Object::translate(delta);
-
-        _center = equidistant(_leftBottom, _rightTop);
-    }
-
-    // Scale by factor from center.
-    void scale(double factor, Coord2D center) override
-    {
-        Object::scale(factor, center);
-
-        _center = equidistant(_leftBottom, _rightTop);
-    }
-
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate_x(double degrees, Coord2D center) override
     {
         Object::rotate_x(-degrees, center);
 
         _up_angle += degrees;
-        _center = equidistant(_leftBottom, _rightTop);
     }
 
     // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -216,7 +199,6 @@ public:
         Object::rotate_y(-degrees, center);
 
         _up_angle += degrees;
-        _center = equidistant(_leftBottom, _rightTop);
     }
 
     // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -225,7 +207,6 @@ public:
         Object::rotate_z(-degrees, center);
 
         _up_angle += degrees;
-        _center = equidistant(_leftBottom, _rightTop);
     }
 
     // Window's center

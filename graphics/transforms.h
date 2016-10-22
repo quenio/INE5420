@@ -330,49 +330,6 @@ inline void transform(TMatrix m, list<Coord *> coords)
         *c *= m;
 }
 
-// Translate coord by dx horizontally, dy vertically, dz in depth.
-template<class Coord>
-inline void translate(Coord delta, list<Coord *> coords)
-{
-    transform(translation(delta), coords);
-}
-
-// Scale coord by factor from center.
-template<class Coord>
-inline void scale(double factor, Coord center, list<Coord *> coords)
-{
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-
-    transform(scaling(factor, center), coords);
-}
-
-// Rotate coord on the x axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-template<class Coord>
-inline void rotate_x(double degrees, Coord center, list<Coord *> coords)
-{
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-
-    transform(x_rotation(degrees, center), coords);
-}
-
-// Rotate coord on the y axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-template<class Coord>
-inline void rotate_y(double degrees, Coord center, list<Coord *> coords)
-{
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-
-    transform(y_rotation(degrees, center), coords);
-}
-
-// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-template<class Coord>
-inline void rotate_z(double degrees, Coord center, list<Coord *> coords)
-{
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-
-    transform(z_rotation(degrees, center), coords);
-}
-
 // Create TVector with the coordinates of controls from i-3 to i, in the j-th position.
 template<class Coord>
 static inline TVector vector_of(const vector<Coord> &controls, size_t i, size_t j)
@@ -461,31 +418,31 @@ public:
     // Translate by delta.
     virtual void translate(Coord delta)
     {
-        ::translate(delta, controls());
+        transform(::translation(delta));
     }
 
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
-        ::scale(factor, center, controls());
+        transform(::scaling(factor, center));
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate_x(double degrees, Coord center)
     {
-        ::rotate_x(degrees, center, controls());
+        transform(::x_rotation(degrees, center));
     }
 
     // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate_y(double degrees, Coord center)
     {
-        ::rotate_y(degrees, center, controls());
+        transform(::y_rotation(degrees, center));
     }
 
     // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
     virtual void rotate_z(double degrees, Coord center)
     {
-        ::rotate_z(degrees, center, controls());
+        transform(::z_rotation(degrees, center));
     }
 
 protected:

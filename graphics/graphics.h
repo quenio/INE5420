@@ -174,6 +174,13 @@ public:
         return controls;
     }
 
+    // Transform all objects according to matrix.
+    void transform(TMatrix matrix) override
+    {
+        for (auto s: _objects)
+            s->transform(matrix);
+    }
+
     // Translate by delta.
     void translate(Coord delta) override
     {
