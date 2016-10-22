@@ -201,10 +201,28 @@ public:
         _center = equidistant(_leftBottom, _rightTop);
     }
 
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate(double degrees, Coord2D center) override
+    // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_x(double degrees, Coord2D center) override
     {
-        Object::rotate(-degrees, center);
+        Object::rotate_x(-degrees, center);
+
+        _up_angle += degrees;
+        _center = equidistant(_leftBottom, _rightTop);
+    }
+
+    // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_y(double degrees, Coord2D center) override
+    {
+        Object::rotate_y(-degrees, center);
+
+        _up_angle += degrees;
+        _center = equidistant(_leftBottom, _rightTop);
+    }
+
+    // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_z(double degrees, Coord2D center) override
+    {
+        Object::rotate_z(-degrees, center);
 
         _up_angle += degrees;
         _center = equidistant(_leftBottom, _rightTop);
@@ -549,7 +567,7 @@ public:
     void rotate_selected(double degrees)
     {
         for (shared_ptr<Object> object: _selected_objects)
-            object->rotate(degrees, TVector(_center));
+            object->rotate_z(degrees, TVector(_center));
     }
 
     // Set the new center from viewport coordinates

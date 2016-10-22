@@ -293,6 +293,18 @@ inline TMatrix z_rotation(double degrees)
     );
 }
 
+// Rotation matrix on x axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix x_rotation(double degrees, TVector center)
+{
+    return inverse_translation(center) * z_rotation(degrees) * translation(center);
+}
+
+// Rotation matrix on y axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix y_rotation(double degrees, TVector center)
+{
+    return inverse_translation(center) * z_rotation(degrees) * translation(center);
+}
+
 // Rotation matrix on z axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline TMatrix z_rotation(double degrees, TVector center)
 {
@@ -334,9 +346,27 @@ inline void scale(double factor, Coord center, list<Coord *> coords)
     transform(scaling(factor, center), coords);
 }
 
+// Rotate coord on the x axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+template<class Coord>
+inline void rotate_x(double degrees, Coord center, list<Coord *> coords)
+{
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+
+    transform(x_rotation(degrees, center), coords);
+}
+
+// Rotate coord on the y axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+template<class Coord>
+inline void rotate_y(double degrees, Coord center, list<Coord *> coords)
+{
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+
+    transform(y_rotation(degrees, center), coords);
+}
+
 // Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 template<class Coord>
-inline void rotate(double degrees, Coord center, list<Coord *> coords)
+inline void rotate_z(double degrees, Coord center, list<Coord *> coords)
 {
     static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
 
@@ -443,10 +473,22 @@ public:
         ::scale(factor, center, controls());
     }
 
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center)
+    // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate_x(double degrees, Coord center)
     {
-        ::rotate(degrees, center, controls());
+        ::rotate_x(degrees, center, controls());
+    }
+
+    // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate_y(double degrees, Coord center)
+    {
+        ::rotate_y(degrees, center, controls());
+    }
+
+    // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate_z(double degrees, Coord center)
+    {
+        ::rotate_z(degrees, center, controls());
     }
 
 };
