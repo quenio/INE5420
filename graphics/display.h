@@ -407,36 +407,64 @@ private:
 
 };
 
-template<class Coord>
-class ProjectionCanvas: public Canvas<Coord>
+class ProjectionCanvas: public Canvas<Coord3D>
 {
 public:
 
     ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
 
     // Move to destination.
-    void move(const Coord &destination) override
+    void move(const Coord3D &destination) override
     {
-        _canvas.move(TVector(destination));
+        _canvas.move(project(destination));
     }
 
     // Draw line from current position to destination.
-    void draw_line(const Coord &destination, const Color &color) override
+    void draw_line(const Coord3D &destination, const Color &color) override
     {
-        _canvas.draw_line(TVector(destination), color);
+        _canvas.draw_line(project(destination), color);
     }
 
     // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord &center, const double radius, const Color &color) override
+    void draw_circle(const Coord3D &center, const double radius, const Color &color) override
     {
-        _canvas.draw_circle(TVector(center), radius, color);
+        _canvas.draw_circle(project(center), radius, color);
     }
+
+    virtual Coord2D project(Coord3D coord) const = 0;
 
 private:
 
     Canvas<Coord2D> &_canvas;
 
 };
+
+class ParallelProjection: public ProjectionCanvas
+{
+public:
+
+    ParallelProjection(Canvas<Coord2D> &canvas) : ProjectionCanvas(canvas) {}
+
+    Coord2D project(Coord3D coord) const override
+    {
+        return TVector(coord);
+    }
+
+};
+
+class PerspectiveProjection: public ProjectionCanvas
+{
+public:
+
+    PerspectiveProjection(Canvas<Coord2D> &canvas) : ProjectionCanvas(canvas) {}
+
+    Coord2D project(UNUSED Coord3D coord) const override
+    {
+        //TODO Implement perspective projection.
+    }
+
+};
+
 
 // Render a cross at center with radius, using color.
 template<class Coord>
@@ -494,7 +522,7 @@ public:
 #endif
 
 #ifdef WORLD_3D
-        ProjectionCanvas<Coord> projectionCanvas(canvas);
+        ParallelProjection projectionCanvas(canvas);    //FIXME Here we must switch projections.
         _display_file.render(projectionCanvas);
         render_controls(projectionCanvas);
 #endif
