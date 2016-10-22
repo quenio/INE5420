@@ -149,3 +149,88 @@ private:
 
 };
 
+// Groups of objects
+template<class Coord>
+class Group: public Transformable<Coord>
+{
+public:
+
+    using Object = ::Object<Coord>;
+
+    // Controls of all objects in group
+    list<Coord *> controls() override
+    {
+        list<Coord *> controls;
+
+        for (auto s: _objects)
+            for (auto c: s->controls())
+                controls.push_back(c);
+
+        return controls;
+    }
+
+    // Translate by delta.
+    void translate(Coord delta) override
+    {
+        for (auto s: _objects)
+            s->translate(delta);
+    }
+
+    // Scale by factor from center.
+    void scale(double factor, Coord center) override
+    {
+        for (auto s: _objects)
+            s->scale(factor, center);
+    }
+
+    // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_x(double degrees, Coord center) override
+    {
+        for (auto s: _objects)
+            s->rotate_x(degrees, center);
+    }
+
+    // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_y(double degrees, Coord center) override
+    {
+        for (auto s: _objects)
+            s->rotate_y(degrees, center);
+    }
+
+    // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_z(double degrees, Coord center) override
+    {
+        for (auto s: _objects)
+            s->rotate_z(degrees, center);
+    }
+
+    // True if any objects is selected.
+    bool not_empty()
+    {
+        return _objects.size() > 0;
+    }
+
+    // All objects in the group
+    list<shared_ptr<Object>> objects()
+    {
+        return _objects;
+    }
+
+    // Add new_object to group.
+    void push_back(shared_ptr<Object> new_object)
+    {
+        _objects.push_back(new_object);
+    }
+
+    // Remove all objects.
+    void removeAll()
+    {
+        _objects.clear();
+    }
+
+private:
+
+    list<shared_ptr<Object>> _objects;
+
+};
+

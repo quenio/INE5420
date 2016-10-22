@@ -528,46 +528,41 @@ public:
 
         shared_ptr<Object> object = objects().at(index);
         object->highlight_on();
-        _selected_objects.push_back(object);
+        _selected_group.push_back(object);
         _center = TVector(object->center());
     }
 
     // Remove all from the list of selected objects.
     void clear_selection()
     {
-        for(auto &object: _selected_objects) object->highlight_off();
-        _selected_objects.clear();
+        for(auto object: _selected_group.objects()) object->highlight_off();
+        _selected_group.removeAll();
         _center = Coord2D(0, 0);
     }
 
     // True if any objects is selected.
     bool has_selected_objects()
     {
-        return _selected_objects.size() > 0;
+        return _selected_group.not_empty();
     }
 
     // Move the selected objects by dx horizontally, dy vertically.
     void translate_selected(double dx, double dy)
     {
-        for (shared_ptr<Object> object: _selected_objects)
-        {
-            object->translate(TVector(Coord2D(dx, dy)));
-            _center = TVector(object->center());
-        }
+        _selected_group.translate(TVector(Coord2D(dx, dy)));
+        _center = TVector(_selected_group.center());
     }
 
     // Scale the selected objects by factor.
     void scale_selected(double factor)
     {
-        for (shared_ptr<Object> object: _selected_objects)
-            object->scale(factor, TVector(_center));
+        _selected_group.scale(factor, TVector(_center));
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate_selected(double degrees)
     {
-        for (shared_ptr<Object> object: _selected_objects)
-            object->rotate_z(degrees, TVector(_center));
+        _selected_group.rotate_z(degrees, TVector(_center));
     }
 
     // Set the new center from viewport coordinates
@@ -592,12 +587,9 @@ private:
     {
         const int radius = 2;
 
-        for (auto obj: _selected_objects)
+        for (auto control: _selected_group.controls())
         {
-            for (auto control: obj->controls())
-            {
-                render_cross(canvas, *control, radius, CONTROL);
-            }
+            render_cross(canvas, *control, radius, CONTROL);
         }
     }
 
@@ -611,7 +603,7 @@ private:
 
     shared_ptr<Window> _window;
     DisplayFile _display_file;
-    list<shared_ptr<Object>> _selected_objects;
+    Group<Coord> _selected_group;
     Coord2D _center;
 
 };
