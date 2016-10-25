@@ -257,63 +257,6 @@ private:
 
 };
 
-// Area on a screen to execute display commands
-class ViewportCanvas: public Canvas<Coord2D>, public Viewport, public ClippingArea
-{
-public:
-
-    ViewportCanvas(double width, double height, shared_ptr<Window> window, Canvas<VC> &canvas)
-        : Viewport(width, height), _window(window), _canvas(canvas) {}
-
-    // True if area contains world coord.
-    bool contains(Coord2D coord) const override
-    {
-        return _window->contains(coord);
-    }
-
-    // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
-    PPC world_to_window(Coord2D coord) const override
-    {
-        return _window->world_to_window(coord);
-    }
-
-    // Translate coord from Window to World.
-    Coord2D window_to_world(PPC coord) const override
-    {
-        return _window->window_to_world(coord);
-    }
-
-    // Translate coord from world to viewport
-    VC world_to_viewport(const Coord2D &coord) const
-    {
-        return _window->to_viewport(_window->from_world(coord), *this);
-    }
-
-    // Move to destination.
-    void move(const Coord2D &destination) override
-    {
-        _canvas.move(world_to_viewport(destination));
-    }
-
-    // Draw line from current position to destination.
-    void draw_line(const Coord2D &destination, const Color &color) override
-    {
-        _canvas.draw_line(world_to_viewport(destination), color);
-    }
-
-    // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord2D &center, const double radius, const Color &color) override
-    {
-        _canvas.draw_circle(world_to_viewport(center), radius, color);
-    }
-
-private:
-
-    shared_ptr<Window> _window;
-    Canvas<VC> &_canvas;
-
-};
-
 // Command to draw 2D objects
 class Draw2DCommand: public DisplayCommand<Coord2D>
 {
@@ -324,25 +267,25 @@ public:
     // Render drawable on canvas if visible.
     void render(Canvas<Coord2D> &canvas) override
     {
-        ViewportCanvas *viewportCanvas = dynamic_cast<ViewportCanvas *>(&canvas);
+        ClippingArea *clipping_area = dynamic_cast<ClippingArea *>(&canvas);
 
-        if (viewportCanvas == nullptr)
+        if (clipping_area == nullptr)
         {
             _drawable->draw(canvas);
         }
         else
         {
-            render_on_viewport(*viewportCanvas);
+            draw_clipped(canvas, *clipping_area);
         }
     }
 
-    void render_on_viewport(ViewportCanvas &viewportCanvas) const
+    void draw_clipped(Canvas<Coord2D> &canvas, ClippingArea &clipping_area) const
     {
-        switch (_drawable->visibility_in(viewportCanvas))
+        switch (_drawable->visibility_in(clipping_area))
         {
             case Visibility::FULL:
             {
-                _drawable->draw(viewportCanvas);
+                _drawable->draw(canvas);
             }
             break;
 
@@ -350,13 +293,13 @@ public:
             {
                 shared_ptr<Clippable<Drawable2D>> clippable = dynamic_pointer_cast<Clippable<Drawable2D>>(_drawable);
                 if (clippable == nullptr)
-                    _drawable->draw(viewportCanvas);
+                    _drawable->draw(canvas);
                 else
                 {
-                    shared_ptr<Drawable2D> clipped = clippable->clipped_in(viewportCanvas);
-                    if (clipped->visibility_in(viewportCanvas) == Visibility::FULL)
+                    shared_ptr<Drawable2D> clipped = clippable->clipped_in(clipping_area);
+                    if (clipped->visibility_in(clipping_area) == Visibility::FULL)
                     {
-                        clipped->draw(viewportCanvas);
+                        clipped->draw(canvas);
                     }
                 }
             }
@@ -437,19 +380,6 @@ private:
 
 };
 
-// Render a cross at center with radius, using color.
-template<class Coord>
-void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &color)
-{
-    // Horizontal bar
-    canvas.move(translated<Coord>(center, TVector(Coord2D(-radius, 0))));
-    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(+radius, 0))), color);
-
-    // Vertical bar
-    canvas.move(translated<Coord>(center, TVector(Coord2D(0, -radius))));
-    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(0, +radius))), color);
-}
-
 template<class Coord>
 class World
 {
@@ -459,9 +389,11 @@ public:
     using Object = ::Object<Coord>;
 
     World(shared_ptr<Window> window, DisplayFile display_file)
-        : _window(window), _display_file(display_file), _center(0, 0) {}
+        : _window(window), _display_file(display_file) {}
 
     shared_ptr<Window> window() { return _window; }
+
+    DisplayFile & display_file() { return _display_file; }
 
     // Objects from command list
     vector<shared_ptr<Object>> objects() {
@@ -482,110 +414,10 @@ public:
         return vector;
     }
 
-    // Render DisplayFile, the center, the x axis and y axis on canvas.
-    void render(Canvas<Coord2D> &canvas)
-    {
-        render_axis(canvas);
-
-#ifdef WORLD_2D
-        _display_file.render(canvas);
-        render_controls(canvas);
-#endif
-
-#ifdef WORLD_3D
-        ProjectionCanvas<Coord> projectionCanvas(canvas);
-        _display_file.render(projectionCanvas);
-        render_controls(projectionCanvas);
-#endif
-
-        render_center(canvas);
-        _window->draw(canvas);
-    }
-
-    // Select the object at index.
-    void select_object_at(size_t index)
-    {
-        assert(index >= 0 && index < objects().size());
-
-        shared_ptr<Object> object = objects().at(index);
-        object->highlight_on();
-        _selected_group.add(object);
-        _center = TVector(object->center());
-    }
-
-    // Remove all from the list of selected objects.
-    void clear_selection()
-    {
-        for(auto object: _selected_group.objects()) object->highlight_off();
-        _selected_group.removeAll();
-        _center = Coord2D(0, 0);
-    }
-
-    // True if any objects is selected.
-    bool has_selected_objects()
-    {
-        return _selected_group.not_empty();
-    }
-
-    // Move the selected objects by dx horizontally, dy vertically.
-    void translate_selected(double dx, double dy)
-    {
-        _selected_group.translate(TVector(Coord2D(dx, dy)));
-        _center = TVector(_selected_group.center());
-    }
-
-    // Scale the selected objects by factor.
-    void scale_selected(double factor)
-    {
-        _selected_group.scale(factor, TVector(_center));
-    }
-
-    // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate_selected(double degrees)
-    {
-        _selected_group.rotate_z(degrees, TVector(_center));
-    }
-
-    // Set the new center from viewport coordinates
-    void set_center_from_viewport(VC center, const Viewport &viewport)
-    {
-        _center = TVector(_window->to_world(_window->from_viewport(center, viewport)));
-    }
-
 private:
-
-    // Render the x axis and y axis.
-    void render_axis(Canvas<Coord2D> &canvas)
-    {
-        const Coord2D center = Coord2D(0, 0);
-        const int radius = 10000;
-
-        render_cross(canvas, center, radius, GREEN);
-    }
-
-    // Render controls of selected objects.
-    void render_controls(Canvas<Coord> &canvas)
-    {
-        const int radius = 2;
-
-        for (auto control: _selected_group.controls())
-        {
-            render_cross(canvas, *control, radius, CONTROL);
-        }
-    }
-
-    // Render the center as a little cross.
-    void render_center(Canvas<Coord2D> &canvas)
-    {
-        const int radius = 2;
-
-        render_cross(canvas, _center, radius, GREEN);
-    }
 
     shared_ptr<Window> _window;
     DisplayFile _display_file;
-    Group<Coord> _selected_group;
-    Coord2D _center;
 
 };
 

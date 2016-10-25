@@ -1,6 +1,6 @@
 #pragma once
 
-#include "display.h"
+#include "tools.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdocumentation-unknown-command"
@@ -18,9 +18,11 @@
 #define UNUSED __attribute__ ((unused))
 
 #ifdef WORLD_2D
-using UserWorld = World<Coord2D>;
+using UserSelection = Selection<Coord2D>;
+using UserViewport = ViewportCanvas<Coord2D>;
 #else
-using UserWorld = World<Coord3D>;
+using UserSelection = Selection<Coord3D>;
+using UserViewport = ViewportCanvas<Coord3D>;
 #endif
 
 // Canvas for GTK surface
@@ -99,18 +101,18 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
     SurfaceCanvas canvas(surface);
     canvas.clear(Color(1, 1, 1));
 
-    UserWorld &world = *(UserWorld*)data;
-    ViewportCanvas viewport(widget_width, widget_height, world.window(), canvas);
-    world.render(viewport);
+    UserSelection &selection = *(UserSelection*)data;
+    UserViewport viewport(widget_width, widget_height, selection.window(), canvas);
+    viewport.render(selection.display_file(), selection);
 
     refresh(widget);
 
     return true;
 }
 
-static void refresh_canvas(GtkWidget *canvas, UserWorld &world)
+static void refresh_canvas(GtkWidget *canvas, UserSelection &selection)
 {
-    refresh_surface(GTK_WIDGET(canvas), nullptr, &world);
+    refresh_surface(GTK_WIDGET(canvas), nullptr, &selection);
 }
 
 constexpr double PADDING = 5;
@@ -141,10 +143,10 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
         const int widget_height = gtk_widget_get_allocated_height(canvas);
         const Viewport viewport(widget_width, widget_height);
 
-        UserWorld &world = *(UserWorld*)data;
-        world.set_center_from_viewport(new_center, viewport);
+        UserSelection &selection = *(UserSelection*)data;
+        selection.set_center_from_viewport(new_center, viewport);
 
-        refresh_canvas(canvas, world);
+        refresh_canvas(canvas, selection);
     }
 
     return true;
@@ -152,7 +154,8 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
 
 static const double step = 0.1; // 10 percent
 
-static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<UserWorld::Object>> objects) {
+template<class Coord>
+static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object<Coord>>> objects) {
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
 
@@ -206,16 +209,16 @@ static GtkWidget * new_grid(GtkWidget *gtk_window)
     return grid;
 }
 
-static GtkWidget * new_canvas(GtkWidget *grid, UserWorld &world, GCallback on_key_press)
+static GtkWidget * new_canvas(GtkWidget *grid, UserSelection &selection, GCallback on_key_press)
 {
     GtkWidget *canvas = gtk_drawing_area_new();
 
     gtk_grid_attach(GTK_GRID(grid), canvas,
                     column__canvas, row__canvas,
                     pan_column__canvas, pan_row__canvas);
-    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
+    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &selection);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
-    g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &world);
+    g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &selection);
     g_signal_connect(canvas, "key-press-event", on_key_press, nullptr);
 
     gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
@@ -224,10 +227,10 @@ static GtkWidget * new_canvas(GtkWidget *grid, UserWorld &world, GCallback on_ke
     return canvas;
 }
 
-static void new_list_box(GtkWidget *grid, GtkWidget *canvas, UserWorld &world, GCallback select_object)
+static void new_list_box(GtkWidget *grid, GtkWidget *canvas, UserSelection &selection, GCallback select_object)
 {
     GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box), world.objects());
+    add_objects_to_list_box(GTK_LIST_BOX(list_box), selection.world().objects());
     gtk_grid_attach(GTK_GRID(grid), list_box,
                     column__list_box, row__list_box,
                     pan_column__list_box, pan_row__list_box);
