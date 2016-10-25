@@ -15,6 +15,12 @@ void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, con
     canvas.draw_line(translated<Coord>(center, TVector(Coord2D(0, +radius))), color);
 }
 
+// Axis of rotation selected by the user
+enum RotationAxis
+{
+    X_AXIS, Y_AXIS, Z_AXIS
+};
+
 // Selection of world objects that can be manipulated by UI tools
 template<class Coord>
 class Selection
@@ -76,7 +82,18 @@ public:
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees)
     {
-        _selected_group.rotate_z(degrees, TVector(_center));
+        switch(_rotation_axis)
+        {
+            case X_AXIS: _selected_group.rotate_x(degrees, TVector(_center)); break;
+            case Y_AXIS: _selected_group.rotate_y(degrees, TVector(_center)); break;
+            case Z_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
+        }
+    }
+
+    // Select the rotation according to axis.
+    void select_rotation_axis(RotationAxis axis)
+    {
+        _rotation_axis = axis;
     }
 
     // Set the new center from viewport coordinates
@@ -110,6 +127,7 @@ private:
     World &_world;
     Group _selected_group;
     Coord2D _center;
+    RotationAxis _rotation_axis = Z_AXIS;
 
 };
 

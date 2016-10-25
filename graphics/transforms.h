@@ -265,16 +265,16 @@ inline TMatrix x_rotation(double degrees)
     );
 }
 
-// Rotation matrix on z axis: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+// Rotation matrix on y axis: rotate by degrees; counter-clockwise if angle positive; clockwise if negative.
 inline TMatrix y_rotation(double degrees)
 {
     const double rad = degrees * PI / 180.0;
     const double c = cos(rad);
     const double s = sin(rad);
     return TMatrix(
-        {  +c, 0.0,  -s, 0.0 },
+        {  +c, 0.0,  +s, 0.0 },
         { 0.0, 1.0, 0.0, 0.0 },
-        {  +s, 0.0,  +c, 0.0 },
+        {  -s, 0.0,  +c, 0.0 },
         { 0.0, 0.0, 0.0, 1.0 }
     );
 }
@@ -296,13 +296,13 @@ inline TMatrix z_rotation(double degrees)
 // Rotation matrix on x axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
 inline TMatrix x_rotation(double degrees, TVector center)
 {
-    return inverse_translation(center) * z_rotation(degrees) * translation(center);
+    return inverse_translation(center) * x_rotation(degrees) * translation(center);
 }
 
-// Rotation matrix on y axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+// Rotation matrix on y axis: rotate by degrees; counter-clockwise if angle positive; clockwise if negative.
 inline TMatrix y_rotation(double degrees, TVector center)
 {
-    return inverse_translation(center) * z_rotation(degrees) * translation(center);
+    return inverse_translation(center) * y_rotation(degrees) * translation(center);
 }
 
 // Rotation matrix on z axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
@@ -433,7 +433,7 @@ public:
         transform(::x_rotation(degrees, center));
     }
 
-    // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    // Rotation matrix on y axis: rotate by degrees; counter-clockwise if angle positive; clockwise if negative.
     virtual void rotate_y(double degrees, Coord center)
     {
         transform(::y_rotation(degrees, center));

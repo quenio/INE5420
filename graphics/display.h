@@ -193,7 +193,7 @@ public:
         _up_angle += degrees;
     }
 
-    // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    // Rotate on the y axis by degrees at center; counter-clockwise if degrees positive; clockwise if negative.
     void rotate_y(double degrees, Coord2D center) override
     {
         Object::rotate_y(-degrees, center);
@@ -491,7 +491,7 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
         z_segment(base6, length)
     });
 
-    cube.transform(x_rotation(30) * y_rotation(30) * z_rotation(30));
+    cube.transform(x_rotation(30) * y_rotation(-30) * z_rotation(30));
 
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }

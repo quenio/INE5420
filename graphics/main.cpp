@@ -172,6 +172,27 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             break;
     }
 
+    switch (event->keyval)
+    {
+        case GDK_KEY_X:
+        case GDK_KEY_x:
+            selection.select_rotation_axis(X_AXIS);
+            break;
+
+        case GDK_KEY_Y:
+        case GDK_KEY_y:
+            selection.select_rotation_axis(Y_AXIS);
+            break;
+
+        case GDK_KEY_Z:
+        case GDK_KEY_z:
+            selection.select_rotation_axis(Z_AXIS);
+            break;
+
+        default:
+            break;
+    }
+
     refresh_canvas(GTK_WIDGET(canvas), selection);
 
     return true;
