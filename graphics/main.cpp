@@ -1,5 +1,5 @@
-#define WORLD_2D
-//#define WORLD_3D
+//#define WORLD_2D
+#define WORLD_3D
 
 #include "ui.h"
 
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
         "Press and use arrow keys to shrink/enlarge selected objects.");
     button_rotate = new_button(
         grid, canvas, "Rotate", false, G_CALLBACK(tool_rotate_clicked),
-        "Press and use arrow keys to rotate selected objects.");
+        "Press and use arrow keys to rotate selected objects. Use x, y, z keys to change rotation axis.");
 
     gtk_widget_show_all(gtk_window);
     gtk_main();
