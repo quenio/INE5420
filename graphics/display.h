@@ -527,9 +527,18 @@ public:
 #endif
 
 #ifdef WORLD_3D
-        ParallelProjection projectionCanvas(canvas);    //FIXME Here we must switch projections.
-        _display_file.render(projectionCanvas);
-        render_controls(projectionCanvas);
+        if (projection_method == ProjectionMethod::PARALLEL)
+        {
+            ParallelProjection projectionCanvas(canvas);
+            _display_file.render(projectionCanvas);
+            render_controls(projectionCanvas);
+        }
+        else
+        {
+            PerspectiveProjection projectionCanvas(canvas);
+            _display_file.render(projectionCanvas);
+            render_controls(projectionCanvas);
+        }
 #endif
 
         render_center(canvas);
