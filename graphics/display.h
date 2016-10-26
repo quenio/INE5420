@@ -407,6 +407,11 @@ private:
 
 };
 
+// Projections
+enum class ProjectionMethod { PARALLEL, PERSPECTIVE };
+
+static ProjectionMethod projection_method = ProjectionMethod::PARALLEL;
+
 class ProjectionCanvas: public Canvas<Coord3D>
 {
 public:

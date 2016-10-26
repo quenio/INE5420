@@ -105,6 +105,18 @@ static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), world);
 }
 
+static void select_parallel(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    projection_method = ProjectionMethod::PARALLEL;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
+
+static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    projection_method = ProjectionMethod::PERSPECTIVE;
+    refresh_canvas(GTK_WIDGET(canvas), world);
+}
+
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
     switch (selected_tool)
@@ -208,11 +220,18 @@ int main(int argc, char *argv[])
 
     GtkWidget *canvas = new_canvas(grid, world, G_CALLBACK(canvas_on_key_press));
 
-    list<pair<string, GCallback>> menu_items;
-    menu_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
-    menu_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
-    menu_items.push_back(make_pair("None", G_CALLBACK(select_none)));
-    menu_bar(grid, canvas, menu_items);
+    GtkWidget *menu_bar = new_menu_bar(grid);
+
+    list<pair<string, GCallback>> clipping_items;
+    clipping_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
+    clipping_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
+    clipping_items.push_back(make_pair("None", G_CALLBACK(select_none)));
+    menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
+
+    list<pair<string, GCallback>> projection_items;
+    projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
+    projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
+    menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
 
     new_list_box(grid, canvas, world, G_CALLBACK(select_object));
 
