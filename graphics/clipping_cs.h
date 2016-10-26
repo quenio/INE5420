@@ -8,15 +8,14 @@
 
 using namespace std;
 
-// Determine which one between a nd b is in bounds.
-inline Coord choose_in_bounds(const Coord &a, const Coord &b)
-{
-    if (region(a) == Region::CENTRAL) return a; else return b;
-}
-
 // Clip point a between Window coord a and b using Cohen-Sutherland
+template<class Coord>
 inline Coord clip_point_in_line_using_cs(const Coord &a, const Coord &b, double m)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+    static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
+    static_assert(is_base_of<XYCoord<Coord>, Coord>::value, "Coord must derive from XYCoord<Coord>");
+
     switch (region(a))
     {
         case Region::NORTH: return at_y(+1, b, m);
@@ -34,9 +33,10 @@ inline Coord clip_point_in_line_using_cs(const Coord &a, const Coord &b, double 
 }
 
 // Clip line between Window coord a and b using Cohen-Sutherland.
+template<class Coord>
 inline pair<Coord, Coord> clip_line_using_cs(const Coord &a, const Coord &b)
 {
-    double m = angular_coefficient(a, b);
+    double m = angular_coefficient(a, b, 1, 0);
 
     return make_pair(
         clip_point_in_line_using_cs(a, b, m),

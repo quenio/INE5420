@@ -1,54 +1,70 @@
+//#define WORLD_2D
+#define WORLD_3D
+
 #include "ui.h"
 
 using namespace std;
 
-static World world(
+#ifdef WORLD_2D
+static World<Coord2D> world(
     make_shared<Window>(-20, -20, 120, 120),
-    DisplayFile({
-        draw_point(Coord(25, 50)),
-        draw_point(Coord(75, 50)),
-        draw_line(Coord(10, 10), Coord(90, 90)),
-        draw_square(Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10)),
-        draw_bezier(Coord(10, 10), Coord(10, 90), Coord(90, 90), Coord(90, 10)),
-        draw_spline({ Coord(50, 10), Coord(20, 30), Coord(20, 70), Coord(50, 90), Coord(80, 70), Coord(80, 30),
-                      Coord(50, 10), Coord(20, 30), Coord(20, 70) })
+    DisplayFile<Coord2D>({
+         draw_point(Coord2D(25, 50)),
+         draw_point(Coord2D(75, 50)),
+         draw_line(Coord2D(10, 10), Coord2D(90, 90)),
+         draw_square(Coord2D(10, 10), Coord2D(10, 90), Coord2D(90, 90), Coord2D(90, 10)),
+         draw_bezier(Coord2D(10, 10), Coord2D(10, 90), Coord2D(90, 90), Coord2D(90, 10)),
+         draw_spline({
+             Coord2D(50, 10), Coord2D(20, 30), Coord2D(20, 70), Coord2D(50, 90), Coord2D(80, 70), Coord2D(80, 30),
+             Coord2D(50, 10), Coord2D(20, 30), Coord2D(20, 70)
+         })
     })
 );
+#endif
+
+#ifdef WORLD_3D
+static World<Coord3D> world(
+    make_shared<Window>(-20, -20, 120, 120),
+    DisplayFile<Coord3D>({ draw_cube(Coord3D(20, 20, 20), 50) })
+);
+#endif
+
+static UserSelection selection(world);
 
 static void zoom_in_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
     world.window()->zoom_in(step);
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void zoom_out_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
     world.window()->zoom_out(step);
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void pan_left_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
     world.window()->pan_left(step);
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void pan_right_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
     world.window()->pan_right(step);
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void pan_up_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
     world.window()->pan_up(step);
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void pan_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
     world.window()->pan_down(step);
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 enum Tool { TRANSLATE, SCALE, ROTATE };
@@ -76,19 +92,19 @@ static void tool_rotate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 static void select_cs(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     clipping_method = ClippingMethod::COHEN_SUTHERLAND;
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void select_lb(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     clipping_method = ClippingMethod::LIANG_BARSKY;
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     clipping_method = ClippingMethod::NONE;
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
@@ -99,19 +115,19 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             switch (event->keyval)
             {
                 case GDK_KEY_Left:
-                    world.translate_selected(-1, 0);
+                    selection.translate(-1, 0);
                     break;
 
                 case GDK_KEY_Right:
-                    world.translate_selected(+1, 0);
+                    selection.translate(+1, 0);
                     break;
 
                 case GDK_KEY_Down:
-                    world.translate_selected(0, -1);
+                    selection.translate(0, -1);
                     break;
 
                 case GDK_KEY_Up:
-                    world.translate_selected(0, +1);
+                    selection.translate(0, +1);
                     break;
 
                 default:
@@ -124,12 +140,12 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             {
                 case GDK_KEY_Right:
                 case GDK_KEY_Up:
-                    world.scale_selected(1.1);
+                    selection.scale(1.1);
                     break;
 
                 case GDK_KEY_Left:
                 case GDK_KEY_Down:
-                    world.scale_selected(0.9);
+                    selection.scale(0.9);
                     break;
 
                 default:
@@ -142,12 +158,12 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             {
                 case GDK_KEY_Right:
                 case GDK_KEY_Down:
-                    world.rotate_selected(+1);
+                    selection.rotate(+1);
                     break;
 
                 case GDK_KEY_Left:
                 case GDK_KEY_Up:
-                    world.rotate_selected(-1);
+                    selection.rotate(-1);
                     break;
 
                 default:
@@ -156,7 +172,28 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             break;
     }
 
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    switch (event->keyval)
+    {
+        case GDK_KEY_X:
+        case GDK_KEY_x:
+            selection.select_rotation_axis(X_AXIS);
+            break;
+
+        case GDK_KEY_Y:
+        case GDK_KEY_y:
+            selection.select_rotation_axis(Y_AXIS);
+            break;
+
+        case GDK_KEY_Z:
+        case GDK_KEY_z:
+            selection.select_rotation_axis(Z_AXIS);
+            break;
+
+        default:
+            break;
+    }
+
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 
     return true;
 }
@@ -169,18 +206,18 @@ static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_butto
 {
     for (GtkWidget *button: tool_buttons)
         if (button_move)
-            gtk_widget_set_sensitive(GTK_WIDGET(button), world.has_selected_objects());
+            gtk_widget_set_sensitive(GTK_WIDGET(button), selection.not_empty());
 }
 
 static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpointer canvas)
 {
-    world.clear_selection();
+    selection.clear();
 
     if (row != nullptr) {
-        world.select_object_at((size_t)gtk_list_box_row_get_index(row));
+        selection.select_object_at((size_t)gtk_list_box_row_get_index(row));
     }
 
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 
     select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
 }
@@ -192,7 +229,7 @@ int main(int argc, char *argv[])
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
 
-    GtkWidget *canvas = new_canvas(grid, world, G_CALLBACK(canvas_on_key_press));
+    GtkWidget *canvas = new_canvas(grid, selection, G_CALLBACK(canvas_on_key_press));
 
     list<pair<string, GCallback>> menu_items;
     menu_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
@@ -200,7 +237,7 @@ int main(int argc, char *argv[])
     menu_items.push_back(make_pair("None", G_CALLBACK(select_none)));
     menu_bar(grid, canvas, menu_items);
 
-    new_list_box(grid, canvas, world, G_CALLBACK(select_object));
+    new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 
     new_button(
         grid, canvas, "Zoom In", true, G_CALLBACK(zoom_in_clicked),
@@ -229,7 +266,7 @@ int main(int argc, char *argv[])
         "Press and use arrow keys to shrink/enlarge selected objects.");
     button_rotate = new_button(
         grid, canvas, "Rotate", false, G_CALLBACK(tool_rotate_clicked),
-        "Press and use arrow keys to rotate selected objects.");
+        "Press and use arrow keys to rotate selected objects. Use x, y, z keys to change rotation axis.");
 
     gtk_widget_show_all(gtk_window);
     gtk_main();

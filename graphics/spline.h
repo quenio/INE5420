@@ -1,11 +1,11 @@
 #pragma once
 
-#include "coord.h"
+#include "transforms.h"
 
 // Coefficient matrix used to calculate a Spline curve
-inline TransformMatrix spline_matrix()
+inline TMatrix spline_matrix()
 {
-    return TransformMatrix(
+    return TMatrix(
         { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
         {      0.5,     -1.0,     0.5,     0.0 },
         {     -0.5,      0.0,     0.5,     0.0 },
@@ -14,9 +14,9 @@ inline TransformMatrix spline_matrix()
 }
 
 // Matrix used to calculate initial deltas of forward differences
-inline TransformMatrix delta_matrix()
+inline TMatrix delta_matrix()
 {
-    return TransformMatrix(
+    return TMatrix(
         { 1, 1, 1, 0 },
         { 6, 2, 0, 0 },
         { 6, 0, 0, 0 },
@@ -25,10 +25,10 @@ inline TransformMatrix delta_matrix()
 }
 
 // Vector with initial deltas of forward differences
-inline TransformVector delta_vector(const TransformVector &v, double step)
+inline TVector delta_vector(const TVector &v, double step)
 {
-    const TransformVector sv = TransformVector::of_step(step);
-    return TransformVector(
+    const TVector sv = vector_of_step(step);
+    return TVector(
         {
             sv[0] * v[0],
             sv[1] * v[1],
@@ -39,9 +39,9 @@ inline TransformVector delta_vector(const TransformVector &v, double step)
 }
 
 // Calculate next delta vector based on previous one.
-inline TransformVector next_delta(const TransformVector &d)
+inline TVector next_delta(const TVector &d)
 {
-    return TransformVector(
+    return TVector(
         {
             d[0] + d[1],
             d[1] + d[2],
@@ -51,24 +51,40 @@ inline TransformVector next_delta(const TransformVector &d)
     );
 }
 
+// Vector with initial coord of forward differences
+inline TVector initial_fd_vector(TVector dx, TVector dy)
+{
+    return TVector({ dx[3], dy[3], 0, 0 });
+}
+
+// Next vector of forward differences
+template<class Coord>
+inline TVector next_fd_vector(const Coord &coord, TVector dx, TVector dy)
+{
+    return coord * translation(dx[0], dy[0], 1);
+}
+
 // Generate vertices using forward-differences technique.
+template<class Coord>
 inline void generate_fd_vertices(
     list<Coord> &vertices,
-    const TransformVector &vx,
-    const TransformVector &vy,
-    const TransformMatrix &m)
+    const TVector &vx,
+    const TVector &vy,
+    const TMatrix &m)
 {
+    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+
     constexpr double step = 0.025;
 
-    TransformVector dx = delta_vector(vx * m, step);
-    TransformVector dy = delta_vector(vy * m, step);
+    TVector dx = delta_vector(vx * m, step);
+    TVector dy = delta_vector(vy * m, step);
 
-    Coord current(dx[3], dy[3]);
+    Coord current(initial_fd_vector(dx, dy));
     vertices.push_back(current);
 
     for (double t = 0.0; t <= 1; t += step)
     {
-        const Coord next = current.translated(dx[0], dy[0]);
+        const Coord next(next_fd_vector(current, dx, dy));
         vertices.push_back(next);
 
         dx = next_delta(dx);
@@ -79,9 +95,10 @@ inline void generate_fd_vertices(
 }
 
 // Generate the vertices to represent a Spline curve.
+template<class Coord>
 inline list<Coord> spline_vertices(vector<Coord> controls)
 {
-    constexpr size_t start = TransformVector::last_index;
+    constexpr size_t start = TVector::last_index;
 
     assert(controls.size() > start);
 
@@ -91,8 +108,8 @@ inline list<Coord> spline_vertices(vector<Coord> controls)
     {
         generate_fd_vertices(
             result,
-            TransformVector::of_x(controls, i),
-            TransformVector::of_y(controls, i),
+            vector_of(controls, i, 0),
+            vector_of(controls, i, 1),
             spline_matrix());
     }
 

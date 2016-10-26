@@ -1,6 +1,6 @@
 #pragma once
 
-#include "coord.h"
+#include "transforms.h"
 
 #include <bitset>
 #include <map>
@@ -38,10 +38,10 @@ inline size_t bitset_index(size_t index)
     return REGION_CODE_SIZE - index; // bitset has indexes in reserve order - LSB order.
 }
 
-// Determine the region code based on the Window coord.
-inline RegionCode region_code(const Coord &coord)
+// Determine the region code based on the Window vector.
+inline RegionCode region_code(const TVector &v)
 {
-    const double x = coord.x(), y = coord.y();
+    const double x = v[0], y = v[1];
 
     RegionCode code { "0000" };
 
@@ -61,27 +61,33 @@ inline Region region(RegionCode code)
     return Region::CENTRAL;
 }
 
-// Determine the region based on Window coord.
-inline Region region(const Coord &coord)
+// Determine the region based on Window vector.
+inline Region region(const TVector &v)
 {
-    return region(region_code(coord));
+    return region(region_code(v));
 }
 
-// Determine if coord is located in super region i.
-inline bool in_super_region(SuperRegionIndex i, Coord coord)
+// Determine if vector is located in super region i.
+inline bool in_super_region(SuperRegionIndex i, const TVector &v)
 {
-    return region_code(coord).test(bitset_index(i));
+    return region_code(v).test(bitset_index(i));
 }
 
 // Determine if line between a and b is fully located in super region i.
-inline bool in_super_region(SuperRegionIndex i, Coord a, Coord b)
+inline bool in_super_region(SuperRegionIndex i, const TVector &a, const TVector &b)
 {
     return in_super_region(i, a) && in_super_region(i, b);
 }
 
 // Determine if line between a and b is fully located in one super region.
-inline bool in_one_super_region(Coord a, Coord b)
+inline bool in_one_super_region(const TVector &a, const TVector &b)
 {
     return in_super_region(NORTH, a, b) || in_super_region(SOUTH, a, b) ||
            in_super_region(EAST, a, b)  || in_super_region(WEST, a, b);
+}
+
+// Determine which one between a nd b is in bounds.
+inline TVector choose_in_bounds(const TVector &a, const TVector &b)
+{
+    if (region(a) == Region::CENTRAL) return a; else return b;
 }

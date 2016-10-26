@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics.h"
+#include "tools.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdocumentation-unknown-command"
@@ -17,8 +17,16 @@
 
 #define UNUSED __attribute__ ((unused))
 
+#ifdef WORLD_2D
+using UserSelection = Selection<Coord2D>;
+using UserViewport = ViewportCanvas<Coord2D>;
+#else
+using UserSelection = Selection<Coord3D>;
+using UserViewport = ViewportCanvas<Coord3D>;
+#endif
+
 // Canvas for GTK surface
-class SurfaceCanvas: public Canvas
+class SurfaceCanvas: public Canvas<VC>
 {
 public:
 
@@ -40,13 +48,13 @@ public:
     }
 
     // Move to destination.
-    virtual void move(const Coord &destination)
+    virtual void move(const VC &destination)
     {
         cairo_move_to(cr, destination.x(), destination.y());
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination, const Color &color)
+    virtual void draw_line(const VC &destination, const Color &color)
     {
         cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
@@ -55,7 +63,7 @@ public:
     }
 
     // Draw circle with the specified center, radius and color.
-    virtual void draw_circle(const Coord &center, const double radius, const Color &color)
+    virtual void draw_circle(const VC &center, const double radius, const Color &color)
     {
         cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
@@ -93,18 +101,18 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
     SurfaceCanvas canvas(surface);
     canvas.clear(Color(1, 1, 1));
 
-    World &world = *(World*)data;
-    ViewportCanvas viewport(widget_width, widget_height, world.window(), canvas);
-    world.render(viewport);
+    UserSelection &selection = *(UserSelection*)data;
+    UserViewport viewport(widget_width, widget_height, selection.window(), canvas);
+    viewport.render(selection.display_file(), selection);
 
     refresh(widget);
 
     return true;
 }
 
-static void refresh_canvas(GtkWidget *canvas, World &world)
+static void refresh_canvas(GtkWidget *canvas, UserSelection &selection)
 {
-    refresh_surface(GTK_WIDGET(canvas), nullptr, &world);
+    refresh_surface(GTK_WIDGET(canvas), nullptr, &selection);
 }
 
 constexpr double PADDING = 5;
@@ -130,15 +138,15 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
     if (event->button == 1) {
         gtk_widget_grab_focus(canvas);
 
-        const Coord new_center = Coord(event->x, event->y);
+        const VC new_center = { event->x, event->y };
         const int widget_width = gtk_widget_get_allocated_width(canvas);
         const int widget_height = gtk_widget_get_allocated_height(canvas);
         const Viewport viewport(widget_width, widget_height);
 
-        World &world = *(World*)data;
-        world.set_center_from_viewport(new_center, viewport);
+        UserSelection &selection = *(UserSelection*)data;
+        selection.set_center_from_viewport(new_center, viewport);
 
-        refresh_canvas(canvas, world);
+        refresh_canvas(canvas, selection);
     }
 
     return true;
@@ -146,7 +154,8 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
 
 static const double step = 0.1; // 10 percent
 
-static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object>> objects) {
+template<class Coord>
+static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object<Coord>>> objects) {
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
 
@@ -200,16 +209,16 @@ static GtkWidget * new_grid(GtkWidget *gtk_window)
     return grid;
 }
 
-static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_press)
+static GtkWidget * new_canvas(GtkWidget *grid, UserSelection &selection, GCallback on_key_press)
 {
     GtkWidget *canvas = gtk_drawing_area_new();
 
     gtk_grid_attach(GTK_GRID(grid), canvas,
                     column__canvas, row__canvas,
                     pan_column__canvas, pan_row__canvas);
-    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &world);
+    g_signal_connect(canvas, "configure-event", G_CALLBACK(refresh_surface), &selection);
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
-    g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &world);
+    g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &selection);
     g_signal_connect(canvas, "key-press-event", on_key_press, nullptr);
 
     gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
@@ -218,10 +227,10 @@ static GtkWidget * new_canvas(GtkWidget *grid, World &world, GCallback on_key_pr
     return canvas;
 }
 
-static void new_list_box(GtkWidget *grid, GtkWidget *canvas, World &world, GCallback select_object)
+static void new_list_box(GtkWidget *grid, GtkWidget *canvas, UserSelection &selection, GCallback select_object)
 {
     GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box), world.objects());
+    add_objects_to_list_box(GTK_LIST_BOX(list_box), selection.world().objects());
     gtk_grid_attach(GTK_GRID(grid), list_box,
                     column__list_box, row__list_box,
                     pan_column__list_box, pan_row__list_box);
