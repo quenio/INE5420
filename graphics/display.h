@@ -466,23 +466,21 @@ public:
 
     Coord2D project(Coord3D coord) const override
     {
-        const TVector vector = TVector({0, 0, 2, 1});
-        const TVector vcoord = TVector({coord.x(), coord.y(), coord.z(), 1});
-
-        const TVector result = vcoord * perspective_matrix(vector);
+        const TVector cop = TVector({0, 0, 5, 1});  // e
+        const TVector result = TVector(coord) * perspective_matrix(cop);
 
         return Coord2D(result[0]/result[3], result[1]/result[3]);
     }
     
 private:
     
-    inline TMatrix perspective_matrix(TVector control) const
+    inline TMatrix perspective_matrix(TVector cop) const
     {
         return TMatrix(
-            { 1, 0, -(control[0]/control[2]), 0 },
-            { 0, 1, -(control[1]/control[2]), 0 },
-            { 0, 0, 1, 0 },
-            { 0, 0, 1/control[2], 0 }
+                { 1, 0, 0, 0},
+                { 0, 1, 0, 0},
+                { -(cop[0]/cop[2]), -(cop[1]/cop[2]), 1, 1/cop[2]},
+                { 0, 0, 0, 0}
         );
     }
 
