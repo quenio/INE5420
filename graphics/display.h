@@ -352,7 +352,7 @@ private:
 // Projections
 enum class ProjectionMethod { PARALLEL, PERSPECTIVE };
 
-static ProjectionMethod projection_method = ProjectionMethod::PERSPECTIVE;
+static ProjectionMethod projection_method = ProjectionMethod::PARALLEL;
 
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>
@@ -409,7 +409,7 @@ public:
 
     Coord2D project(Coord3D coord) const override
     {
-        const double d = 20;
+        const double d = 100;
         const Coord3D center = Coord3D(_window->center().x(), _window->center().y(), 0);
 
         return coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
