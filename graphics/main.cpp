@@ -110,13 +110,13 @@ static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
 static void select_parallel(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     projection_method = ProjectionMethod::PARALLEL;
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     projection_method = ProjectionMethod::PERSPECTIVE;
-    refresh_canvas(GTK_WIDGET(canvas), world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)

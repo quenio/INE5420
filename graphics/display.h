@@ -354,31 +354,32 @@ enum class ProjectionMethod { PARALLEL, PERSPECTIVE };
 
 static ProjectionMethod projection_method = ProjectionMethod::PARALLEL;
 
-class ProjectionCanvas: public Canvas<Coord3D>
+template<class Coord>
+class ProjectionCanvas: public Canvas<Coord>
 {
 public:
 
     ProjectionCanvas(Canvas<Coord2D> &canvas, shared_ptr<Window> window): _canvas(canvas), _window(window) {}
 
     // Move to destination.
-    void move(const Coord3D &destination) override
+    void move(const Coord &destination) override
     {
         _canvas.move(project(destination));
     }
 
     // Draw line from current position to destination.
-    void draw_line(const Coord3D &destination, const Color &color) override
+    void draw_line(const Coord &destination, const Color &color) override
     {
         _canvas.draw_line(project(destination), color);
     }
 
     // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord3D &center, const double radius, const Color &color) override
+    void draw_circle(const Coord &center, const double radius, const Color &color) override
     {
         _canvas.draw_circle(project(center), radius, color);
     }
 
-    virtual Coord2D project(Coord3D coord) const = 0;
+    virtual Coord2D project(Coord coord) const = 0;
 
 protected:
 
@@ -387,7 +388,7 @@ protected:
 
 };
 
-class ParallelProjection: public ProjectionCanvas
+class ParallelProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
@@ -400,7 +401,7 @@ public:
 
 };
 
-class PerspectiveProjection: public ProjectionCanvas
+class PerspectiveProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
