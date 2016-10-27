@@ -352,7 +352,7 @@ private:
 // Projections
 enum class ProjectionMethod { PARALLEL, PERSPECTIVE };
 
-static ProjectionMethod projection_method = ProjectionMethod::PARALLEL;
+static ProjectionMethod projection_method = ProjectionMethod::PERSPECTIVE;
 
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>
@@ -409,21 +409,21 @@ public:
 
     Coord2D project(Coord3D coord) const override
     {
-        const TVector cop = TVector({0, 0, 5, 1});  // e
-        const TVector result = TVector(coord) * perspective_matrix(cop);
+        const double d = 20;
+        const Coord3D center = Coord3D(_window->center().x(), _window->center().y(), 0);
 
-        return Coord2D(result[0]/result[3], result[1]/result[3]);
+        return coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
     }
 
 private:
 
-    inline TMatrix perspective_matrix(TVector cop) const
+    inline TMatrix perspective_matrix(double d) const
     {
         return TMatrix(
-                { 1, 0, 0, 0},
-                { 0, 1, 0, 0},
-                { -(cop[0]/cop[2]), -(cop[1]/cop[2]), 1, 1/cop[2]},
-                { 0, 0, 0, 0}
+            { 1.0, 0.0,   0.0, 0.0 },
+            { 0.0, 1.0,   0.0, 0.0 },
+            { 0.0, 0.0,   1.0, 0.0 },
+            { 0.0, 0.0, 1.0/d, 1.0 }
         );
     }
 
@@ -541,7 +541,7 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
         z_segment(base6, length)
     });
 
-    cube.transform(x_rotation(30) * y_rotation(-30) * z_rotation(30));
+//    cube.transform(x_rotation(30) * y_rotation(-30) * z_rotation(30));
 
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }
