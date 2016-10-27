@@ -161,12 +161,13 @@ public:
     // Transform vector using transformation matrix.
     friend TVector operator * (TVector vector, TMatrix matrix)
     {
+        const double w = vector * matrix.column(3);
         return TVector({
-           vector * matrix.column(0),
-           vector * matrix.column(1),
-           vector * matrix.column(2),
-           vector * matrix.column(3)
-        });
+            vector * matrix.column(0),
+            vector * matrix.column(1),
+            vector * matrix.column(2),
+            1.0
+        }) / w; // Making it homogeneous
     }
 
     // Multiply this matrix by other
