@@ -265,16 +265,16 @@ inline TMatrix x_rotation(double degrees)
     );
 }
 
-// Rotation matrix on z axis: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
+// Rotation matrix on y axis: rotate by degrees; counter-clockwise if angle positive; clockwise if negative.
 inline TMatrix y_rotation(double degrees)
 {
     const double rad = degrees * PI / 180.0;
     const double c = cos(rad);
     const double s = sin(rad);
     return TMatrix(
-        {  +c, 0.0,  -s, 0.0 },
+        {  +c, 0.0,  +s, 0.0 },
         { 0.0, 1.0, 0.0, 0.0 },
-        {  +s, 0.0,  +c, 0.0 },
+        {  -s, 0.0,  +c, 0.0 },
         { 0.0, 0.0, 0.0, 1.0 }
     );
 }
@@ -291,6 +291,18 @@ inline TMatrix z_rotation(double degrees)
         { 0.0, 0.0, 1.0, 0.0 },
         { 0.0, 0.0, 0.0, 1.0 }
     );
+}
+
+// Rotation matrix on x axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
+inline TMatrix x_rotation(double degrees, TVector center)
+{
+    return inverse_translation(center) * x_rotation(degrees) * translation(center);
+}
+
+// Rotation matrix on y axis: rotate by degrees; counter-clockwise if angle positive; clockwise if negative.
+inline TMatrix y_rotation(double degrees, TVector center)
+{
+    return inverse_translation(center) * y_rotation(degrees) * translation(center);
 }
 
 // Rotation matrix on z axis by degrees at center; clockwise if angle positive; counter-clockwise if negative.
@@ -316,31 +328,6 @@ inline void transform(TMatrix m, list<Coord *> coords)
 {
     for (auto c: coords)
         *c *= m;
-}
-
-// Translate coord by dx horizontally, dy vertically, dz in depth.
-template<class Coord>
-inline void translate(Coord delta, list<Coord *> coords)
-{
-    transform(translation(delta), coords);
-}
-
-// Scale coord by factor from center.
-template<class Coord>
-inline void scale(double factor, Coord center, list<Coord *> coords)
-{
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-
-    transform(scaling(factor, center), coords);
-}
-
-// Rotate coord by degrees at center; clockwise if angle positive; counter-clockwise if negative.
-template<class Coord>
-inline void rotate(double degrees, Coord center, list<Coord *> coords)
-{
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
-
-    transform(z_rotation(degrees, center), coords);
 }
 
 // Create TVector with the coordinates of controls from i-3 to i, in the j-th position.
@@ -416,9 +403,6 @@ public:
         static_assert(is_convertible<Coord, TVector>::value, "Coord must have conversion operator: operator TVector() const");
     }
 
-    // Control coords
-    virtual list<Coord *> controls() = 0;
-
     // Center of all controls
     virtual Coord center()
     {
@@ -434,20 +418,37 @@ public:
     // Translate by delta.
     virtual void translate(Coord delta)
     {
-        ::translate(delta, controls());
+        transform(::translation(delta));
     }
 
     // Scale by factor from center.
     virtual void scale(double factor, Coord center)
     {
-        ::scale(factor, center, controls());
+        transform(::scaling(factor, center));
     }
 
-    // Rotate by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    virtual void rotate(double degrees, Coord center)
+    // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate_x(double degrees, Coord center)
     {
-        ::rotate(degrees, center, controls());
+        transform(::x_rotation(degrees, center));
     }
+
+    // Rotation matrix on y axis: rotate by degrees; counter-clockwise if angle positive; clockwise if negative.
+    virtual void rotate_y(double degrees, Coord center)
+    {
+        transform(::y_rotation(degrees, center));
+    }
+
+    // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    virtual void rotate_z(double degrees, Coord center)
+    {
+        transform(::z_rotation(degrees, center));
+    }
+
+protected:
+
+    // Control coords
+    virtual list<Coord *> controls() = 0;
 
 };
 

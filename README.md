@@ -44,3 +44,4 @@ make
 - 1.4: Point, Line and Polygon Clipping.
 - 1.5: Bézier parametric curves.
 - 1.6: Spline curves using forward differences.
+- 1.7: 3D objects and parallel orthogonal projection.

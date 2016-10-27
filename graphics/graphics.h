@@ -58,10 +58,15 @@ public:
 
 };
 
+// Groups of objects
+template<class Coord> class Group;
+
 // World objects
 template<class Coord>
 class Object: public virtual Drawable<Coord>, public Transformable<Coord>
 {
+    friend Group<Coord>;
+
 public:
 
     Object(const Color &color = BLACK): _color(color), _regular_color(color)
@@ -146,6 +151,98 @@ private:
 
     // Commands to be executed
     list<shared_ptr<Command>> _commands;
+
+};
+
+// Groups of objects
+template<class Coord>
+class Group: public Transformable<Coord>
+{
+public:
+
+    using Object = ::Object<Coord>;
+
+    // Controls of all objects in group
+    list<Coord *> controls() override
+    {
+        list<Coord *> controls;
+
+        for (auto s: _objects)
+            for (auto c: s->controls())
+                controls.push_back(c);
+
+        return controls;
+    }
+
+    // Transform all objects according to matrix.
+    void transform(TMatrix matrix) override
+    {
+        for (auto s: _objects)
+            s->transform(matrix);
+    }
+
+    // Translate by delta.
+    void translate(Coord delta) override
+    {
+        for (auto s: _objects)
+            s->translate(delta);
+    }
+
+    // Scale by factor from center.
+    void scale(double factor, Coord center) override
+    {
+        for (auto s: _objects)
+            s->scale(factor, center);
+    }
+
+    // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_x(double degrees, Coord center) override
+    {
+        for (auto s: _objects)
+            s->rotate_x(degrees, center);
+    }
+
+    // Rotate on the y axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_y(double degrees, Coord center) override
+    {
+        for (auto s: _objects)
+            s->rotate_y(degrees, center);
+    }
+
+    // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
+    void rotate_z(double degrees, Coord center) override
+    {
+        for (auto s: _objects)
+            s->rotate_z(degrees, center);
+    }
+
+    // True if any objects is selected.
+    bool not_empty()
+    {
+        return _objects.size() > 0;
+    }
+
+    // All objects in the group
+    list<shared_ptr<Object>> objects()
+    {
+        return _objects;
+    }
+
+    // Add object to back of the group.
+    void add(shared_ptr<Object> object)
+    {
+        _objects.push_back(object);
+    }
+
+    // Remove all objects in the group.
+    void removeAll()
+    {
+        _objects.clear();
+    }
+
+private:
+
+    list<shared_ptr<Object>> _objects;
 
 };
 
