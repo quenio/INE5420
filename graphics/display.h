@@ -438,7 +438,7 @@ public:
 
     virtual Coord2D project(Coord3D coord) const = 0;
 
-private:
+protected:
 
     Canvas<Coord2D> &_canvas;
     shared_ptr<Window> _window;
@@ -464,9 +464,26 @@ public:
 
     PerspectiveProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
 
-    Coord2D project(UNUSED Coord3D coord) const override
+    Coord2D project(Coord3D coord) const override
     {
-        //TODO Implement perspective projection.
+        const TVector vector = TVector({0, 0, 2, 1});
+        const TVector vcoord = TVector({coord.x(), coord.y(), coord.z(), 1});
+
+        const TVector result = vcoord * perspective_matrix(vector);
+
+        return Coord2D(result[0]/result[3], result[1]/result[3]);
+    }
+    
+private:
+    
+    inline TMatrix perspective_matrix(TVector control) const
+    {
+        return TMatrix(
+            { 1, 0, -(control[0]/control[2]), 0 },
+            { 0, 1, -(control[1]/control[2]), 0 },
+            { 0, 0, 1, 0 },
+            { 0, 0, 1/control[2], 0 }
+        );
     }
 
 };
