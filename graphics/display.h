@@ -416,7 +416,7 @@ class ProjectionCanvas: public Canvas<Coord3D>
 {
 public:
 
-    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
+    ProjectionCanvas(Canvas<Coord2D> &canvas, shared_ptr<Window> window): _canvas(canvas), _window(window) {}
 
     // Move to destination.
     void move(const Coord3D &destination) override
@@ -441,6 +441,7 @@ public:
 private:
 
     Canvas<Coord2D> &_canvas;
+    shared_ptr<Window> _window;
 
 };
 
@@ -448,7 +449,7 @@ class ParallelProjection: public ProjectionCanvas
 {
 public:
 
-    ParallelProjection(Canvas<Coord2D> &canvas) : ProjectionCanvas(canvas) {}
+    ParallelProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
 
     Coord2D project(Coord3D coord) const override
     {
@@ -461,7 +462,7 @@ class PerspectiveProjection: public ProjectionCanvas
 {
 public:
 
-    PerspectiveProjection(Canvas<Coord2D> &canvas) : ProjectionCanvas(canvas) {}
+    PerspectiveProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
 
     Coord2D project(UNUSED Coord3D coord) const override
     {
@@ -529,13 +530,13 @@ public:
 #ifdef WORLD_3D
         if (projection_method == ProjectionMethod::PARALLEL)
         {
-            ParallelProjection projectionCanvas(canvas);
+            ParallelProjection projectionCanvas(canvas, window());
             _display_file.render(projectionCanvas);
             render_controls(projectionCanvas);
         }
         else
         {
-            PerspectiveProjection projectionCanvas(canvas);
+            PerspectiveProjection projectionCanvas(canvas, window());
             _display_file.render(projectionCanvas);
             render_controls(projectionCanvas);
         }
