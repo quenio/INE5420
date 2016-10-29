@@ -66,10 +66,10 @@ public:
         return _selected_group.not_empty();
     }
 
-    // Move the selected objects by dx horizontally, dy vertically.
-    void translate(double dx, double dy)
+    // Move the selected objects by delta.
+    void translate(Coord delta)
     {
-        _selected_group.translate(TVector(Coord2D(dx, dy)));
+        _selected_group.translate(delta);
         _center = TVector(_selected_group.center());
     }
 

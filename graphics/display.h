@@ -350,9 +350,9 @@ private:
 };
 
 // Projections
-enum class ProjectionMethod { PARALLEL, PERSPECTIVE };
+enum ProjectionMethod { PARALLEL, PERSPECTIVE };
 
-static ProjectionMethod projection_method = ProjectionMethod::PARALLEL;
+static ProjectionMethod projection_method = PERSPECTIVE;
 
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>

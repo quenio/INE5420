@@ -127,19 +127,67 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             switch (event->keyval)
             {
                 case GDK_KEY_Left:
-                    selection.translate(-1, 0);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(-1, 0));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, -1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(-1, 0, 0));
+                    }
+#endif
                     break;
 
                 case GDK_KEY_Right:
-                    selection.translate(+1, 0);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(+1, 0));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, +1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(+1, 0, 0));
+                    }
+#endif
                     break;
 
                 case GDK_KEY_Down:
-                    selection.translate(0, -1);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(0, -1));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, -1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(0, -1, 0));
+                    }
+#endif
                     break;
 
                 case GDK_KEY_Up:
-                    selection.translate(0, +1);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(0, +1));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, +1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(0, +1, 0));
+                    }
+#endif
                     break;
 
                 default:
@@ -252,8 +300,8 @@ int main(int argc, char *argv[])
     menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
 
     list<pair<string, GCallback>> projection_items;
-    projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
     projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
+    projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
     menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
 
     new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
