@@ -411,8 +411,9 @@ public:
     {
         const double d = 100;
         const Coord3D center = Coord3D(_window->center().x(), _window->center().y(), 0);
+        const TVector projected = coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
 
-        return coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
+        return Coord2D(projected.homogeneous());
     }
 
 private:
