@@ -350,9 +350,9 @@ private:
 };
 
 // Projections
-enum class ProjectionMethod { PARALLEL, PERSPECTIVE };
+enum ProjectionMethod { PARALLEL, PERSPECTIVE };
 
-static ProjectionMethod projection_method = ProjectionMethod::PARALLEL;
+static ProjectionMethod projection_method = PERSPECTIVE;
 
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>
@@ -411,8 +411,9 @@ public:
     {
         const double d = 100;
         const Coord3D center = Coord3D(_window->center().x(), _window->center().y(), 0);
+        const TVector projected = coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
 
-        return coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
+        return Coord2D(projected.homogeneous());
     }
 
 private:

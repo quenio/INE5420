@@ -77,6 +77,16 @@ public:
         return sum;
     }
 
+    TVector homogeneous() const
+    {
+        return TVector({
+           _vector[0],
+           _vector[1],
+           _vector[2],
+           1.0
+        }) / _vector[3];
+    }
+
 private:
     vector<double> _vector;
 };
@@ -161,13 +171,12 @@ public:
     // Transform vector using transformation matrix.
     friend TVector operator * (TVector vector, TMatrix matrix)
     {
-        const double w = vector * matrix.column(3);
         return TVector({
             vector * matrix.column(0),
             vector * matrix.column(1),
             vector * matrix.column(2),
-            1.0
-        }) / w; // Making it homogeneous
+            vector * matrix.column(3)
+        });
     }
 
     // Multiply this matrix by other
