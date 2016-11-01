@@ -548,8 +548,12 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }
 
-inline shared_ptr<Draw3DCommand> draw_bezier_surface(Coord3D edge1, Coord3D control1, Coord3D edge2, Coord3D control2)
+inline shared_ptr<Draw3DCommand> draw_bezier_surface(initializer_list<Coord3D> controls)
 {
-    return make_shared<Draw3DCommand>(make_shared<BezierSurface>(BezierSurface(edge1, control1, edge2, control2)));
+    BezierSurface surface(controls);
+
+    surface.transform(y_rotation(60) * translation(0, -10, 20) * x_rotation(10));
+
+    return make_shared<Draw3DCommand>(make_shared<BezierSurface>(surface));
 }
 

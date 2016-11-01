@@ -27,7 +27,12 @@ static World<Coord3D> world(
     make_shared<Window>(-20, -20, 120, 120),
     DisplayFile<Coord3D>({
          draw_cube(Coord3D(20, 20, 20), 50),
-         draw_bezier_surface(Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 90, 20), Coord3D(90, 10, 20))
+         draw_bezier_surface({
+             Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
+             Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
+             Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
+             Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
+         })
     })
 );
 #endif

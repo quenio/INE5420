@@ -97,8 +97,10 @@ class BezierSurface: public Object<Coord3D>, public Polyline<Coord3D>
 {
 public:
 
-    BezierSurface(Coord3D edge1, Coord3D control1, Coord3D edge2, Coord3D control2)
-        : _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
+    BezierSurface(initializer_list<Coord3D> controls): _controls(controls)
+    {
+        assert(controls.size() == control_size);
+    }
 
     // Type used in the name
     string type() const override
@@ -106,27 +108,26 @@ public:
         return "Bezier";
     }
 
-    // Midpoint between both edges
-    Coord3D center() override
-    {
-        return equidistant(_edge1, _edge2);
-    }
-
     // Vertices to use when drawing the lines.
     list<Coord3D> vertices() const override
     {
-        return bezier_surface_vertices(_edge1, _control1, _control2, _edge2);
+        return bezier_surface_vertices(_controls);
     }
 
+    // Control coords
     list<Coord3D *> controls() override
     {
-        return { &_edge1, &_control1, &_edge2, &_control2 };
+        list<Coord3D *> vertices;
+
+        for (auto &v: _controls)
+            vertices.push_back(&v);
+
+        return vertices;
     }
 
 private:
 
-    Coord3D _edge1, _control1;
-    Coord3D _edge2, _control2;
+    vector<Coord3D> _controls;
 
 };
 
