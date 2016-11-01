@@ -162,6 +162,7 @@ class TMatrix
 public:
     constexpr static size_t column_count = TVector::count;
     constexpr static size_t row_count = TVector::count;
+    constexpr static size_t cell_count = column_count * row_count;
 
     TMatrix(
         initializer_list<double> column1,
@@ -185,7 +186,7 @@ public:
     }
 
     // Multiply this matrix by other
-    TMatrix operator * (TMatrix other)
+    TMatrix operator * (TMatrix other) const
     {
         double m[column_count][row_count];
 
@@ -325,6 +326,28 @@ inline TMatrix y_rotation(double degrees, TVector center)
 inline TMatrix z_rotation(double degrees, TVector center)
 {
     return inverse_translation(center) * z_rotation(degrees) * translation(center);
+}
+
+// Coefficient matrix used to calculate a Bezier curve or surface
+inline TMatrix bezier()
+{
+    return TMatrix(
+        { -1, +3, -3, +1 },
+        { +3, -6, +3,  0 },
+        { -3, +3,  0,  0 },
+        { +1,  0,  0,  0 }
+    );
+}
+
+// Coefficient matrix used to calculate a Spline curve or surface
+inline TMatrix spline()
+{
+    return TMatrix(
+        { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
+        {      0.5,     -1.0,     0.5,     0.0 },
+        {     -0.5,      0.0,     0.5,     0.0 },
+        {  1.0/6.0,  4.0/6.0, 1.0/6.0,     0.0 }
+    );
 }
 
 // Transform coord using matrix, and assigns to lhs.

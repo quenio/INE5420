@@ -1,6 +1,6 @@
 #pragma once
 
-#include "spline.h"
+#include "transforms.h"
 
 // Matrix used to calculate initial deltas of forward differences
 inline TMatrix delta_matrix()
@@ -99,7 +99,7 @@ inline list<Coord> spline_curve_vertices(vector<Coord> controls)
             result,
             vector_of(controls, i, 0),
             vector_of(controls, i, 1),
-            spline_matrix());
+            spline());
     }
 
     return result;

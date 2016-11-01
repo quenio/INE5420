@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bezier_surface.h"
+#include "surfaces.h"
 #include "graphics.h"
 
 // 3D coordinates
@@ -99,7 +99,7 @@ public:
 
     BezierSurface(initializer_list<Coord3D> controls): _controls(controls)
     {
-        assert(controls.size() == control_size);
+        assert(controls.size() >= surface_geometry_matrix_size);
     }
 
     // Type used in the name
@@ -111,7 +111,7 @@ public:
     // Vertices to use when drawing the lines.
     list<Coord3D> vertices() const override
     {
-        return bezier_surface_vertices(_controls);
+        return surface_vertices(bezier(), _controls);
     }
 
     // Control coords

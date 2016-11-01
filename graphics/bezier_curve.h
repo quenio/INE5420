@@ -1,11 +1,11 @@
 #pragma once
 
-#include "bezier.h"
+#include "transforms.h"
 
 // Vector used to calculate points in each step of a Bezier curve
 inline TVector bezier_step_vector(double step)
 {
-    return vector_of_step(step) * bezier_matrix();
+    return vector_of_step(step) * bezier();
 }
 
 // Vector in the Bezier curve at step for geometry vectors gx and gy.
