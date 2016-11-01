@@ -85,7 +85,7 @@ inline void generate_fd_vertices(
 
 // Generate the vertices to represent a Spline curve.
 template<class Coord>
-inline list<Coord> spline_vertices(vector<Coord> controls)
+inline list<Coord> spline_curve_vertices(vector<Coord> controls)
 {
     constexpr size_t start = TVector::last_index;
 

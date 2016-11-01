@@ -469,13 +469,13 @@ private:
 };
 
 // B-Spline curve defined by a list of control coords.
-class Spline: public Object2D, public Polyline2D
+class SplineCurve: public Object2D, public Polyline2D
 {
 public:
 
-    Spline(initializer_list<Coord2D> controls): Spline(BLACK, controls) {}
+    SplineCurve(initializer_list<Coord2D> controls): SplineCurve(BLACK, controls) {}
 
-    Spline(const Color &color, initializer_list<Coord2D> controls): Object2D(color), _controls(controls) {}
+    SplineCurve(const Color &color, initializer_list<Coord2D> controls): Object2D(color), _controls(controls) {}
 
     // Type used in the name
     string type() const override
@@ -486,7 +486,7 @@ public:
     // Vertices to use when drawing the lines
     list<Coord2D> vertices() const override
     {
-        return spline_vertices(_controls);
+        return spline_curve_vertices(_controls);
     }
 
     // New drawable from clipped_vertices

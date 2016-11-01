@@ -493,9 +493,9 @@ inline shared_ptr<Draw2DCommand> draw_bezier_curve(Coord2D edge1, Coord2D contro
     return make_shared<Draw2DCommand>(make_shared<BezierCurve>(BezierCurve(edge1, control1, edge2, control2)));
 }
 
-inline shared_ptr<Draw2DCommand> draw_spline(initializer_list<Coord2D> controls)
+inline shared_ptr<Draw2DCommand> draw_spline_curve(initializer_list<Coord2D> controls)
 {
-    return make_shared<Draw2DCommand>(make_shared<Spline>(Spline(controls)));
+    return make_shared<Draw2DCommand>(make_shared<SplineCurve>(SplineCurve(controls)));
 }
 
 inline Segment3D x_segment(Coord3D start, double length)
