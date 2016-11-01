@@ -472,7 +472,7 @@ public:
     // Vertices to use when drawing the lines.
     list<Coord2D> vertices() const override
     {
-        return bezier_vertices(_edge1, _control1, _control2, _edge2);
+        return bezier_curve_vertices(_edge1, _control1, _control2, _edge2);
     }
 
     // New drawable from clipped_vertices

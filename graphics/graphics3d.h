@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bezier_surface.h"
 #include "graphics.h"
 
 // 3D coordinates
