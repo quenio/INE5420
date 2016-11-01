@@ -4,7 +4,7 @@
 #include "clipping_cs.h"
 #include "clipping_lb.h"
 #include "bezier_curve.h"
-#include "spline.h"
+#include "spline_curve.h"
 #include "graphics.h"
 
 #define UNUSED __attribute__ ((unused))
