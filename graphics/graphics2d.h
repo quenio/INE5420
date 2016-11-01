@@ -3,7 +3,7 @@
 #include "region.h"
 #include "clipping_cs.h"
 #include "clipping_lb.h"
-#include "bezier.h"
+#include "bezier_curve.h"
 #include "spline.h"
 #include "graphics.h"
 

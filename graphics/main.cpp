@@ -1,5 +1,5 @@
-//#define WORLD_2D
-#define WORLD_3D
+#define WORLD_2D
+//#define WORLD_3D
 
 #include "ui.h"
 
