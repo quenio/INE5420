@@ -557,3 +557,11 @@ inline shared_ptr<Draw3DCommand> draw_bezier_surface(initializer_list<Coord3D> c
     return make_shared<Draw3DCommand>(make_shared<BezierSurface>(surface));
 }
 
+inline shared_ptr<Draw3DCommand> draw_spline_surface(initializer_list<Coord3D> controls)
+{
+    SplineSurface surface(controls);
+
+    surface.transform(translation(-30, -10, -30) * y_rotation(120) * scaling(2, 2, 2));
+
+    return make_shared<Draw3DCommand>(make_shared<SplineSurface>(surface));
+}

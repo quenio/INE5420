@@ -99,7 +99,7 @@ inline list<Coord> spline_curve_vertices(vector<Coord> controls)
             result,
             vector_of(controls, i, 0),
             vector_of(controls, i, 1),
-            spline());
+            spline);
     }
 
     return result;

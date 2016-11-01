@@ -435,7 +435,7 @@ public:
     // Type used in the name
     string type() const override
     {
-        return "Bezier";
+        return "BezierCurve";
     }
 
     // Midpoint between both edges
@@ -480,7 +480,7 @@ public:
     // Type used in the name
     string type() const override
     {
-        return "Spline";
+        return "SplineCurve";
     }
 
     // Vertices to use when drawing the lines

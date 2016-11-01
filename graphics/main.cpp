@@ -32,6 +32,12 @@ static World<Coord3D> world(
              Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
              Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
              Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
+         }),
+         draw_spline_surface({
+             Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
+             Coord3D(50, 10, 30), Coord3D(20, 30, 30), Coord3D(20, 70, 30), Coord3D(50, 90, 30),
+             Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
+             Coord3D(50, 10, 50), Coord3D(20, 30, 50), Coord3D(20, 70, 50), Coord3D(50, 90, 50)
          })
     })
 );

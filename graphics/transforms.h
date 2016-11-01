@@ -329,26 +329,20 @@ inline TMatrix z_rotation(double degrees, TVector center)
 }
 
 // Coefficient matrix used to calculate a Bezier curve or surface
-inline TMatrix bezier()
-{
-    return TMatrix(
-        { -1, +3, -3, +1 },
-        { +3, -6, +3,  0 },
-        { -3, +3,  0,  0 },
-        { +1,  0,  0,  0 }
-    );
-}
+static TMatrix bezier(
+    { -1, +3, -3, +1 },
+    { +3, -6, +3,  0 },
+    { -3, +3,  0,  0 },
+    { +1,  0,  0,  0 }
+);
 
 // Coefficient matrix used to calculate a Spline curve or surface
-inline TMatrix spline()
-{
-    return TMatrix(
-        { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
-        {      0.5,     -1.0,     0.5,     0.0 },
-        {     -0.5,      0.0,     0.5,     0.0 },
-        {  1.0/6.0,  4.0/6.0, 1.0/6.0,     0.0 }
-    );
-}
+static TMatrix spline(
+    { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
+    {      0.5,     -1.0,     0.5,     0.0 },
+    {     -0.5,      0.0,     0.5,     0.0 },
+    {  1.0/6.0,  4.0/6.0, 1.0/6.0,     0.0 }
+);
 
 // Transform coord using matrix, and assigns to lhs.
 template<class Coord>
