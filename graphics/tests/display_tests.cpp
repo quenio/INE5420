@@ -130,4 +130,9 @@ void all_tests()
     mu_test(from_world);
     mu_test(to_viewport);
     mu_test(from_viewport);
+
+    if (projection_method == ProjectionMethod::PERSPECTIVE)
+    {
+        //FIXME Suppress warning for unused projection_method in display_tests...
+    }
 }

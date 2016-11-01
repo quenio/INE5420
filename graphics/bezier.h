@@ -28,8 +28,8 @@ inline TVector bezier_vertex(const TVector &vx, const TVector &vy, double step)
         {
             b * vx,
             b * vy,
-            0,
-            0
+            1,
+            1
         }
     );
 }

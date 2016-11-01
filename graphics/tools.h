@@ -66,10 +66,10 @@ public:
         return _selected_group.not_empty();
     }
 
-    // Move the selected objects by dx horizontally, dy vertically.
-    void translate(double dx, double dy)
+    // Move the selected objects by delta.
+    void translate(Coord delta)
     {
-        _selected_group.translate(TVector(Coord2D(dx, dy)));
+        _selected_group.translate(delta);
         _center = TVector(_selected_group.center());
     }
 
@@ -146,15 +146,23 @@ public:
         render_axis();
 
 #ifdef WORLD_2D
-        Canvas<Coord2D> &projection_canvas = *this;
+        Canvas<Coord2D> *projection_canvas = this;
 #endif
 
 #ifdef WORLD_3D
-        ProjectionCanvas<Coord> projection_canvas(*this);
+        shared_ptr<ProjectionCanvas<Coord3D>> projection_canvas;
+        if (projection_method == ProjectionMethod::PARALLEL)
+        {
+            projection_canvas = make_shared<ParallelProjection>(*this, _window);
+        }
+        else
+        {
+            projection_canvas = make_shared<PerspectiveProjection>(*this, _window);
+        }
 #endif
 
-        display_file.render(projection_canvas);
-        selection.render_controls(projection_canvas);
+        display_file.render(*projection_canvas);
+        selection.render_controls(*projection_canvas);
 
         selection.render_center(*this);
         _window->draw(*this);

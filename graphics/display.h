@@ -349,36 +349,87 @@ private:
 
 };
 
+// Projections
+enum ProjectionMethod { PARALLEL, PERSPECTIVE };
+
+static ProjectionMethod projection_method = PERSPECTIVE;
+
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>
 {
 public:
 
-    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
+    ProjectionCanvas(Canvas<Coord2D> &canvas, shared_ptr<Window> window): _canvas(canvas), _window(window) {}
 
     // Move to destination.
     void move(const Coord &destination) override
     {
-        _canvas.move(TVector(destination));
+        _canvas.move(project(destination));
     }
 
     // Draw line from current position to destination.
     void draw_line(const Coord &destination, const Color &color) override
     {
-        _canvas.draw_line(TVector(destination), color);
+        _canvas.draw_line(project(destination), color);
     }
 
     // Draw circle with the specified center, radius and color.
     void draw_circle(const Coord &center, const double radius, const Color &color) override
     {
-        _canvas.draw_circle(TVector(center), radius, color);
+        _canvas.draw_circle(project(center), radius, color);
+    }
+
+    virtual Coord2D project(Coord coord) const = 0;
+
+protected:
+
+    Canvas<Coord2D> &_canvas;
+    shared_ptr<Window> _window;
+
+};
+
+class ParallelProjection: public ProjectionCanvas<Coord3D>
+{
+public:
+
+    ParallelProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
+
+    Coord2D project(Coord3D coord) const override
+    {
+        return TVector(coord);
+    }
+
+};
+
+class PerspectiveProjection: public ProjectionCanvas<Coord3D>
+{
+public:
+
+    PerspectiveProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
+
+    Coord2D project(Coord3D coord) const override
+    {
+        const double d = 100;
+        const Coord3D center = Coord3D(_window->center().x(), _window->center().y(), 0);
+        const TVector projected = coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
+
+        return Coord2D(projected.homogeneous());
     }
 
 private:
 
-    Canvas<Coord2D> &_canvas;
+    inline TMatrix perspective_matrix(double d) const
+    {
+        return TMatrix(
+            { 1.0, 0.0,   0.0, 0.0 },
+            { 0.0, 1.0,   0.0, 0.0 },
+            { 0.0, 0.0,   1.0, 0.0 },
+            { 0.0, 0.0, 1.0/d, 1.0 }
+        );
+    }
 
 };
+
 
 template<class Coord>
 class World
@@ -491,7 +542,7 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
         z_segment(base6, length)
     });
 
-    cube.transform(x_rotation(30) * y_rotation(-30) * z_rotation(30));
+//    cube.transform(x_rotation(30) * y_rotation(-30) * z_rotation(30));
 
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }

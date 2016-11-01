@@ -107,6 +107,18 @@ static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
+static void select_parallel(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    projection_method = ProjectionMethod::PARALLEL;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    projection_method = ProjectionMethod::PERSPECTIVE;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
     switch (selected_tool)
@@ -115,19 +127,67 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             switch (event->keyval)
             {
                 case GDK_KEY_Left:
-                    selection.translate(-1, 0);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(-1, 0));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, -1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(-1, 0, 0));
+                    }
+#endif
                     break;
 
                 case GDK_KEY_Right:
-                    selection.translate(+1, 0);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(+1, 0));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, +1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(+1, 0, 0));
+                    }
+#endif
                     break;
 
                 case GDK_KEY_Down:
-                    selection.translate(0, -1);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(0, -1));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, -1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(0, -1, 0));
+                    }
+#endif
                     break;
 
                 case GDK_KEY_Up:
-                    selection.translate(0, +1);
+#ifdef WORLD_2D
+                    selection.translate(Coord2D(0, +1));
+#endif
+#ifdef WORLD_3D
+                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
+                    {
+                        selection.translate(Coord3D(0, 0, +1));
+                    }
+                    else
+                    {
+                        selection.translate(Coord3D(0, +1, 0));
+                    }
+#endif
                     break;
 
                 default:
@@ -231,11 +291,18 @@ int main(int argc, char *argv[])
 
     GtkWidget *canvas = new_canvas(grid, selection, G_CALLBACK(canvas_on_key_press));
 
-    list<pair<string, GCallback>> menu_items;
-    menu_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
-    menu_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
-    menu_items.push_back(make_pair("None", G_CALLBACK(select_none)));
-    menu_bar(grid, canvas, menu_items);
+    GtkWidget *menu_bar = new_menu_bar(grid);
+
+    list<pair<string, GCallback>> clipping_items;
+    clipping_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
+    clipping_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
+    clipping_items.push_back(make_pair("None", G_CALLBACK(select_none)));
+    menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
+
+    list<pair<string, GCallback>> projection_items;
+    projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
+    projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
+    menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
 
     new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 

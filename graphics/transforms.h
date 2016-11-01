@@ -77,6 +77,16 @@ public:
         return sum;
     }
 
+    TVector homogeneous() const
+    {
+        return TVector({
+           _vector[0],
+           _vector[1],
+           _vector[2],
+           1.0
+        }) / _vector[3];
+    }
+
 private:
     vector<double> _vector;
 };
@@ -162,10 +172,10 @@ public:
     friend TVector operator * (TVector vector, TMatrix matrix)
     {
         return TVector({
-           vector * matrix.column(0),
-           vector * matrix.column(1),
-           vector * matrix.column(2),
-           vector * matrix.column(3)
+            vector * matrix.column(0),
+            vector * matrix.column(1),
+            vector * matrix.column(2),
+            vector * matrix.column(3)
         });
     }
 
