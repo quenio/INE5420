@@ -14,8 +14,6 @@ TMatrix surface_geometry_matrix(const vector<Coord> controls, size_t i, size_t j
     assert(i >= 0 && i <= (controls.size() - surface_geometry_matrix_size));
     assert(j >= TVector::first_index && j <= TVector::last_index);
 
-    assert(controls.size() == surface_geometry_matrix_size);
-
     return TMatrix(
         vector_of<Coord>({ controls[i],   controls[i+4], controls[i+8],  controls[i+12] }, j),
         vector_of<Coord>({ controls[i+1], controls[i+5], controls[i+9],  controls[i+13] }, j),
