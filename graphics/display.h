@@ -487,9 +487,9 @@ inline shared_ptr<Draw2DCommand> draw_square(Coord2D a, Coord2D b, Coord2D c, Co
     return make_shared<Draw2DCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
 }
 
-inline shared_ptr<Draw2DCommand> draw_bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
+inline shared_ptr<Draw2DCommand> draw_bezier_curve(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
 {
-    return make_shared<Draw2DCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
+    return make_shared<Draw2DCommand>(make_shared<BezierCurve>(BezierCurve(edge1, control1, edge2, control2)));
 }
 
 inline shared_ptr<Draw2DCommand> draw_spline(initializer_list<Coord2D> controls)

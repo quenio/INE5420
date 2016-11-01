@@ -447,14 +447,14 @@ private:
 };
 
 // Curve defined by two edge coords and two internal control points
-class Bezier: public Object2D, public Polyline
+class BezierCurve: public Object2D, public Polyline
 {
 public:
 
-    Bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
-        : Bezier(BLACK, edge1, control1, edge2, control2) {}
+    BezierCurve(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
+        : BezierCurve(BLACK, edge1, control1, edge2, control2) {}
 
-    Bezier(const Color &color, Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
+    BezierCurve(const Color &color, Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
         : Object2D(color), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
 
     // Type used in the name
