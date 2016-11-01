@@ -1,7 +1,7 @@
 #pragma once
 
-#include "graphics2d.h"
 #include "graphics3d.h"
+#include "graphics2d.h"
 
 // Viewport Coordinates
 class VC: public XYCoord<VC>
@@ -328,6 +328,7 @@ public:
 
     using Drawable = ::Drawable<Coord3D>;
     using Canvas = ::Canvas<Coord3D>;
+    using Object = ::Object<Coord3D>;
 
     Draw3DCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
 
@@ -340,7 +341,7 @@ public:
 
     shared_ptr<Object> object() const override
     {
-        return dynamic_pointer_cast<Object3D>(_drawable);
+        return dynamic_pointer_cast<Object>(_drawable);
     }
 
 private:
@@ -546,3 +547,9 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
 
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }
+
+inline shared_ptr<Draw3DCommand> draw_bezier_surface(Coord3D edge1, Coord3D control1, Coord3D edge2, Coord3D control2)
+{
+    return make_shared<Draw3DCommand>(make_shared<BezierSurface>(BezierSurface(edge1, control1, edge2, control2)));
+}
+

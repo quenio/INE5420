@@ -1,5 +1,5 @@
-#define WORLD_2D
-//#define WORLD_3D
+//#define WORLD_2D
+#define WORLD_3D
 
 #include "ui.h"
 
@@ -25,7 +25,10 @@ static World<Coord2D> world(
 #ifdef WORLD_3D
 static World<Coord3D> world(
     make_shared<Window>(-20, -20, 120, 120),
-    DisplayFile<Coord3D>({ draw_cube(Coord3D(20, 20, 20), 50) })
+    DisplayFile<Coord3D>({
+         draw_cube(Coord3D(20, 20, 20), 50),
+         draw_bezier_surface(Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 90, 20), Coord3D(90, 10, 20))
+    })
 );
 #endif
 

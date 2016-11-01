@@ -249,37 +249,12 @@ private:
 };
 
 // Sequence of lines drawn from the given vertices.
-class Polyline: public virtual Drawable2D, public Clippable<Drawable2D>
+class Polyline2D: public virtual Drawable2D, public Polyline<Coord2D>, public Clippable<Drawable2D>
 {
 public:
 
-    // Vertices to use when drawing the lines.
-    virtual list<Coord2D> vertices() const = 0;
-
-    // Initial vertex of the first line to be drawn
-    // nullptr if should start from first vertex in the list of vertices
-    virtual Coord2D const * initial_vertex() const
-    {
-        return nullptr;
-    }
-
     // New drawable from clipped_vertices
     virtual shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const = 0;
-
-    // Draw the sequence of lines in canvas.
-    void draw(Canvas<Coord2D> &canvas) override
-    {
-        Coord2D const *previous = initial_vertex();
-        for (auto &current: vertices())
-        {
-            if (previous != nullptr)
-            {
-                canvas.move(*previous);
-                canvas.draw_line(current, color());
-            }
-            previous = &current;
-        }
-    }
 
     // Determine the visibility in area.
     Visibility visibility_in(ClippingArea &area) const override
@@ -368,7 +343,7 @@ public:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Object2D, public Polyline
+class Polygon: public Object2D, public Polyline2D
 {
 public:
 
@@ -415,7 +390,7 @@ private:
 
 };
 
-class ClippedPolyline: public Polyline
+class ClippedPolyline: public Polyline2D
 {
 public:
 
@@ -447,7 +422,7 @@ private:
 };
 
 // Curve defined by two edge coords and two internal control points
-class BezierCurve: public Object2D, public Polyline
+class BezierCurve: public Object2D, public Polyline2D
 {
 public:
 
@@ -494,7 +469,7 @@ private:
 };
 
 // B-Spline curve defined by a list of control coords.
-class Spline: public Object2D, public Polyline
+class Spline: public Object2D, public Polyline2D
 {
 public:
 
