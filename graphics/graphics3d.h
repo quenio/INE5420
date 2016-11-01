@@ -98,13 +98,14 @@ class Surface: public Object<Coord3D>, public Polyline<Coord3D>
 {
 public:
 
-    Surface(initializer_list<Coord3D> controls): _controls(controls)
+    Surface(vector<vector<Coord3D>> controls): _controls(controls)
     {
-        assert(controls.size() >= surface_geometry_matrix_size);
+        for (auto &c: controls)
+            assert(c.size() >= surface_geometry_matrix_size);
     }
 
     // Vertices to use when drawing the lines.
-    list<Coord3D> vertices() const override
+    list<shared_ptr<Coord3D>> vertices() const override
     {
         return surface_vertices(curve, _controls);
     }
@@ -114,15 +115,16 @@ public:
     {
         list<Coord3D *> vertices;
 
-        for (auto &v: _controls)
-            vertices.push_back(&v);
+        for (auto &c: _controls)
+            for (auto &v: c)
+                vertices.push_back(&v);
 
         return vertices;
     }
 
 private:
 
-    vector<Coord3D> _controls;
+    vector<vector<Coord3D>> _controls;
 
 };
 
@@ -131,7 +133,7 @@ class BezierSurface: public Surface<bezier>
 {
 public:
 
-    BezierSurface(initializer_list<Coord3D> controls): Surface(controls) {}
+    BezierSurface(vector<vector<Coord3D>> controls): Surface(controls) {}
 
     // Type used in the name
     string type() const override
@@ -146,7 +148,7 @@ class SplineSurface: public Surface<spline>
 {
 public:
 
-    SplineSurface(initializer_list<Coord3D> controls): Surface(controls) {}
+    SplineSurface(vector<vector<Coord3D>> controls): Surface(controls) {}
 
     // Type used in the name
     string type() const override

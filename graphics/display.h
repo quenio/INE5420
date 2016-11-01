@@ -548,7 +548,7 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }
 
-inline shared_ptr<Draw3DCommand> draw_bezier_surface(initializer_list<Coord3D> controls)
+inline shared_ptr<Draw3DCommand> draw_bezier_surface(vector<vector<Coord3D>> controls)
 {
     BezierSurface surface(controls);
 
@@ -557,11 +557,11 @@ inline shared_ptr<Draw3DCommand> draw_bezier_surface(initializer_list<Coord3D> c
     return make_shared<Draw3DCommand>(make_shared<BezierSurface>(surface));
 }
 
-inline shared_ptr<Draw3DCommand> draw_spline_surface(initializer_list<Coord3D> controls)
+inline shared_ptr<Draw3DCommand> draw_spline_surface(vector<vector<Coord3D>> controls)
 {
     SplineSurface surface(controls);
 
-    surface.transform(translation(-30, -10, -30) * y_rotation(120) * scaling(2, 2, 2));
+    surface.transform(scaling(3, 3, 3) * y_rotation(-60) * translation(+40, -60, -40));
 
     return make_shared<Draw3DCommand>(make_shared<SplineSurface>(surface));
 }

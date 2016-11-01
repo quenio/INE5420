@@ -220,6 +220,12 @@ private:
 
 };
 
+// Transposed version of the given matrix m
+inline TMatrix transposed(const TMatrix &m)
+{
+    return TMatrix(m.row(0), m.row(1), m.row(2), m.row(3));
+}
+
 // Translation matrix: translate by dx horizontally, dy vertically, dz in depth.
 inline TMatrix translation(double dx, double dy, double dz)
 {

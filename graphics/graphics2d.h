@@ -254,19 +254,19 @@ class Polyline2D: public virtual Drawable2D, public Polyline<Coord2D>, public Cl
 public:
 
     // New drawable from clipped_vertices
-    virtual shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const = 0;
+    virtual shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const = 0;
 
     // Determine the visibility in area.
     Visibility visibility_in(ClippingArea &area) const override
     {
         Visibility result = Visibility::NONE;
 
-        Coord2D const *previous = initial_vertex();
-        for (auto &current: vertices())
+        shared_ptr<Coord2D> previous = initial_vertex();
+        for (auto current: vertices())
         {
             if (previous != nullptr)
             {
-                const Visibility v = visibility(area, *previous, current);
+                const Visibility v = visibility(area, *previous, *current);
                 if (v == Visibility::PARTIAL)
                 {
                     return Visibility::PARTIAL;
@@ -276,7 +276,7 @@ public:
                 }
             }
 
-            previous = &current;
+            previous = current;
         }
 
         return result;
@@ -285,19 +285,19 @@ public:
     // Provide clipped version of itself in area.
     shared_ptr<Drawable2D> clipped_in(ClippingArea &area) override
     {
-        list<Coord2D> new_vertices;
+        list<shared_ptr<Coord2D>> new_vertices;
 
-        Coord2D const *previous = initial_vertex();
-        for (auto &current: vertices())
+        shared_ptr<Coord2D> previous = initial_vertex();
+        for (auto current: vertices())
         {
             if (previous != nullptr)
             {
-                switch (visibility(area, *previous, current))
+                switch (visibility(area, *previous, *current))
                 {
                     case Visibility::FULL:
                     {
-                        if (&new_vertices.back() != previous)
-                            new_vertices.push_back(*previous);
+                        if (new_vertices.back() != previous)
+                            new_vertices.push_back(previous);
                         if (new_vertices.back() != current)
                             new_vertices.push_back(current);
                     }
@@ -305,20 +305,20 @@ public:
 
                     case Visibility::PARTIAL:
                     {
-                        const pair<Coord2D, Coord2D> clipped_line = clip_line(area, *previous, current);
+                        const pair<Coord2D, Coord2D> clipped_line = clip_line(area, *previous, *current);
 
-                        if (area.contains(clipped_line.first) && new_vertices.back() != clipped_line.first)
-                            new_vertices.push_back(clipped_line.first);
+                        if (area.contains(clipped_line.first) && *new_vertices.back() != clipped_line.first)
+                            new_vertices.push_back(make_shared<Coord2D>(clipped_line.first));
 
-                        if (area.contains(clipped_line.second) && new_vertices.back() != clipped_line.second)
-                            new_vertices.push_back(clipped_line.second);
+                        if (area.contains(clipped_line.second) && *new_vertices.back() != clipped_line.second)
+                            new_vertices.push_back(make_shared<Coord2D>(clipped_line.second));
                     }
                         break;
 
                     case Visibility::NONE:
                     {
                         const PPC window_a = area.world_to_window(*previous);
-                        const PPC window_b = area.world_to_window(current);
+                        const PPC window_b = area.world_to_window(*current);
 
                         if (region(window_a) != region(window_b))
                         {
@@ -327,14 +327,14 @@ public:
                             const double y = min(window_a.y(), window_b.y()) < -1 ? -1 : +1;
                             const Coord2D corner = area.window_to_world(PPC(x, y));
 
-                            if (area.contains(corner) && new_vertices.back() != corner)
-                                new_vertices.push_back(corner);
+                            if (area.contains(corner) && *new_vertices.back() != corner)
+                                new_vertices.push_back(make_shared<Coord2D>(corner));
                         }
                     }
                 }
             }
 
-            previous = &current;
+            previous = current;
         }
 
         return clipped_drawable(color(), new_vertices);
@@ -347,19 +347,26 @@ class Polygon: public Object2D, public Polyline2D
 {
 public:
 
-    Polygon(initializer_list<Coord2D> vertices): _vertices(vertices) {}
-    Polygon(const Color &color, list<Coord2D> vertices): Object2D(color), _vertices(vertices) {}
+    Polygon(initializer_list<Coord2D> vertices): Polygon(BLACK, vertices) {}
+
+    Polygon(const Color &color, initializer_list<Coord2D> vertices): Object2D(color)
+    {
+        for (auto &v: vertices)
+            _vertices.push_back(make_shared<Coord2D>(v));
+    }
+
+    Polygon(const Color &color, list<shared_ptr<Coord2D>> vertices): Object2D(color), _vertices(vertices) {}
 
     // Vertices to use when drawing the lines.
-    list<Coord2D> vertices() const override
+    list<shared_ptr<Coord2D>> vertices() const override
     {
         return _vertices;
     }
 
     // Initial vertex of the first line to be drawn.
-    Coord2D const * initial_vertex() const override
+    shared_ptr<Coord2D> initial_vertex() const override
     {
-        return &_vertices.back();
+        return _vertices.back();
     }
 
     // Type used in the name
@@ -369,7 +376,7 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
         return make_shared<Polygon>(color, clipped_vertices);
     }
@@ -378,15 +385,15 @@ public:
     {
         list<Coord2D *> vertices;
 
-        for (auto &v: _vertices)
-            vertices.push_back(&v);
+        for (auto v: _vertices)
+            vertices.push_back(v.get());
 
         return vertices;
     }
 
 private:
 
-    list<Coord2D> _vertices;
+    list<shared_ptr<Coord2D>> _vertices;
 
 };
 
@@ -394,7 +401,7 @@ class ClippedPolyline: public Polyline2D
 {
 public:
 
-    ClippedPolyline(const Color &color, list<Coord2D> vertices): _color(color), _vertices(vertices) {}
+    ClippedPolyline(const Color &color, list<shared_ptr<Coord2D>> vertices): _color(color), _vertices(vertices) {}
 
     // Color used to draw.
     Color color() const override
@@ -403,13 +410,13 @@ public:
     }
 
     // Vertices to use when drawing the lines.
-    list<Coord2D> vertices() const override
+    list<shared_ptr<Coord2D>> vertices() const override
     {
         return _vertices;
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
@@ -417,7 +424,7 @@ public:
 private:
 
     Color _color;
-    list<Coord2D> _vertices;
+    list<shared_ptr<Coord2D>> _vertices;
 
 };
 
@@ -445,13 +452,13 @@ public:
     }
 
     // Vertices to use when drawing the lines.
-    list<Coord2D> vertices() const override
+    list<shared_ptr<Coord2D>> vertices() const override
     {
         return bezier_curve_vertices(_edge1, _control1, _control2, _edge2);
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
@@ -484,13 +491,13 @@ public:
     }
 
     // Vertices to use when drawing the lines
-    list<Coord2D> vertices() const override
+    list<shared_ptr<Coord2D>> vertices() const override
     {
         return spline_curve_vertices(_controls);
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
         return make_shared<ClippedPolyline>(color, clipped_vertices);
     }
@@ -508,6 +515,7 @@ public:
 private:
 
     vector<Coord2D> _controls;
+
 };
 
 

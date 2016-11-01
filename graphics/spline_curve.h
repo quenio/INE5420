@@ -56,7 +56,7 @@ inline TVector next_fd_vector(const Coord &coord, TVector dx, TVector dy)
 // Generate vertices using forward-differences technique.
 template<class Coord>
 inline void generate_fd_vertices(
-    list<Coord> &vertices,
+    list<shared_ptr<Coord>> vertices,
     const TVector &vx,
     const TVector &vy,
     const TMatrix &m)
@@ -69,12 +69,12 @@ inline void generate_fd_vertices(
     TVector dy = delta_vector(vy * m, step);
 
     Coord current(initial_fd_vector(dx, dy));
-    vertices.push_back(current);
+    vertices.push_back(make_shared<Coord>(current));
 
     for (double t = 0.0; t <= 1; t += step)
     {
         const Coord next(next_fd_vector(current, dx, dy));
-        vertices.push_back(next);
+        vertices.push_back(make_shared<Coord>(next));
 
         dx = next_delta(dx);
         dy = next_delta(dy);
@@ -85,13 +85,13 @@ inline void generate_fd_vertices(
 
 // Generate the vertices to represent a Spline curve.
 template<class Coord>
-inline list<Coord> spline_curve_vertices(vector<Coord> controls)
+inline list<shared_ptr<Coord>> spline_curve_vertices(vector<Coord> controls)
 {
     constexpr size_t start = TVector::last_index;
 
     assert(controls.size() > start);
 
-    list<Coord> result;
+    list<shared_ptr<Coord>> result;
 
     for (size_t i = start; i < controls.size(); i++)
     {
