@@ -1,7 +1,7 @@
 #pragma once
 
-#include "graphics2d.h"
 #include "graphics3d.h"
+#include "graphics2d.h"
 
 // Viewport Coordinates
 class VC: public XYCoord<VC>
@@ -328,6 +328,7 @@ public:
 
     using Drawable = ::Drawable<Coord3D>;
     using Canvas = ::Canvas<Coord3D>;
+    using Object = ::Object<Coord3D>;
 
     Draw3DCommand(shared_ptr<Drawable> drawable): _drawable(drawable) {}
 
@@ -340,7 +341,7 @@ public:
 
     shared_ptr<Object> object() const override
     {
-        return dynamic_pointer_cast<Object3D>(_drawable);
+        return dynamic_pointer_cast<Object>(_drawable);
     }
 
 private:
@@ -487,9 +488,9 @@ inline shared_ptr<Draw2DCommand> draw_square(Coord2D a, Coord2D b, Coord2D c, Co
     return make_shared<Draw2DCommand>(make_shared<Polygon>(Polygon({ a, b, c, d })));
 }
 
-inline shared_ptr<Draw2DCommand> draw_bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
+inline shared_ptr<Draw2DCommand> draw_bezier_curve(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
 {
-    return make_shared<Draw2DCommand>(make_shared<Bezier>(Bezier(edge1, control1, edge2, control2)));
+    return make_shared<Draw2DCommand>(make_shared<BezierCurve>(BezierCurve(edge1, control1, edge2, control2)));
 }
 
 inline shared_ptr<Draw2DCommand> draw_spline(initializer_list<Coord2D> controls)
@@ -546,3 +547,13 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
 
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }
+
+inline shared_ptr<Draw3DCommand> draw_bezier_surface(initializer_list<Coord3D> controls)
+{
+    BezierSurface surface(controls);
+
+    surface.transform(y_rotation(60) * translation(0, -10, 20) * x_rotation(10));
+
+    return make_shared<Draw3DCommand>(make_shared<BezierSurface>(surface));
+}
+

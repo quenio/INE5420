@@ -246,3 +246,35 @@ private:
 
 };
 
+// Sequence of lines drawn from the given vertices.
+template<class Coord>
+class Polyline: public virtual Drawable<Coord>
+{
+public:
+
+    // Vertices to use when drawing the lines.
+    virtual list<Coord> vertices() const = 0;
+
+    // Initial vertex of the first line to be drawn
+    // nullptr if should start from first vertex in the list of vertices
+    virtual Coord const * initial_vertex() const
+    {
+        return nullptr;
+    }
+
+    // Draw the sequence of lines in canvas.
+    void draw(Canvas<Coord> &canvas) override
+    {
+        Coord const *previous = initial_vertex();
+        for (auto &current: vertices())
+        {
+            if (previous != nullptr)
+            {
+                canvas.move(*previous);
+                canvas.draw_line(current, this->color());
+            }
+            previous = &current;
+        }
+    }
+
+};

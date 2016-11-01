@@ -88,7 +88,9 @@ public:
     }
 
 private:
+
     vector<double> _vector;
+
 };
 
 // Sum rhs to lhs.
@@ -168,6 +170,9 @@ public:
         initializer_list<double> column4)
         : _column { column1, column2, column3, column4 } {}
 
+    TMatrix(TVector vector1, TVector vector2, TVector vector3, TVector vector4)
+        : _column { vector1, vector2, vector3, vector4 } {}
+
     // Transform vector using transformation matrix.
     friend TVector operator * (TVector vector, TMatrix matrix)
     {
@@ -196,21 +201,22 @@ public:
         );
     }
 
-private:
-
     // Vector representing row at the i'th position
-    TVector row(size_t i)
+    TVector row(size_t i) const
     {
         return TVector({ _column[0][i], _column[1][i], _column[2][i], _column[3][i] });
     }
 
     // Vector representing column at the i'th position
-    TVector column(size_t i)
+    TVector column(size_t i) const
     {
         return _column[i];
     }
 
+private:
+
     TVector _column[column_count];
+
 };
 
 // Translation matrix: translate by dx horizontally, dy vertically, dz in depth.

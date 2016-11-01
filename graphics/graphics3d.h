@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bezier_surface.h"
 #include "graphics.h"
 
 // 3D coordinates
@@ -90,4 +91,44 @@ private:
     list<Segment3D> _segments;
 
 };
+
+// Surface defined by bezier curves
+class BezierSurface: public Object<Coord3D>, public Polyline<Coord3D>
+{
+public:
+
+    BezierSurface(initializer_list<Coord3D> controls): _controls(controls)
+    {
+        assert(controls.size() == control_size);
+    }
+
+    // Type used in the name
+    string type() const override
+    {
+        return "Bezier";
+    }
+
+    // Vertices to use when drawing the lines.
+    list<Coord3D> vertices() const override
+    {
+        return bezier_surface_vertices(_controls);
+    }
+
+    // Control coords
+    list<Coord3D *> controls() override
+    {
+        list<Coord3D *> vertices;
+
+        for (auto &v: _controls)
+            vertices.push_back(&v);
+
+        return vertices;
+    }
+
+private:
+
+    vector<Coord3D> _controls;
+
+};
+
 

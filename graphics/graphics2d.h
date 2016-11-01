@@ -3,7 +3,7 @@
 #include "region.h"
 #include "clipping_cs.h"
 #include "clipping_lb.h"
-#include "bezier.h"
+#include "bezier_curve.h"
 #include "spline.h"
 #include "graphics.h"
 
@@ -249,37 +249,12 @@ private:
 };
 
 // Sequence of lines drawn from the given vertices.
-class Polyline: public virtual Drawable2D, public Clippable<Drawable2D>
+class Polyline2D: public virtual Drawable2D, public Polyline<Coord2D>, public Clippable<Drawable2D>
 {
 public:
 
-    // Vertices to use when drawing the lines.
-    virtual list<Coord2D> vertices() const = 0;
-
-    // Initial vertex of the first line to be drawn
-    // nullptr if should start from first vertex in the list of vertices
-    virtual Coord2D const * initial_vertex() const
-    {
-        return nullptr;
-    }
-
     // New drawable from clipped_vertices
     virtual shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<Coord2D> clipped_vertices) const = 0;
-
-    // Draw the sequence of lines in canvas.
-    void draw(Canvas<Coord2D> &canvas) override
-    {
-        Coord2D const *previous = initial_vertex();
-        for (auto &current: vertices())
-        {
-            if (previous != nullptr)
-            {
-                canvas.move(*previous);
-                canvas.draw_line(current, color());
-            }
-            previous = &current;
-        }
-    }
 
     // Determine the visibility in area.
     Visibility visibility_in(ClippingArea &area) const override
@@ -368,7 +343,7 @@ public:
 };
 
 // Plane figure bound by a set of lines - the sides - meeting in a set of points - the vertices
-class Polygon: public Object2D, public Polyline
+class Polygon: public Object2D, public Polyline2D
 {
 public:
 
@@ -415,7 +390,7 @@ private:
 
 };
 
-class ClippedPolyline: public Polyline
+class ClippedPolyline: public Polyline2D
 {
 public:
 
@@ -447,14 +422,14 @@ private:
 };
 
 // Curve defined by two edge coords and two internal control points
-class Bezier: public Object2D, public Polyline
+class BezierCurve: public Object2D, public Polyline2D
 {
 public:
 
-    Bezier(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
-        : Bezier(BLACK, edge1, control1, edge2, control2) {}
+    BezierCurve(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
+        : BezierCurve(BLACK, edge1, control1, edge2, control2) {}
 
-    Bezier(const Color &color, Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
+    BezierCurve(const Color &color, Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
         : Object2D(color), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
 
     // Type used in the name
@@ -472,7 +447,7 @@ public:
     // Vertices to use when drawing the lines.
     list<Coord2D> vertices() const override
     {
-        return bezier_vertices(_edge1, _control1, _control2, _edge2);
+        return bezier_curve_vertices(_edge1, _control1, _control2, _edge2);
     }
 
     // New drawable from clipped_vertices
@@ -494,7 +469,7 @@ private:
 };
 
 // B-Spline curve defined by a list of control coords.
-class Spline: public Object2D, public Polyline
+class Spline: public Object2D, public Polyline2D
 {
 public:
 
