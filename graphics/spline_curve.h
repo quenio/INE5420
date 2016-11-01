@@ -56,7 +56,7 @@ inline TVector next_fd_vector(const Coord &coord, TVector dx, TVector dy)
 // Generate vertices using forward-differences technique.
 template<class Coord>
 inline void generate_fd_vertices(
-    list<shared_ptr<Coord>> vertices,
+    list<shared_ptr<Coord>> &vertices,
     const TVector &vx,
     const TVector &vy,
     const TMatrix &m)
