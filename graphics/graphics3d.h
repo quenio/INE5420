@@ -93,7 +93,6 @@ private:
 };
 
 // Surface defined by some type of curve
-template<TMatrix &curve>
 class Surface: public Object<Coord3D>, public Polyline<Coord3D>
 {
 public:
@@ -104,10 +103,12 @@ public:
             assert(c.size() >= surface_geometry_matrix_size);
     }
 
+    virtual TMatrix & curve() const = 0;
+
     // Vertices to use when drawing the lines.
     list<shared_ptr<Coord3D>> vertices() const override
     {
-        return surface_vertices(curve, _controls);
+        return surface_vertices(curve(), _controls);
     }
 
     // Control coords
@@ -129,7 +130,7 @@ private:
 };
 
 // Surface defined by Bezier curves
-class BezierSurface: public Surface<bezier>
+class BezierSurface: public Surface
 {
 public:
 
@@ -141,10 +142,15 @@ public:
         return "BezierSurface";
     }
 
+    TMatrix & curve() const override
+    {
+        return bezier;
+    }
+
 };
 
 // Surface defined by Spline curves
-class SplineSurface: public Surface<spline>
+class SplineSurface: public Surface
 {
 public:
 
@@ -154,6 +160,11 @@ public:
     string type() const override
     {
         return "SplineSurface";
+    }
+
+    TMatrix & curve() const override
+    {
+        return spline;
     }
 
 };
