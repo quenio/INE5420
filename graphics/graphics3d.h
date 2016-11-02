@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bezier_surface.h"
+#include "surfaces.h"
 #include "graphics.h"
 
 // 3D coordinates
@@ -92,26 +92,23 @@ private:
 
 };
 
-// Surface defined by bezier curves
-class BezierSurface: public Object<Coord3D>, public Polyline<Coord3D>
+// Surface defined by some type of curve
+class Surface: public Object<Coord3D>, public Polyline<Coord3D>
 {
 public:
 
-    BezierSurface(initializer_list<Coord3D> controls): _controls(controls)
+    Surface(vector<vector<Coord3D>> controls): _controls(controls)
     {
-        assert(controls.size() == control_size);
+        for (auto &c: controls)
+            assert(c.size() >= surface_geometry_matrix_size);
     }
 
-    // Type used in the name
-    string type() const override
-    {
-        return "Bezier";
-    }
+    virtual TMatrix & curve() const = 0;
 
     // Vertices to use when drawing the lines.
-    list<Coord3D> vertices() const override
+    list<shared_ptr<Coord3D>> vertices() const override
     {
-        return bezier_surface_vertices(_controls);
+        return surface_vertices(curve(), _controls);
     }
 
     // Control coords
@@ -119,16 +116,56 @@ public:
     {
         list<Coord3D *> vertices;
 
-        for (auto &v: _controls)
-            vertices.push_back(&v);
+        for (auto &c: _controls)
+            for (auto &v: c)
+                vertices.push_back(&v);
 
         return vertices;
     }
 
 private:
 
-    vector<Coord3D> _controls;
+    vector<vector<Coord3D>> _controls;
 
 };
 
+// Surface defined by Bezier curves
+class BezierSurface: public Surface
+{
+public:
+
+    BezierSurface(vector<vector<Coord3D>> controls): Surface(controls) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "BezierSurface";
+    }
+
+    TMatrix & curve() const override
+    {
+        return bezier;
+    }
+
+};
+
+// Surface defined by Spline curves
+class SplineSurface: public Surface
+{
+public:
+
+    SplineSurface(vector<vector<Coord3D>> controls): Surface(controls) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "SplineSurface";
+    }
+
+    TMatrix & curve() const override
+    {
+        return spline;
+    }
+
+};
 

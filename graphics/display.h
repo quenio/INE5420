@@ -493,9 +493,9 @@ inline shared_ptr<Draw2DCommand> draw_bezier_curve(Coord2D edge1, Coord2D contro
     return make_shared<Draw2DCommand>(make_shared<BezierCurve>(BezierCurve(edge1, control1, edge2, control2)));
 }
 
-inline shared_ptr<Draw2DCommand> draw_spline(initializer_list<Coord2D> controls)
+inline shared_ptr<Draw2DCommand> draw_spline_curve(initializer_list<Coord2D> controls)
 {
-    return make_shared<Draw2DCommand>(make_shared<Spline>(Spline(controls)));
+    return make_shared<Draw2DCommand>(make_shared<SplineCurve>(SplineCurve(controls)));
 }
 
 inline Segment3D x_segment(Coord3D start, double length)
@@ -548,7 +548,7 @@ inline shared_ptr<Draw3DCommand> draw_cube(Coord3D base, double length)
     return make_shared<Draw3DCommand>(make_shared<Object3D>(cube));
 }
 
-inline shared_ptr<Draw3DCommand> draw_bezier_surface(initializer_list<Coord3D> controls)
+inline shared_ptr<Draw3DCommand> draw_bezier_surface(vector<vector<Coord3D>> controls)
 {
     BezierSurface surface(controls);
 
@@ -557,3 +557,11 @@ inline shared_ptr<Draw3DCommand> draw_bezier_surface(initializer_list<Coord3D> c
     return make_shared<Draw3DCommand>(make_shared<BezierSurface>(surface));
 }
 
+inline shared_ptr<Draw3DCommand> draw_spline_surface(vector<vector<Coord3D>> controls)
+{
+    SplineSurface surface(controls);
+
+    surface.transform(scaling(3, 3, 3) * y_rotation(-60) * translation(+40, -60, -40));
+
+    return make_shared<Draw3DCommand>(make_shared<SplineSurface>(surface));
+}

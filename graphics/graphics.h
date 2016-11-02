@@ -2,7 +2,6 @@
 
 #include "transforms.h"
 
-#include <memory>
 #include <sstream>
 
 class Color
@@ -253,11 +252,11 @@ class Polyline: public virtual Drawable<Coord>
 public:
 
     // Vertices to use when drawing the lines.
-    virtual list<Coord> vertices() const = 0;
+    virtual list<shared_ptr<Coord>> vertices() const = 0;
 
     // Initial vertex of the first line to be drawn
     // nullptr if should start from first vertex in the list of vertices
-    virtual Coord const * initial_vertex() const
+    virtual shared_ptr<Coord> initial_vertex() const
     {
         return nullptr;
     }
@@ -265,15 +264,20 @@ public:
     // Draw the sequence of lines in canvas.
     void draw(Canvas<Coord> &canvas) override
     {
-        Coord const *previous = initial_vertex();
-        for (auto &current: vertices())
+        shared_ptr<Coord> previous = initial_vertex();
+        for (auto current: vertices())
         {
             if (previous != nullptr)
             {
                 canvas.move(*previous);
-                canvas.draw_line(current, this->color());
+
+                if (current != nullptr)
+                {
+                    canvas.draw_line(*current, this->color());
+                }
             }
-            previous = &current;
+
+            previous = current;
         }
     }
 

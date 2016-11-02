@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <list>
+#include <memory>
 #include <cassert>
 
 using namespace std;
@@ -162,6 +163,7 @@ class TMatrix
 public:
     constexpr static size_t column_count = TVector::count;
     constexpr static size_t row_count = TVector::count;
+    constexpr static size_t cell_count = column_count * row_count;
 
     TMatrix(
         initializer_list<double> column1,
@@ -185,7 +187,7 @@ public:
     }
 
     // Multiply this matrix by other
-    TMatrix operator * (TMatrix other)
+    TMatrix operator * (TMatrix other) const
     {
         double m[column_count][row_count];
 
@@ -218,6 +220,12 @@ private:
     TVector _column[column_count];
 
 };
+
+// Transposed version of the given matrix m
+inline TMatrix transposed(const TMatrix &m)
+{
+    return TMatrix(m.row(0), m.row(1), m.row(2), m.row(3));
+}
 
 // Translation matrix: translate by dx horizontally, dy vertically, dz in depth.
 inline TMatrix translation(double dx, double dy, double dz)
@@ -326,6 +334,22 @@ inline TMatrix z_rotation(double degrees, TVector center)
 {
     return inverse_translation(center) * z_rotation(degrees) * translation(center);
 }
+
+// Coefficient matrix used to calculate a Bezier curve or surface
+static TMatrix bezier(
+    { -1, +3, -3, +1 },
+    { +3, -6, +3,  0 },
+    { -3, +3,  0,  0 },
+    { +1,  0,  0,  0 }
+);
+
+// Coefficient matrix used to calculate a Spline curve or surface
+static TMatrix spline(
+    { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
+    {      0.5,     -1.0,     0.5,     0.0 },
+    {     -0.5,      0.0,     0.5,     0.0 },
+    {  1.0/6.0,  4.0/6.0, 1.0/6.0,     0.0 }
+);
 
 // Transform coord using matrix, and assigns to lhs.
 template<class Coord>
