@@ -2,7 +2,6 @@
 
 #include "transforms.h"
 
-#include <memory>
 #include <sstream>
 
 class Color
@@ -246,3 +245,40 @@ private:
 
 };
 
+// Sequence of lines drawn from the given vertices.
+template<class Coord>
+class Polyline: public virtual Drawable<Coord>
+{
+public:
+
+    // Vertices to use when drawing the lines.
+    virtual list<shared_ptr<Coord>> vertices() const = 0;
+
+    // Initial vertex of the first line to be drawn
+    // nullptr if should start from first vertex in the list of vertices
+    virtual shared_ptr<Coord> initial_vertex() const
+    {
+        return nullptr;
+    }
+
+    // Draw the sequence of lines in canvas.
+    void draw(Canvas<Coord> &canvas) override
+    {
+        shared_ptr<Coord> previous = initial_vertex();
+        for (auto current: vertices())
+        {
+            if (previous != nullptr)
+            {
+                canvas.move(*previous);
+
+                if (current != nullptr)
+                {
+                    canvas.draw_line(*current, this->color());
+                }
+            }
+
+            previous = current;
+        }
+    }
+
+};

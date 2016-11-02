@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <list>
+#include <memory>
 #include <cassert>
 
 using namespace std;
@@ -88,7 +89,9 @@ public:
     }
 
 private:
+
     vector<double> _vector;
+
 };
 
 // Sum rhs to lhs.
@@ -160,6 +163,7 @@ class TMatrix
 public:
     constexpr static size_t column_count = TVector::count;
     constexpr static size_t row_count = TVector::count;
+    constexpr static size_t cell_count = column_count * row_count;
 
     TMatrix(
         initializer_list<double> column1,
@@ -167,6 +171,9 @@ public:
         initializer_list<double> column3,
         initializer_list<double> column4)
         : _column { column1, column2, column3, column4 } {}
+
+    TMatrix(TVector vector1, TVector vector2, TVector vector3, TVector vector4)
+        : _column { vector1, vector2, vector3, vector4 } {}
 
     // Transform vector using transformation matrix.
     friend TVector operator * (TVector vector, TMatrix matrix)
@@ -180,7 +187,7 @@ public:
     }
 
     // Multiply this matrix by other
-    TMatrix operator * (TMatrix other)
+    TMatrix operator * (TMatrix other) const
     {
         double m[column_count][row_count];
 
@@ -196,22 +203,29 @@ public:
         );
     }
 
-private:
-
     // Vector representing row at the i'th position
-    TVector row(size_t i)
+    TVector row(size_t i) const
     {
         return TVector({ _column[0][i], _column[1][i], _column[2][i], _column[3][i] });
     }
 
     // Vector representing column at the i'th position
-    TVector column(size_t i)
+    TVector column(size_t i) const
     {
         return _column[i];
     }
 
+private:
+
     TVector _column[column_count];
+
 };
+
+// Transposed version of the given matrix m
+inline TMatrix transposed(const TMatrix &m)
+{
+    return TMatrix(m.row(0), m.row(1), m.row(2), m.row(3));
+}
 
 // Translation matrix: translate by dx horizontally, dy vertically, dz in depth.
 inline TMatrix translation(double dx, double dy, double dz)
@@ -320,6 +334,22 @@ inline TMatrix z_rotation(double degrees, TVector center)
 {
     return inverse_translation(center) * z_rotation(degrees) * translation(center);
 }
+
+// Coefficient matrix used to calculate a Bezier curve or surface
+static TMatrix bezier(
+    { -1, +3, -3, +1 },
+    { +3, -6, +3,  0 },
+    { -3, +3,  0,  0 },
+    { +1,  0,  0,  0 }
+);
+
+// Coefficient matrix used to calculate a Spline curve or surface
+static TMatrix spline(
+    { -1.0/6.0,      0.5,    -0.5, 1.0/6.0 },
+    {      0.5,     -1.0,     0.5,     0.0 },
+    {     -0.5,      0.0,     0.5,     0.0 },
+    {  1.0/6.0,  4.0/6.0, 1.0/6.0,     0.0 }
+);
 
 // Transform coord using matrix, and assigns to lhs.
 template<class Coord>

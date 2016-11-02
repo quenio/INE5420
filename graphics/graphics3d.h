@@ -1,5 +1,6 @@
 #pragma once
 
+#include "surfaces.h"
 #include "graphics.h"
 
 // 3D coordinates
@@ -88,6 +89,83 @@ public:
 private:
 
     list<Segment3D> _segments;
+
+};
+
+// Surface defined by some type of curve
+class Surface: public Object<Coord3D>, public Polyline<Coord3D>
+{
+public:
+
+    Surface(vector<vector<Coord3D>> controls): _controls(controls)
+    {
+        for (auto &c: controls)
+            assert(c.size() >= surface_geometry_matrix_size);
+    }
+
+    virtual TMatrix & curve() const = 0;
+
+    // Vertices to use when drawing the lines.
+    list<shared_ptr<Coord3D>> vertices() const override
+    {
+        return surface_vertices(curve(), _controls);
+    }
+
+    // Control coords
+    list<Coord3D *> controls() override
+    {
+        list<Coord3D *> vertices;
+
+        for (auto &c: _controls)
+            for (auto &v: c)
+                vertices.push_back(&v);
+
+        return vertices;
+    }
+
+private:
+
+    vector<vector<Coord3D>> _controls;
+
+};
+
+// Surface defined by Bezier curves
+class BezierSurface: public Surface
+{
+public:
+
+    BezierSurface(vector<vector<Coord3D>> controls): Surface(controls) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "BezierSurface";
+    }
+
+    TMatrix & curve() const override
+    {
+        return bezier;
+    }
+
+};
+
+// Surface defined by Spline curves
+class SplineSurface: public Surface
+{
+public:
+
+    SplineSurface(vector<vector<Coord3D>> controls): Surface(controls) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "SplineSurface";
+    }
+
+    TMatrix & curve() const override
+    {
+        return spline;
+    }
 
 };
 

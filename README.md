@@ -46,3 +46,4 @@ make
 - 1.6: Spline curves using forward differences.
 - 1.7: 3D objects and parallel orthogonal projection.
 - 1.8: Perspective projection.
+- 1.9: Bézier and Spline bicubic surfaces.
