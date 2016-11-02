@@ -2,7 +2,6 @@
 
 #include "transforms.h"
 
-#include <memory>
 #include <sstream>
 
 class Color
