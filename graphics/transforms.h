@@ -78,6 +78,14 @@ public:
         return sum;
     }
 
+    // Multiply this vector by scalar.
+    TVector operator * (const double scalar) const
+    {
+        TVector v;
+        for (size_t i = 0; i < count; i++) v._vector[i] = _vector[i] * scalar;
+        return v;
+    }
+
     TVector homogeneous() const
     {
         return TVector({
