@@ -68,6 +68,17 @@ inline void next_s_delta(TMatrix &dd)
     );
 }
 
+// Calculate the next delta in t.
+inline void next_t_delta(TMatrix &dd)
+{
+    dd = transposed(TMatrix(
+        dd.row(0) + dd.row(1),
+        dd.row(1) + dd.row(2),
+        dd.row(2) + dd.row(3),
+        dd.row(3)
+    ));
+}
+
 // Vector with initial coord of forward differences
 inline TVector initial_fd_vector(const TVector &dx, const TVector &dy, const TVector &dz)
 {

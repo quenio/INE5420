@@ -17,25 +17,38 @@ inline void generate_fd_surface_vertices(
     const TMatrix cx = surface_matrix(curve_matrix, controls, 0);
     const TMatrix cy = surface_matrix(curve_matrix, controls, 1);
     const TMatrix cz = surface_matrix(curve_matrix, controls, 2);
-
-    static_assert(is_convertible<TVector, Coord>::value, "Coord must have constructor: Coord(const TVector &)");
+    const TMatrix ddx = delta_matrix(cx), ddy = delta_matrix(cy), ddz = delta_matrix(cz);
 
     const double min = 0, max = 1;
 
-    TMatrix ddx = delta_matrix(cx), ddy = delta_matrix(cy), ddz = delta_matrix(cz);
-
+    TMatrix sddx = ddx, sddy = ddy, sddz = ddz;
     for (double s = min; s < max || equals(s, max); s += fd_step)
     {
-        TVector dx = ddx.column(0), dy = ddy.column(0), dz = ddz.column(0);
+        TVector dx = sddx.column(0), dy = sddy.column(0), dz = sddz.column(0);
 
         generate_fd_vertices(vertices, dx, dy, dz);
 
         // Not drawing lines between curves.
         vertices.push_back(nullptr);
 
-        next_s_delta(ddx);
-        next_s_delta(ddy);
-        next_s_delta(ddz);
+        next_s_delta(sddx);
+        next_s_delta(sddy);
+        next_s_delta(sddz);
+    }
+
+    TMatrix tddx = ddx, tddy = ddy, tddz = ddz;
+    for (double t = min; t < max || equals(t, max); t += fd_step)
+    {
+        TVector dx = tddx.row(0), dy = tddy.row(0), dz = tddz.row(0);
+
+        generate_fd_vertices(vertices, dx, dy, dz);
+
+        // Not drawing lines between curves.
+        vertices.push_back(nullptr);
+
+        next_t_delta(tddx);
+        next_t_delta(tddy);
+        next_t_delta(tddz);
     }
 }
 
