@@ -1,17 +1,6 @@
 #pragma once
 
-#include "transforms.h"
-
-// Matrix used to calculate initial deltas of forward differences
-inline TMatrix delta_matrix()
-{
-    return TMatrix(
-        { 1, 1, 1, 0 },
-        { 6, 2, 0, 0 },
-        { 6, 0, 0, 0 },
-        { 0, 0, 0, 1 }
-    );
-}
+#include "fd.h"
 
 // Vector with initial deltas of forward differences
 inline TVector delta_vector(const TVector &v, double step)
@@ -24,7 +13,7 @@ inline TVector delta_vector(const TVector &v, double step)
             sv[2] * v[2],
             sv[3] * v[3]
         }
-    ) * delta_matrix();
+    ) * delta_coefficient_matrix();
 }
 
 // Calculate next delta vector based on previous one.
@@ -32,10 +21,10 @@ inline TVector next_delta(const TVector &d)
 {
     return TVector(
         {
-            d[0] + d[1],
+            d[0],
             d[1] + d[2],
-            d[2],
-            d[3]
+            d[2] + d[3],
+            d[3],
         }
     );
 }
@@ -43,14 +32,14 @@ inline TVector next_delta(const TVector &d)
 // Vector with initial coord of forward differences
 inline TVector initial_fd_vector(TVector dx, TVector dy)
 {
-    return TVector({ dx[3], dy[3], 0, 0 });
+    return TVector({ dx[0], dy[0], 0, 0 });
 }
 
 // Next vector of forward differences
 template<class Coord>
 inline TVector next_fd_vector(const Coord &coord, TVector dx, TVector dy)
 {
-    return coord * translation(dx[0], dy[0], 1);
+    return coord * translation(dx[1], dy[1], 1);
 }
 
 // Generate vertices using forward-differences technique.
