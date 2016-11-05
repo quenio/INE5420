@@ -1,6 +1,7 @@
 #pragma once
 
 #include "surfaces.h"
+#include "fd_surfaces.h"
 #include "graphics.h"
 
 // 3D coordinates
@@ -108,7 +109,7 @@ public:
     // Vertices to use when drawing the lines.
     list<shared_ptr<Coord3D>> vertices() const override
     {
-        return surface_vertices(curve(), _controls);
+        return fd_surface_vertices(curve(), _controls);
     }
 
     // Control coords

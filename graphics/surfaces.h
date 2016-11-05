@@ -23,7 +23,7 @@ TMatrix surface_geometry_matrix(const vector<Coord> controls, size_t j)
 
 // Create TMatrix for surface, from controls i to i+16, extracting the j-th position of each vector.
 template<class Coord>
-TMatrix surface_matrix(const TMatrix &curve_matrix, const vector<Coord> controls, size_t j)
+TMatrix surface_matrix(const TMatrix &curve_matrix, const vector<Coord> &controls, size_t j)
 {
     return transposed(curve_matrix) * surface_geometry_matrix(controls, j) * curve_matrix;
 }
