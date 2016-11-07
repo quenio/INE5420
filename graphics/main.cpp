@@ -28,7 +28,7 @@ static World<Coord2D> world(
 static World<Coord3D> world(
     make_shared<Window>(-20, -20, 120, 120),
     DisplayFile<Coord3D>(
-        as_display_commands(obj_file(square))
+        as_display_commands(obj_file(box))
 //        {
 //             draw_cube(Coord3D(20, 20, 20), 50),
 //             draw_bezier_surface({{
