@@ -20,6 +20,11 @@ public:
 
 };
 
+// Empty line in a .obj file
+class EmptyLine: public Statement
+{
+};
+
 // Comment statement in a .obj file
 class Comment: public Statement
 {
@@ -73,6 +78,14 @@ class File
 {
 public:
 
+    // True if line is empty
+    bool is_line_empty(size_t line_no)
+    {
+        assert(line_no > 0 && line_no <= _statements.size());
+
+        return dynamic_pointer_cast<EmptyLine>(_statements[line_no-1]) != nullptr;
+    }
+
     // Comment found at line_no or nullptr if not a Comment.
     shared_ptr<Comment> comment_at(size_t line_no)
     {
@@ -96,8 +109,11 @@ public:
             char type;
             input >> noskipws >> type;
 
-            char subtype;
-            input >> noskipws >> subtype;
+            char subtype = ' ';
+            if (type != '\n')
+            {
+                input >> noskipws >> subtype;
+            }
 
             if (type == '#')
             {
@@ -110,6 +126,17 @@ public:
                 shared_ptr<Vertex> vertex { make_shared<Vertex>() };
                 input >> *vertex;
                 file._statements.push_back(vertex);
+            }
+            else
+            {
+                // If statement is not recognized, then ignore the rest of the line and interpret as an empty line.
+                if (type != '\n' && subtype != '\n')
+                {
+                    string line;
+                    getline(input, line);
+                }
+
+                file._statements.push_back(make_shared<EmptyLine>());
             }
         }
 

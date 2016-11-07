@@ -5,6 +5,10 @@
 static const string obj_file {
     "# Vertex list:\n"
     "v -0.5 0.6 -0.7\n"
+    "\n"
+    " \n"
+    "  \n"
+    "un \n" // unknown statement
     "# End of file"
 };
 
@@ -28,7 +32,12 @@ static const char * test_obj_file()
     mu_assert(equals(vertex->y(), 0.6));
     mu_assert(equals(vertex->z(), -0.7));
 
-    comment = file.comment_at(3);
+    mu_assert(file.is_line_empty(3));
+    mu_assert(file.is_line_empty(4));
+    mu_assert(file.is_line_empty(5));
+    mu_assert(file.is_line_empty(6)); // unknown statement
+
+    comment = file.comment_at(7);
     mu_assert(comment != nullptr);
     mu_assert(comment->line() == "End of file");
 
