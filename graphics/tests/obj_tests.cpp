@@ -1,26 +1,36 @@
 #include "min_unit.h"
 #include "../obj.h"
-#include <sstream>
+#include "../doubles.h"
 
 static const string obj_file {
-    "# This is a comment.\n"
-    "# Another comment."
+    "# Vertex list:\n"
+    "v -0.5 0.6 -0.7\n"
+    "# End of file"
 };
 
 static const char * test_obj_file()
 {
     istringstream input { obj_file };
 
+    shared_ptr<Obj::Comment> comment;
+    shared_ptr<Obj::Vertex> vertex;
+
     Obj::File file;
     input >> file;
 
-    shared_ptr<Obj::Comment> first_comment = file.comment_at(1);
-    mu_assert(first_comment != nullptr);
-    mu_assert(first_comment->line() == "This is a comment.");
+    comment = file.comment_at(1);
+    mu_assert(comment != nullptr);
+    mu_assert(comment->line() == "Vertex list:");
 
-    shared_ptr<Obj::Comment> second_comment = file.comment_at(2);
-    mu_assert(second_comment != nullptr);
-    mu_assert(second_comment->line() == "Another comment.");
+    vertex = file.vertex_at(2);
+    mu_assert(vertex != nullptr);
+    mu_assert(equals(vertex->x(), -0.5));
+    mu_assert(equals(vertex->y(), 0.6));
+    mu_assert(equals(vertex->z(), -0.7));
+
+    comment = file.comment_at(3);
+    mu_assert(comment != nullptr);
+    mu_assert(comment->line() == "End of file");
 
     return nullptr;
 }
