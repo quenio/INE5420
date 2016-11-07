@@ -9,6 +9,7 @@ static const string obj_file {
     " \n"
     "  \n"
     "un \n" // unknown statement
+    "f 4 3 2 1\n"
     "# End of file"
 };
 
@@ -18,6 +19,7 @@ static const char * test_obj_file()
 
     shared_ptr<Obj::Comment> comment;
     shared_ptr<Obj::Vertex> vertex;
+    shared_ptr<Obj::Face> face;
 
     Obj::File file;
     input >> file;
@@ -37,7 +39,11 @@ static const char * test_obj_file()
     mu_assert(file.is_line_empty(5));
     mu_assert(file.is_line_empty(6)); // unknown statement
 
-    comment = file.comment_at(7);
+    face = file.face_at(7);
+    mu_assert(face != nullptr);
+    mu_assert(*face == Obj::Face({ 4, 3, 2, 1 }));
+
+    comment = file.comment_at(8);
     mu_assert(comment != nullptr);
     mu_assert(comment->line() == "End of file");
 

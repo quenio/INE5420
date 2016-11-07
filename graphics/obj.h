@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <istream>
 #include <sstream>
 #include <cassert>
@@ -73,6 +74,42 @@ private:
 
 };
 
+class Face: public Statement
+{
+public:
+
+    Face() {}
+    Face(initializer_list<size_t> references): _references(references) {}
+
+    // True if a and b match.
+    friend bool operator == (const Face &a, const Face &b)
+    {
+        return a._references == b._references;
+    }
+
+    friend istream & operator >> (istream  &input, Face &face)
+    {
+        string line;
+        getline(input, line);
+
+        istringstream iss { line };
+
+        while (iss.good())
+        {
+            size_t reference;
+            iss >> reference;
+            face._references.push_back(reference);
+        }
+
+        return input;
+    }
+
+private:
+
+    list<size_t> _references;
+
+};
+
 // .obj file
 class File
 {
@@ -102,6 +139,14 @@ public:
         return dynamic_pointer_cast<Vertex>(_statements[line_no-1]);
     }
 
+    // Face found at line_no or nullptr if not a Face.
+    shared_ptr<Face> face_at(size_t line_no)
+    {
+        assert(line_no > 0 && line_no <= _statements.size());
+
+        return dynamic_pointer_cast<Face>(_statements[line_no-1]);
+    }
+
     friend istream & operator >> (istream  &input, File &file)
     {
         while (input.good())
@@ -126,6 +171,12 @@ public:
                 shared_ptr<Vertex> vertex { make_shared<Vertex>() };
                 input >> *vertex;
                 file._statements.push_back(vertex);
+            }
+            else if (type == 'f' && subtype == ' ')
+            {
+                shared_ptr<Face> face { make_shared<Face>() };
+                input >> *face;
+                file._statements.push_back(face);
             }
             else
             {
