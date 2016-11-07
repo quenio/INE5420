@@ -162,7 +162,7 @@ public:
 #endif
 
         display_file.render(*projection_canvas);
-        selection.render_controls(*projection_canvas);
+//        selection.render_controls(*projection_canvas);
 
         selection.render_center(*this);
         _window->draw(*this);

@@ -132,7 +132,7 @@ public:
 
     using Command = DisplayCommand<Coord>;
 
-    DisplayFile(initializer_list<shared_ptr<Command>> commands): _commands(commands) {}
+    DisplayFile(list<shared_ptr<Command>> commands): _commands(commands) {}
 
     // Commands to be executed
     list<shared_ptr<Command>> commands()

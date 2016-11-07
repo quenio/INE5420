@@ -2,6 +2,8 @@
 #define WORLD_3D
 
 #include "ui.h"
+#include "file_conversions.h"
+#include "obj_samples.h"
 
 using namespace std;
 
@@ -25,35 +27,38 @@ static World<Coord2D> world(
 #ifdef WORLD_3D
 static World<Coord3D> world(
     make_shared<Window>(-20, -20, 120, 120),
-    DisplayFile<Coord3D>({
-         draw_cube(Coord3D(20, 20, 20), 50),
-         draw_bezier_surface({{
-             Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
-             Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
-             Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
-             Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
-         }}),
-         draw_spline_surface({
-            {
-                Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
-                Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
-                Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
-                Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
-            },
-            {
-                Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
-                Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
-                Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
-                Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
-            },
-            {
-                Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
-                Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
-                Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
-                Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
-            }
-         })
-    })
+    DisplayFile<Coord3D>(
+        as_display_commands(obj_file(square))
+//        {
+//             draw_cube(Coord3D(20, 20, 20), 50),
+//             draw_bezier_surface({{
+//                 Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
+//                 Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
+//                 Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
+//                 Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
+//             }}),
+//             draw_spline_surface({
+//                {
+//                    Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
+//                    Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
+//                    Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
+//                    Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
+//                },
+//                {
+//                    Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
+//                    Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
+//                    Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
+//                    Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
+//                },
+//                {
+//                    Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
+//                    Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
+//                    Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
+//                    Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
+//                }
+//             })
+//        }
+    )
 );
 #endif
 

@@ -2,7 +2,7 @@
 #include "../obj.h"
 #include "../doubles.h"
 
-static const string obj_file {
+static const string test_obj_file {
     "# Vertex list:\n"
     "v -0.5 0.6 -0.7\n"
     "\n"
@@ -13,9 +13,9 @@ static const string obj_file {
     "# End of file"
 };
 
-static const char * test_obj_file()
+static const char * obj_file()
 {
-    istringstream input { obj_file };
+    istringstream input { test_obj_file };
 
     shared_ptr<Obj::Comment> comment;
     shared_ptr<Obj::Vertex> vertex;
@@ -52,5 +52,5 @@ static const char * test_obj_file()
 
 void all_tests()
 {
-    mu_test(test_obj_file);
+    mu_test(obj_file);
 }

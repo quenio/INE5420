@@ -81,6 +81,8 @@ public:
     Face() {}
     Face(initializer_list<size_t> references): _references(references) {}
 
+    list<size_t> & references() { return _references; }
+
     // True if a and b match.
     friend bool operator == (const Face &a, const Face &b)
     {
@@ -116,7 +118,7 @@ class File
 public:
 
     // True if line is empty
-    bool is_line_empty(size_t line_no)
+    bool is_line_empty(size_t line_no) const
     {
         assert(line_no > 0 && line_no <= _statements.size());
 
@@ -124,7 +126,7 @@ public:
     }
 
     // Comment found at line_no or nullptr if not a Comment.
-    shared_ptr<Comment> comment_at(size_t line_no)
+    shared_ptr<Comment> comment_at(size_t line_no) const
     {
         assert(line_no > 0 && line_no <= _statements.size());
 
@@ -132,7 +134,7 @@ public:
     }
 
     // Vertex found at line_no or nullptr if not a Vertex.
-    shared_ptr<Vertex> vertex_at(size_t line_no)
+    shared_ptr<Vertex> vertex_at(size_t line_no) const
     {
         assert(line_no > 0 && line_no <= _statements.size());
 
@@ -140,11 +142,37 @@ public:
     }
 
     // Face found at line_no or nullptr if not a Face.
-    shared_ptr<Face> face_at(size_t line_no)
+    shared_ptr<Face> face_at(size_t line_no) const
     {
         assert(line_no > 0 && line_no <= _statements.size());
 
         return dynamic_pointer_cast<Face>(_statements[line_no-1]);
+    }
+
+    vector<shared_ptr<Vertex>> vertices() const
+    {
+        vector<shared_ptr<Vertex>> vertices;
+
+        for (size_t line_no = 1; line_no <= _statements.size(); line_no++)
+        {
+            const shared_ptr<Vertex> vertex = vertex_at(line_no);
+            if (vertex != nullptr) vertices.push_back(vertex);
+        }
+
+        return vertices;
+    }
+
+    list<shared_ptr<Face>> faces() const
+    {
+        list<shared_ptr<Face>> faces;
+
+        for (size_t line_no = 1; line_no <= _statements.size(); line_no++)
+        {
+            const shared_ptr<Face> face = face_at(line_no);
+            if (face != nullptr) faces.push_back(face);
+        }
+
+        return faces;
     }
 
     friend istream & operator >> (istream  &input, File &file)
@@ -201,3 +229,14 @@ private:
 };
 
 };
+
+inline Obj::File obj_file(const string &str)
+{
+    istringstream input { str };
+    Obj::File file;
+    input >> file;
+    return file;
+}
+
+
+

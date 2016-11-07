@@ -60,6 +60,7 @@ class Object3D: public Object<Coord3D>
 public:
 
     Object3D(initializer_list<Segment3D> segments): _segments(segments) {}
+    Object3D(list<Segment3D> segments): _segments(segments) {}
 
     // Type used in the name
     string type() const override
