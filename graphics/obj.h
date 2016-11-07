@@ -231,13 +231,19 @@ private:
 
 };
 
-inline Obj::File obj_file(const string &str)
+inline Obj::File obj_file(istream &input)
 {
-    istringstream input { str };
     Obj::File file;
     input >> file;
     return file;
 }
+
+inline Obj::File obj_file(const string &str)
+{
+    istringstream input { str };
+    return obj_file(input);
+}
+
 
 
 

@@ -4,6 +4,7 @@
 #include "ui.h"
 #include "file_conversions.h"
 #include "obj_samples.h"
+#include <fstream>
 
 using namespace std;
 
@@ -25,10 +26,11 @@ static World<Coord2D> world(
 #endif
 
 #ifdef WORLD_3D
+static ifstream teapot("/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/teapot.obj");
 static World<Coord3D> world(
-    make_shared<Window>(-20, -20, 120, 120),
+    make_shared<Window>(-5, -5, 5, 5),
     DisplayFile<Coord3D>(
-        as_display_commands(obj_file(box))
+        as_display_commands(obj_file(teapot))
 //        {
 //             draw_cube(Coord3D(20, 20, 20), 50),
 //             draw_bezier_surface({{
