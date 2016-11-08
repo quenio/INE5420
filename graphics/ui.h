@@ -150,7 +150,7 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
         const Viewport viewport(widget_width, widget_height);
 
         UserSelection &selection = *(UserSelection*)data;
-        selection.set_center_from_viewport(new_center, viewport);
+        selection.set_center_from_viewport(new_center, viewport.height());
 
         refresh_canvas(canvas, selection);
     }

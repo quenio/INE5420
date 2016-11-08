@@ -60,7 +60,13 @@ public:
     Window(double left, double bottom, double right, double top):
          _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
-         _up_angle(0) {}
+         _viewport_top_left(0, 0),
+         _up_angle(0),
+         _viewport_width(1), _viewport_height(1),
+         _from_world_matrix(from_world_matrix()),
+         _to_world_matrix(to_world_matrix()),
+         _from_viewport_matrix(from_viewport_matrix()),
+         _to_viewport_matrix(to_viewport_matrix()) {}
 
     Coord2D leftBottom() const { return _leftBottom; }
     Coord2D leftTop() const { return _leftTop; }
@@ -73,14 +79,14 @@ public:
     Coord2D window_ratios() const { return Coord2D(norm_width / width(), norm_height / height()); }
     Coord2D world_ratios() const { return Coord2D(width() / norm_width, height() / norm_height); }
 
-    Coord2D window_ratios(const Viewport &viewport) const
+    Coord2D window_ratios_for_viewport() const
     {
-        return Coord2D(norm_width / viewport.content_width(), norm_height / viewport.content_height());
+        return Coord2D(norm_width / _viewport_width, norm_height / _viewport_height);
     }
 
-    Coord2D viewport_ratios(const Viewport &viewport) const
+    Coord2D viewport_ratios() const
     {
-        return Coord2D(viewport.content_width() / norm_width, viewport.content_height() / norm_height);
+        return Coord2D(_viewport_width / norm_width, _viewport_height / norm_height);
     }
 
     // True if Window contains World coord.
@@ -107,30 +113,47 @@ public:
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
     PPC from_world(Coord2D coord) const
     {
-        return coord * inverse_translation(_center) * z_rotation(_up_angle) * scaling(window_ratios());
+        return coord * _from_world_matrix;
+    }
+
+    TMatrix from_world_matrix() const
+    {
+        return inverse_translation(_center) * z_rotation(_up_angle) * scaling(window_ratios());
     }
 
     // Translate coord from Window to World.
     Coord2D to_world(PPC coord) const
     {
-        return coord * z_rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
+        return coord * _to_world_matrix;
+    }
+
+    TMatrix to_world_matrix() const
+    {
+        return z_rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
     }
 
     // Translate coord from Viewport to Window.
-    PPC from_viewport(VC coord, const Viewport &viewport) const
+    PPC from_viewport(VC coord, double viewport_height) const
     {
-        return Coord2D(coord.x(), viewport.height() - coord.y()) *
-               inverse_translation(viewport.topLeft()) *
-               scaling(window_ratios(viewport)) *
+        return Coord2D(coord.x(), viewport_height - coord.y()) * _from_viewport_matrix;
+    }
+
+    TMatrix from_viewport_matrix() const
+    {
+        return inverse_translation(_viewport_top_left) *
+               scaling(window_ratios_for_viewport()) *
                translation(Coord2D(norm_left, norm_bottom));
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
-    VC to_viewport(PPC coord, const Viewport &viewport) const
+    VC to_viewport(PPC coord) const
     {
-        return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
-               scaling(viewport_ratios(viewport)) *
-               translation(viewport.topLeft());
+        return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) * _to_viewport_matrix;
+    }
+
+    TMatrix to_viewport_matrix() const
+    {
+        return scaling(viewport_ratios()) * translation(_viewport_top_left);
     }
 
     // Zoom out by factor
@@ -183,6 +206,8 @@ public:
         Object::transform(matrix);
 
         _center = equidistant(_leftBottom, _rightTop);
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -191,6 +216,8 @@ public:
         Object::rotate_x(-degrees, center);
 
         _up_angle += degrees;
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Rotate on the y axis by degrees at center; counter-clockwise if degrees positive; clockwise if negative.
@@ -199,6 +226,8 @@ public:
         Object::rotate_y(-degrees, center);
 
         _up_angle += degrees;
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -207,6 +236,8 @@ public:
         Object::rotate_z(-degrees, center);
 
         _up_angle += degrees;
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Window's center
@@ -252,10 +283,22 @@ public:
         return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
     }
 
+    void set_viewport(const Viewport &viewport)
+    {
+        _viewport_top_left = viewport.topLeft();
+        _viewport_width = viewport.content_width();
+        _viewport_height = viewport.content_height();
+
+        _from_viewport_matrix = from_viewport_matrix();
+        _to_viewport_matrix = to_viewport_matrix();
+    }
+
 private:
 
-    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom, _center;
+    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom, _center, _viewport_top_left;
     double _up_angle; // degrees
+    double _viewport_width, _viewport_height;
+    TMatrix _from_world_matrix, _to_world_matrix, _from_viewport_matrix, _to_viewport_matrix;
 
 };
 

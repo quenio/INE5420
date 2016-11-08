@@ -100,10 +100,10 @@ public:
     }
 
     // Set the new center from viewport coordinates
-    void set_center_from_viewport(VC center, const Viewport &viewport)
+    void set_center_from_viewport(VC center, double viewport_height)
     {
         const Window &window = *_world.window();
-        _center = TVector(window.to_world(window.from_viewport(center, viewport)));
+        _center = TVector(window.to_world(window.from_viewport(center, viewport_height)));
     }
 
     // Render controls of selected objects.
@@ -151,6 +151,8 @@ public:
     // Render DisplayFile, the center, the x axis and y axis on canvas.
     void render(DisplayFile<Coord> &display_file, Selection<Coord> &selection)
     {
+        _window->set_viewport(*this);
+
         render_axis();
 
 #ifdef WORLD_2D
@@ -207,7 +209,7 @@ public:
     // Translate coord from world to viewport
     VC world_to_viewport(const Coord2D &coord) const
     {
-        return _window->to_viewport(_window->from_world(coord), *this);
+        return _window->to_viewport(_window->from_world(coord));
     }
 
     // Move to destination.
