@@ -43,7 +43,7 @@ static World<Coord3D> world(
 
 enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE };
 
-static SelectedWorld selected_world = SelectedWorld::SPLINE_SURFACE;
+static SelectedWorld selected_world = SelectedWorld::CUBE;
 
 static World<Coord3D> get_world(SelectedWorld selected)
 {
@@ -196,6 +196,24 @@ static void select_parallel(GtkWidget UNUSED *menu_item, gpointer canvas)
 static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     projection_method = ProjectionMethod::PERSPECTIVE;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_cube_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::CUBE;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_bezier_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::BEZIER_SURFACE;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_spline_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::SPLINE_SURFACE;
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
@@ -386,6 +404,12 @@ int main(int argc, char *argv[])
     projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
     projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
     menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
+
+    list<pair<string, GCallback>> world_items;
+    world_items.push_back(make_pair("Cube", G_CALLBACK(select_cube_world)));
+    world_items.push_back(make_pair("Bézier Surface", G_CALLBACK(select_bezier_world)));
+    world_items.push_back(make_pair("Spline Surface", G_CALLBACK(select_spline_world)));
+    menu_bar_attach(menu_bar, canvas, "World", world_items);
 
     new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 
