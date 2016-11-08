@@ -3,7 +3,7 @@
 
 #include "ui.h"
 #include "file_conversions.h"
-//#include "obj_samples.h"
+#include "obj_samples.h"
 #include "timer.h"
 
 #include <fstream>
@@ -30,12 +30,13 @@ static World<Coord2D> world(
 #ifdef WORLD_3D
 static ifstream teapot("/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/teapot.obj");
 static World<Coord3D> world(
-    make_shared<Window>(-5, -5, 5, 5),
+    make_shared<Window>(-5, -5, 5, 5), // window for teapot
+//    make_shared<Window>(-20, -20, 120, 120), // window for surfaces
     DisplayFile<Coord3D>(
-//        as_display_commands(as_object_3d(obj_file(teapot)))
-        as_display_commands(as_group_3d(obj_file(teapot)))
+//        as_display_commands(as_object_3d(obj_file(teapot))) // slow - too many vertices
+        as_display_commands(as_group_3d(obj_file(teapot))) // fast - number of vertices matches the .obj file
 //        {
-//             draw_cube(Coord3D(20, 20, 20), 50),
+//             draw_cube(Coord3D(20, 20, 20), 50)
 //             draw_bezier_surface({{
 //                 Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
 //                 Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
