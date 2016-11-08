@@ -156,6 +156,12 @@ public:
         return scaling(viewport_ratios()) * translation(_viewport_top_left);
     }
 
+    // Translate coord from world to viewport
+    VC world_to_viewport(const Coord2D &coord) const
+    {
+        return to_viewport(from_world(coord));
+    }
+
     // Zoom out by factor
     void zoom_out(double factor)
     {

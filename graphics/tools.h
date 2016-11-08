@@ -206,28 +206,22 @@ public:
         return _window->window_to_world(coord);
     }
 
-    // Translate coord from world to viewport
-    VC world_to_viewport(const Coord2D &coord) const
-    {
-        return _window->to_viewport(_window->from_world(coord));
-    }
-
     // Move to destination.
     void move(const Coord2D &destination) override
     {
-        _canvas.move(world_to_viewport(destination));
+        _canvas.move(_window->world_to_viewport(destination));
     }
 
     // Draw line from current position to destination.
     void draw_line(const Coord2D &destination) override
     {
-        _canvas.draw_line(world_to_viewport(destination));
+        _canvas.draw_line(_window->world_to_viewport(destination));
     }
 
     // Draw circle with the specified center, radius and color.
     void draw_circle(const Coord2D &center, const double radius) override
     {
-        _canvas.draw_circle(world_to_viewport(center), radius);
+        _canvas.draw_circle(_window->world_to_viewport(center), radius);
     }
 
     // Set the color to be used when drawing.
