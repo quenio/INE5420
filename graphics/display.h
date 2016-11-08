@@ -56,8 +56,7 @@ public:
     constexpr static double norm_width = 2;
     constexpr static double norm_height = 2;
 
-    Window(double left, double bottom, double right, double top)
-        :Object2D(BLUE),
+    Window(double left, double bottom, double right, double top):
          _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
          _up_angle(0) {}
@@ -232,17 +231,19 @@ public:
     // Draw a square in canvas.
     void draw(Canvas<Coord2D> &canvas) override
     {
+        canvas.set_color(BLUE);
+
         canvas.move(leftBottom());
-        canvas.draw_line(leftTop(), color());
+        canvas.draw_line(leftTop());
 
         canvas.move(leftTop());
-        canvas.draw_line(rightTop(), color());
+        canvas.draw_line(rightTop());
 
         canvas.move(rightTop());
-        canvas.draw_line(rightBottom(), color());
+        canvas.draw_line(rightBottom());
 
         canvas.move(rightBottom());
-        canvas.draw_line(leftBottom(), color());
+        canvas.draw_line(leftBottom());
     }
 
     list<Coord2D *> controls() override
@@ -369,15 +370,21 @@ public:
     }
 
     // Draw line from current position to destination.
-    void draw_line(const Coord &destination, const Color &color) override
+    void draw_line(const Coord &destination) override
     {
-        _canvas.draw_line(project(destination), color);
+        _canvas.draw_line(project(destination));
     }
 
     // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord &center, const double radius, const Color &color) override
+    void draw_circle(const Coord &center, const double radius) override
     {
-        _canvas.draw_circle(project(center), radius, color);
+        _canvas.draw_circle(project(center), radius);
+    }
+
+    // Set the color to be used when drawing.
+    void set_color(const Color &color) override
+    {
+        _canvas.set_color(color);
     }
 
     virtual Coord2D project(Coord coord) const = 0;

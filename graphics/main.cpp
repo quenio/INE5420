@@ -3,7 +3,9 @@
 
 #include "ui.h"
 #include "file_conversions.h"
-#include "obj_samples.h"
+//#include "obj_samples.h"
+#include "timer.h"
+
 #include <fstream>
 
 using namespace std;
@@ -30,7 +32,7 @@ static ifstream teapot("/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/teapot.
 static World<Coord3D> world(
     make_shared<Window>(-5, -5, 5, 5),
     DisplayFile<Coord3D>(
-        as_display_commands(as_object_3d(obj_file(teapot)))
+        as_display_commands(as_group_3d(obj_file(teapot)))
 //        {
 //             draw_cube(Coord3D(20, 20, 20), 50),
 //             draw_bezier_surface({{
@@ -306,15 +308,18 @@ static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_butto
 
 static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpointer canvas)
 {
-    selection.clear();
+    printf("Object selection: started\n");
+    const clock_t start = clock();
 
+    selection.clear();
     if (row != nullptr) {
         selection.select_object_at((size_t)gtk_list_box_row_get_index(row));
     }
-
     refresh_canvas(GTK_WIDGET(canvas), selection);
-
     select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+
+    const double time = elapsed_secs(start);
+    printf("Object selection: finished (t = %9.6lf)\n", time);
 }
 
 int main(int argc, char *argv[])

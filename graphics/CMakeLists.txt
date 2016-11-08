@@ -28,12 +28,13 @@ set(SOURCE_FILES ui.h tools.h display.h
                  clipping_cs.h clipping_lb.h region.h
                  transforms.h doubles.h
                  obj.h obj_samples.h
-                 file_conversions.h)
+                 file_conversions.h
+                 timer.cpp timer.h)
 add_executable(graphics main.cpp ${SOURCE_FILES})
 target_link_libraries(graphics ${GTK3_LIBRARIES})
 
 # Unit Tests
-set(MIN_UNIT_FILES ./tests/min_unit.cpp ./tests/min_unit.h ./tests/timer.cpp ./tests/timer.h)
+set(MIN_UNIT_FILES ./tests/min_unit.cpp ./tests/min_unit.h)
 add_executable(region_tests tests/region_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
 add_executable(graphics2d_tests tests/graphics2d_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})
 add_executable(graphics3d_tests tests/graphics3d_tests.cpp ${MIN_UNIT_FILES} ${SOURCE_FILES})

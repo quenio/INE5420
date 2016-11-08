@@ -36,10 +36,13 @@ public:
     virtual void move(const Coord &destination) = 0;
 
     // Draw line from current position to destination.
-    virtual void draw_line(const Coord &destination, const Color &color) = 0;
+    virtual void draw_line(const Coord &destination) = 0;
 
     // Draw circle with the specified center, radius and color.
-    virtual void draw_circle(const Coord &center, const double radius, const Color &color) = 0;
+    virtual void draw_circle(const Coord &center, const double radius) = 0;
+
+    // Set the color to be used when drawing.
+    virtual void set_color(const Color &color) = 0;
 
 };
 
@@ -51,9 +54,6 @@ public:
 
     // Draw something in canvas.
     virtual void draw(Canvas<Coord> &canvas) = 0;
-
-    // Color used to draw.
-    virtual Color color() const = 0;
 
 };
 
@@ -68,7 +68,7 @@ class Object: public virtual Drawable<Coord>, public Transformable<Coord>
 
 public:
 
-    Object(const Color &color = BLACK): _color(color), _regular_color(color)
+    Object()
     {
         _id = ++_count;
     }
@@ -84,26 +84,9 @@ public:
         return ss.str();
     }
 
-    void highlight_on()
-    {
-        _color = RED;
-    }
-
-    void highlight_off()
-    {
-        _color = _regular_color;
-    }
-
-    // Color used to draw.
-    Color color() const override
-    {
-        return _color;
-    }
-
 private:
 
     int _id;
-    Color _color, _regular_color;
 
     static int _count;
 
@@ -124,13 +107,28 @@ public:
 
 };
 
+// Listens to the rendering process, affecting the state of the canvas when needed
+template<class Coord>
+class RenderingListener
+{
+public:
+
+    using Command = ::DisplayCommand<Coord>;
+    using Canvas = ::Canvas<Coord>;
+
+    virtual void beforeRendering(const Command &command, Canvas &canvas) = 0;
+
+};
+
 // List of commands to be executed in order to display an output image
 template<class Coord>
 class DisplayFile
 {
 public:
 
-    using Command = DisplayCommand<Coord>;
+    using Command = ::DisplayCommand<Coord>;
+    using Canvas = ::Canvas<Coord>;
+    using RenderingListener = ::RenderingListener<Coord>;
 
     DisplayFile(list<shared_ptr<Command>> commands): _commands(commands) {}
 
@@ -141,9 +139,13 @@ public:
     }
 
     // Render all commands on canvas.
-    void render(Canvas<Coord> &canvas)
+    void render(Canvas &canvas, RenderingListener &listener)
     {
-        for (auto &command: _commands) command->render(canvas);
+        for (auto &command: _commands)
+        {
+            listener.beforeRendering(*command, canvas);
+            command->render(canvas);
+        }
     }
 
 private:
@@ -239,6 +241,12 @@ public:
         _objects.clear();
     }
 
+    // True if the given object is found in this group
+    bool contains(shared_ptr<Object> object)
+    {
+        return found(_objects, object);
+    }
+
 private:
 
     list<shared_ptr<Object>> _objects;
@@ -273,7 +281,7 @@ public:
 
                 if (current != nullptr)
                 {
-                    canvas.draw_line(*current, this->color());
+                    canvas.draw_line(*current);
                 }
             }
 
