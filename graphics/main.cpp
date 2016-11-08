@@ -32,6 +32,7 @@ static ifstream teapot("/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/teapot.
 static World<Coord3D> world(
     make_shared<Window>(-5, -5, 5, 5),
     DisplayFile<Coord3D>(
+//        as_display_commands(as_object_3d(obj_file(teapot)))
         as_display_commands(as_group_3d(obj_file(teapot)))
 //        {
 //             draw_cube(Coord3D(20, 20, 20), 50),
@@ -255,12 +256,12 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             {
                 case GDK_KEY_Right:
                 case GDK_KEY_Down:
-                    selection.rotate(+1);
+                    selection.rotate(+10);
                     break;
 
                 case GDK_KEY_Left:
                 case GDK_KEY_Up:
-                    selection.rotate(-1);
+                    selection.rotate(-10);
                     break;
 
                 default:

@@ -2,6 +2,7 @@
 
 #include "graphics3d.h"
 #include "graphics2d.h"
+#include "timer.h"
 
 // Viewport Coordinates
 class VC: public XYCoord<VC>
@@ -336,9 +337,12 @@ public:
     // Render drawable on canvas if visible.
     void render(Canvas &canvas) override
     {
+        printf("Draw3DCommand: %s: started\n", object()->name().c_str());
+        const clock_t start = clock();
         _drawable->draw(canvas);
+        const double time = elapsed_secs(start);
+        printf("Draw3DCommand: %s: finished (t = %9.6lf)\n", object()->name().c_str(), time);
     }
-
 
     shared_ptr<Object> object() const override
     {
@@ -361,7 +365,7 @@ class ProjectionCanvas: public Canvas<Coord>
 {
 public:
 
-    ProjectionCanvas(Canvas<Coord2D> &canvas, shared_ptr<Window> window): _canvas(canvas), _window(window) {}
+    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
 
     // Move to destination.
     void move(const Coord &destination) override
@@ -392,7 +396,6 @@ public:
 protected:
 
     Canvas<Coord2D> &_canvas;
-    shared_ptr<Window> _window;
 
 };
 
@@ -400,7 +403,7 @@ class ParallelProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
-    ParallelProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
+    ParallelProjection(Canvas<Coord2D> &canvas) : ProjectionCanvas(canvas) {}
 
     Coord2D project(Coord3D coord) const override
     {
@@ -413,20 +416,24 @@ class PerspectiveProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
-    PerspectiveProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
+    static constexpr double d = 100;
+
+    PerspectiveProjection(Canvas<Coord2D> &canvas, Coord3D center) :
+        ProjectionCanvas(canvas),
+        _projection(inverse_translation(center) * perspective_matrix() * translation(center))
+    {
+    }
 
     Coord2D project(Coord3D coord) const override
     {
-        const double d = 100;
-        const Coord3D center = Coord3D(_window->center().x(), _window->center().y(), 0);
-        const TVector projected = coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
+        const TVector projected = coord * _projection;
 
         return Coord2D(projected.homogeneous());
     }
 
 private:
 
-    inline TMatrix perspective_matrix(double d) const
+    inline TMatrix perspective_matrix() const
     {
         return TMatrix(
             { 1.0, 0.0,   0.0, 0.0 },
@@ -435,6 +442,8 @@ private:
             { 0.0, 0.0, 1.0/d, 1.0 }
         );
     }
+
+    TMatrix _projection;
 
 };
 

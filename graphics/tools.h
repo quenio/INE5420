@@ -1,6 +1,7 @@
 #pragma once
 
 #include "display.h"
+#include "timer.h"
 
 // Render a cross at center with radius, using color.
 template<class Coord>
@@ -160,18 +161,28 @@ public:
         shared_ptr<ProjectionCanvas<Coord3D>> projection_canvas;
         if (projection_method == ProjectionMethod::PARALLEL)
         {
-            projection_canvas = make_shared<ParallelProjection>(*this, _window);
+            projection_canvas = make_shared<ParallelProjection>(*this);
         }
         else
         {
-            projection_canvas = make_shared<PerspectiveProjection>(*this, _window);
+            projection_canvas = make_shared<PerspectiveProjection>(
+                *this,
+                Coord3D(_window->center().x(), _window->center().y(), 0)
+            );
         }
 #endif
 
+        printf("Render display file: started\n");
+        const clock_t start = clock();
         display_file.render(*projection_canvas, selection);
-//        selection.render_controls(*projection_canvas);
+        const double time = elapsed_secs(start);
+        printf("Render display file: finished (t = %9.6lf)\n", time);
 
+#ifdef WORLD_2D
+        selection.render_controls(*projection_canvas);
         selection.render_center(*this);
+#endif
+
         _window->draw(*this);
     }
 
