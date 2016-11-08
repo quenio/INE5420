@@ -45,68 +45,57 @@ enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE };
 
 static SelectedWorld selected_world = SelectedWorld::CUBE;
 
-static World<Coord3D> get_world(SelectedWorld selected)
+static World<Coord3D> world(
+    make_shared<Window>(-20, -20, 120, 120),
+    DisplayFile<Coord3D>({})
+);
+
+static World<Coord3D> update_world(SelectedWorld selected)
 {
+    world.clear_display_file();
     switch (selected)
     {
         case CUBE:
         {
-            World<Coord3D> world(
-                make_shared<Window>(-20, -20, 120, 120),
-                DisplayFile<Coord3D>({
-                    draw_cube(Coord3D(20, 20, 20), 50)
-                })
-            );
+            world.add_object(draw_cube(Coord3D(20, 20, 20), 50));
             return world;
         }
         case BEZIER_SURFACE:
         {
-            World<Coord3D> world(
-                make_shared<Window>(-20, -20, 120, 120),
-                DisplayFile<Coord3D>({
-                    draw_bezier_surface({{
-                        Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
-                        Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
-                        Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
-                        Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
-                    }})
-                })
-            );
+            world.add_object(draw_bezier_surface({{
+                Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
+                Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
+                Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
+                Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
+            }}));
             return world;
         }
         case SPLINE_SURFACE:
         {
-            World<Coord3D> world(
-                make_shared<Window>(-20, -20, 120, 120),
-                DisplayFile<Coord3D>({
-                    draw_spline_surface({
-                    {
-                        Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
-                        Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
-                        Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
-                        Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
-                    },
-                    {
-                        Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
-                        Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
-                        Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
-                        Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
-                    },
-                    {
-                        Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
-                        Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
-                        Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
-                        Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
-                    }
-                    })
-                })
-            );
+            world.add_object(draw_spline_surface({
+                {
+                    Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
+                    Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
+                    Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
+                    Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
+                },
+                {
+                    Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
+                    Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
+                    Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
+                    Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
+                },
+                {
+                    Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
+                    Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
+                    Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
+                    Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
+                }
+                }));
             return world;
         }
     }
 }
-
-static World<Coord3D> world = get_world(selected_world);
 #endif
 
 static UserSelection selection(world);
@@ -202,18 +191,21 @@ static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
 static void select_cube_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     selected_world = SelectedWorld::CUBE;
+    update_world(selected_world);
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void select_bezier_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     selected_world = SelectedWorld::BEZIER_SURFACE;
+    update_world(selected_world);
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
 static void select_spline_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     selected_world = SelectedWorld::SPLINE_SURFACE;
+    update_world(selected_world);
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
@@ -386,6 +378,8 @@ static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpoin
 int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
+
+    update_world(selected_world);
 
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);

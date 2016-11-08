@@ -148,6 +148,18 @@ public:
         }
     }
 
+    // Removes all objects from the display file.
+    void clear_display_file()
+    {
+        _commands.clear();
+    }
+
+    // Adds a new command to the display file.
+    void add_command(shared_ptr<Command> command)
+    {
+        _commands.push_back(command);
+    }
+
 private:
 
     // Commands to be executed

@@ -531,6 +531,17 @@ public:
         return vector;
     }
 
+    // Removes all objects from this world.
+    void clear_display_file()
+    {
+        _display_file.clear_display_file();
+    }
+
+    void add_object(shared_ptr<::DisplayCommand<Coord>> object)
+    {
+        _display_file.add_command(object);
+    }
+
 private:
 
     shared_ptr<Window> _window;
