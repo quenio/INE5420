@@ -30,7 +30,7 @@ static ifstream teapot("/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/teapot.
 static World<Coord3D> world(
     make_shared<Window>(-5, -5, 5, 5),
     DisplayFile<Coord3D>(
-        as_display_commands(obj_file(teapot))
+        as_display_commands(as_object_3d(obj_file(teapot)))
 //        {
 //             draw_cube(Coord3D(20, 20, 20), 50),
 //             draw_bezier_surface({{
