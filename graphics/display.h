@@ -2,6 +2,7 @@
 
 #include "graphics3d.h"
 #include "graphics2d.h"
+#include "timer.h"
 
 // Viewport Coordinates
 class VC: public XYCoord<VC>
@@ -56,11 +57,16 @@ public:
     constexpr static double norm_width = 2;
     constexpr static double norm_height = 2;
 
-    Window(double left, double bottom, double right, double top)
-        :Object2D(BLUE),
+    Window(double left, double bottom, double right, double top):
          _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
-         _up_angle(0) {}
+         _viewport_top_left(0, 0),
+         _up_angle(0),
+         _viewport_width(1), _viewport_height(1),
+         _from_world_matrix(from_world_matrix()),
+         _to_world_matrix(to_world_matrix()),
+         _from_viewport_matrix(from_viewport_matrix()),
+         _to_viewport_matrix(to_viewport_matrix()) {}
 
     Coord2D leftBottom() const { return _leftBottom; }
     Coord2D leftTop() const { return _leftTop; }
@@ -73,14 +79,14 @@ public:
     Coord2D window_ratios() const { return Coord2D(norm_width / width(), norm_height / height()); }
     Coord2D world_ratios() const { return Coord2D(width() / norm_width, height() / norm_height); }
 
-    Coord2D window_ratios(const Viewport &viewport) const
+    Coord2D window_ratios_for_viewport() const
     {
-        return Coord2D(norm_width / viewport.content_width(), norm_height / viewport.content_height());
+        return Coord2D(norm_width / _viewport_width, norm_height / _viewport_height);
     }
 
-    Coord2D viewport_ratios(const Viewport &viewport) const
+    Coord2D viewport_ratios() const
     {
-        return Coord2D(viewport.content_width() / norm_width, viewport.content_height() / norm_height);
+        return Coord2D(_viewport_width / norm_width, _viewport_height / norm_height);
     }
 
     // True if Window contains World coord.
@@ -107,30 +113,53 @@ public:
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
     PPC from_world(Coord2D coord) const
     {
-        return coord * inverse_translation(_center) * z_rotation(_up_angle) * scaling(window_ratios());
+        return coord * _from_world_matrix;
+    }
+
+    TMatrix from_world_matrix() const
+    {
+        return inverse_translation(_center) * z_rotation(_up_angle) * scaling(window_ratios());
     }
 
     // Translate coord from Window to World.
     Coord2D to_world(PPC coord) const
     {
-        return coord * z_rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
+        return coord * _to_world_matrix;
+    }
+
+    TMatrix to_world_matrix() const
+    {
+        return z_rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
     }
 
     // Translate coord from Viewport to Window.
-    PPC from_viewport(VC coord, const Viewport &viewport) const
+    PPC from_viewport(VC coord, double viewport_height) const
     {
-        return Coord2D(coord.x(), viewport.height() - coord.y()) *
-               inverse_translation(viewport.topLeft()) *
-               scaling(window_ratios(viewport)) *
+        return Coord2D(coord.x(), viewport_height - coord.y()) * _from_viewport_matrix;
+    }
+
+    TMatrix from_viewport_matrix() const
+    {
+        return inverse_translation(_viewport_top_left) *
+               scaling(window_ratios_for_viewport()) *
                translation(Coord2D(norm_left, norm_bottom));
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
-    VC to_viewport(PPC coord, const Viewport &viewport) const
+    VC to_viewport(PPC coord) const
     {
-        return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) *
-               scaling(viewport_ratios(viewport)) *
-               translation(viewport.topLeft());
+        return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) * _to_viewport_matrix;
+    }
+
+    TMatrix to_viewport_matrix() const
+    {
+        return scaling(viewport_ratios()) * translation(_viewport_top_left);
+    }
+
+    // Translate coord from world to viewport
+    VC world_to_viewport(const Coord2D &coord) const
+    {
+        return to_viewport(from_world(coord));
     }
 
     // Zoom out by factor
@@ -183,6 +212,8 @@ public:
         Object::transform(matrix);
 
         _center = equidistant(_leftBottom, _rightTop);
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -191,6 +222,8 @@ public:
         Object::rotate_x(-degrees, center);
 
         _up_angle += degrees;
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Rotate on the y axis by degrees at center; counter-clockwise if degrees positive; clockwise if negative.
@@ -199,6 +232,8 @@ public:
         Object::rotate_y(-degrees, center);
 
         _up_angle += degrees;
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -207,6 +242,8 @@ public:
         Object::rotate_z(-degrees, center);
 
         _up_angle += degrees;
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
     }
 
     // Window's center
@@ -232,17 +269,19 @@ public:
     // Draw a square in canvas.
     void draw(Canvas<Coord2D> &canvas) override
     {
+        canvas.set_color(BLUE);
+
         canvas.move(leftBottom());
-        canvas.draw_line(leftTop(), color());
+        canvas.draw_line(leftTop());
 
         canvas.move(leftTop());
-        canvas.draw_line(rightTop(), color());
+        canvas.draw_line(rightTop());
 
         canvas.move(rightTop());
-        canvas.draw_line(rightBottom(), color());
+        canvas.draw_line(rightBottom());
 
         canvas.move(rightBottom());
-        canvas.draw_line(leftBottom(), color());
+        canvas.draw_line(leftBottom());
     }
 
     list<Coord2D *> controls() override
@@ -250,10 +289,22 @@ public:
         return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
     }
 
+    void set_viewport(const Viewport &viewport)
+    {
+        _viewport_top_left = viewport.topLeft();
+        _viewport_width = viewport.content_width();
+        _viewport_height = viewport.content_height();
+
+        _from_viewport_matrix = from_viewport_matrix();
+        _to_viewport_matrix = to_viewport_matrix();
+    }
+
 private:
 
-    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom, _center;
+    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom, _center, _viewport_top_left;
     double _up_angle; // degrees
+    double _viewport_width, _viewport_height;
+    TMatrix _from_world_matrix, _to_world_matrix, _from_viewport_matrix, _to_viewport_matrix;
 
 };
 
@@ -335,9 +386,12 @@ public:
     // Render drawable on canvas if visible.
     void render(Canvas &canvas) override
     {
+        printf("Draw3DCommand: %s: started\n", object()->name().c_str());
+        const clock_t start = clock();
         _drawable->draw(canvas);
+        const double time = elapsed_secs(start);
+        printf("Draw3DCommand: %s: finished (t = %9.6lf)\n", object()->name().c_str(), time);
     }
-
 
     shared_ptr<Object> object() const override
     {
@@ -360,7 +414,7 @@ class ProjectionCanvas: public Canvas<Coord>
 {
 public:
 
-    ProjectionCanvas(Canvas<Coord2D> &canvas, shared_ptr<Window> window): _canvas(canvas), _window(window) {}
+    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
 
     // Move to destination.
     void move(const Coord &destination) override
@@ -369,15 +423,21 @@ public:
     }
 
     // Draw line from current position to destination.
-    void draw_line(const Coord &destination, const Color &color) override
+    void draw_line(const Coord &destination) override
     {
-        _canvas.draw_line(project(destination), color);
+        _canvas.draw_line(project(destination));
     }
 
     // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord &center, const double radius, const Color &color) override
+    void draw_circle(const Coord &center, const double radius) override
     {
-        _canvas.draw_circle(project(center), radius, color);
+        _canvas.draw_circle(project(center), radius);
+    }
+
+    // Set the color to be used when drawing.
+    void set_color(const Color &color) override
+    {
+        _canvas.set_color(color);
     }
 
     virtual Coord2D project(Coord coord) const = 0;
@@ -385,7 +445,6 @@ public:
 protected:
 
     Canvas<Coord2D> &_canvas;
-    shared_ptr<Window> _window;
 
 };
 
@@ -393,7 +452,7 @@ class ParallelProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
-    ParallelProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
+    ParallelProjection(Canvas<Coord2D> &canvas) : ProjectionCanvas(canvas) {}
 
     Coord2D project(Coord3D coord) const override
     {
@@ -406,20 +465,24 @@ class PerspectiveProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
-    PerspectiveProjection(Canvas<Coord2D> &canvas, shared_ptr<Window> window) : ProjectionCanvas(canvas, window) {}
+    static constexpr double d = 100;
+
+    PerspectiveProjection(Canvas<Coord2D> &canvas, Coord3D center) :
+        ProjectionCanvas(canvas),
+        _projection(inverse_translation(center) * perspective_matrix() * translation(center))
+    {
+    }
 
     Coord2D project(Coord3D coord) const override
     {
-        const double d = 100;
-        const Coord3D center = Coord3D(_window->center().x(), _window->center().y(), 0);
-        const TVector projected = coord * (inverse_translation(center) * perspective_matrix(d) * translation(center));
+        const TVector projected = coord * _projection;
 
         return Coord2D(projected.homogeneous());
     }
 
 private:
 
-    inline TMatrix perspective_matrix(double d) const
+    inline TMatrix perspective_matrix() const
     {
         return TMatrix(
             { 1.0, 0.0,   0.0, 0.0 },
@@ -428,6 +491,8 @@ private:
             { 0.0, 0.0, 1.0/d, 1.0 }
         );
     }
+
+    TMatrix _projection;
 
 };
 
@@ -464,6 +529,17 @@ public:
         }
 
         return vector;
+    }
+
+    // Removes all objects from this world.
+    void clear_display_file()
+    {
+        _display_file.clear_display_file();
+    }
+
+    void add_object(shared_ptr<::DisplayCommand<Coord>> object)
+    {
+        _display_file.add_command(object);
     }
 
 private:

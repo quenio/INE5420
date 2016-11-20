@@ -1,18 +1,21 @@
 #pragma once
 
 #include "display.h"
+#include "timer.h"
 
 // Render a cross at center with radius, using color.
 template<class Coord>
 void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &color)
 {
+    canvas.set_color(color);
+
     // Horizontal bar
     canvas.move(translated<Coord>(center, TVector(Coord2D(-radius, 0))));
-    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(+radius, 0))), color);
+    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(+radius, 0))));
 
     // Vertical bar
     canvas.move(translated<Coord>(center, TVector(Coord2D(0, -radius))));
-    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(0, +radius))), color);
+    canvas.draw_line(translated<Coord>(center, TVector(Coord2D(0, +radius))));
 }
 
 // Axis of rotation selected by the user
@@ -23,7 +26,7 @@ enum RotationAxis
 
 // Selection of world objects that can be manipulated by UI tools
 template<class Coord>
-class Selection
+class Selection: public RenderingListener<Coord>
 {
 public:
 
@@ -31,6 +34,8 @@ public:
     using Group = ::Group<Coord>;
     using World = ::World<Coord>;
     using DisplayFile = ::DisplayFile<Coord>;
+    using Command = ::DisplayCommand<Coord>;
+    using Canvas = ::Canvas<Coord>;
 
     Selection(World &world)
     : _world(world), _center(0, 0) {}
@@ -47,7 +52,6 @@ public:
         assert(index >= 0 && index < _world.objects().size());
 
         shared_ptr<Object> object = _world.objects().at(index);
-        object->highlight_on();
         _selected_group.add(object);
         _center = TVector(object->center());
     }
@@ -55,7 +59,6 @@ public:
     // Remove all from the list of selected objects.
     void clear()
     {
-        for(auto object: _selected_group.objects()) object->highlight_off();
         _selected_group.removeAll();
         _center = Coord2D(0, 0);
     }
@@ -97,14 +100,14 @@ public:
     }
 
     // Set the new center from viewport coordinates
-    void set_center_from_viewport(VC center, const Viewport &viewport)
+    void set_center_from_viewport(VC center, double viewport_height)
     {
         const Window &window = *_world.window();
-        _center = TVector(window.to_world(window.from_viewport(center, viewport)));
+        _center = TVector(window.to_world(window.from_viewport(center, viewport_height)));
     }
 
     // Render controls of selected objects.
-    void render_controls(Canvas<Coord> &canvas)
+    void render_controls(::Canvas<Coord2D> &canvas)
     {
         const int radius = 2;
 
@@ -115,11 +118,16 @@ public:
     }
 
     // Render the center as a little cross.
-    void render_center(Canvas<Coord2D> &canvas)
+    void render_center(::Canvas<Coord2D> &canvas)
     {
         const int radius = 2;
 
         render_cross(canvas, _center, radius, GREEN);
+    }
+
+    void beforeRendering(const Command &command, Canvas &canvas) override
+    {
+        canvas.set_color(_selected_group.contains(command.object()) ? RED : BLACK);
     }
 
 private:
@@ -143,6 +151,8 @@ public:
     // Render DisplayFile, the center, the x axis and y axis on canvas.
     void render(DisplayFile<Coord> &display_file, Selection<Coord> &selection)
     {
+        _window->set_viewport(*this);
+
         render_axis();
 
 #ifdef WORLD_2D
@@ -153,18 +163,28 @@ public:
         shared_ptr<ProjectionCanvas<Coord3D>> projection_canvas;
         if (projection_method == ProjectionMethod::PARALLEL)
         {
-            projection_canvas = make_shared<ParallelProjection>(*this, _window);
+            projection_canvas = make_shared<ParallelProjection>(*this);
         }
         else
         {
-            projection_canvas = make_shared<PerspectiveProjection>(*this, _window);
+            projection_canvas = make_shared<PerspectiveProjection>(
+                *this,
+                Coord3D(_window->center().x(), _window->center().y(), 0)
+            );
         }
 #endif
 
-        display_file.render(*projection_canvas);
-        selection.render_controls(*projection_canvas);
+        printf("Render display file: started\n");
+        const clock_t start = clock();
+        display_file.render(*projection_canvas, selection);
+        const double time = elapsed_secs(start);
+        printf("Render display file: finished (t = %9.6lf)\n", time);
 
+#ifdef WORLD_2D
+        selection.render_controls(*projection_canvas);
         selection.render_center(*this);
+#endif
+
         _window->draw(*this);
     }
 
@@ -186,28 +206,28 @@ public:
         return _window->window_to_world(coord);
     }
 
-    // Translate coord from world to viewport
-    VC world_to_viewport(const Coord2D &coord) const
-    {
-        return _window->to_viewport(_window->from_world(coord), *this);
-    }
-
     // Move to destination.
     void move(const Coord2D &destination) override
     {
-        _canvas.move(world_to_viewport(destination));
+        _canvas.move(_window->world_to_viewport(destination));
     }
 
     // Draw line from current position to destination.
-    void draw_line(const Coord2D &destination, const Color &color) override
+    void draw_line(const Coord2D &destination) override
     {
-        _canvas.draw_line(world_to_viewport(destination), color);
+        _canvas.draw_line(_window->world_to_viewport(destination));
     }
 
     // Draw circle with the specified center, radius and color.
-    void draw_circle(const Coord2D &center, const double radius, const Color &color) override
+    void draw_circle(const Coord2D &center, const double radius) override
     {
-        _canvas.draw_circle(world_to_viewport(center), radius, color);
+        _canvas.draw_circle(_window->world_to_viewport(center), radius);
+    }
+
+    // Set the color to be used when drawing.
+    void set_color(const Color &color) override
+    {
+        _canvas.set_color(color);
     }
 
 private:

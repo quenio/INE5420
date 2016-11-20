@@ -2,7 +2,7 @@
 // Original Code: http://www.jera.com/techinfo/jtns/jtn002.html#License
 
 #include <stdio.h>
-#include "timer.h"
+#include "../timer.h"
 
 extern int tests_run;
 extern int tests_failed;

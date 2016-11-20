@@ -148,10 +148,6 @@ public:
 // 2D objects
 class Object2D: public Object<Coord2D>, public virtual Drawable2D
 {
-public:
-
-    Object2D(const Color &color = BLACK): Object<Coord2D>(color) {}
-
 };
 
 // Two-dimensional points
@@ -164,7 +160,7 @@ public:
     // Draw a point in canvas at position (x, y).
     void draw(Canvas<Coord2D> &canvas) override
     {
-        canvas.draw_circle(_coord, 1.5, color());
+        canvas.draw_circle(_coord, 1.5);
     }
 
     // Type used in the name
@@ -202,13 +198,12 @@ class Line: public Object2D, public Clippable<Drawable2D>
 public:
 
     Line(Coord2D a, Coord2D b): _a(a), _b(b) {}
-    Line(const Color &color, Coord2D a, Coord2D b): Object2D(color), _a(a), _b(b) {}
 
     // Draw line in canvas.
     void draw(Canvas<Coord2D> &canvas) override
     {
         canvas.move(_a);
-        canvas.draw_line(_b, color());
+        canvas.draw_line(_b);
     }
 
     // Type used in the name
@@ -234,7 +229,7 @@ public:
     {
         const pair<Coord2D, Coord2D> clipped_line = clip_line(area, _a, _b);
 
-        return make_shared<Line>(color(), clipped_line.first, clipped_line.second);
+        return make_shared<Line>(clipped_line.first, clipped_line.second);
     }
 
     list<Coord2D *> controls() override
@@ -254,7 +249,7 @@ class Polyline2D: public virtual Drawable2D, public Polyline<Coord2D>, public Cl
 public:
 
     // New drawable from clipped_vertices
-    virtual shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const = 0;
+    virtual shared_ptr<Drawable2D> clipped_drawable(list<shared_ptr<Coord2D>> clipped_vertices) const = 0;
 
     // Determine the visibility in area.
     Visibility visibility_in(ClippingArea &area) const override
@@ -337,7 +332,7 @@ public:
             previous = current;
         }
 
-        return clipped_drawable(color(), new_vertices);
+        return clipped_drawable(new_vertices);
     }
 
 };
@@ -347,15 +342,13 @@ class Polygon: public Object2D, public Polyline2D
 {
 public:
 
-    Polygon(initializer_list<Coord2D> vertices): Polygon(BLACK, vertices) {}
+    Polygon(list<shared_ptr<Coord2D>> vertices): _vertices(vertices) {}
 
-    Polygon(const Color &color, initializer_list<Coord2D> vertices): Object2D(color)
+    Polygon(list<Coord2D> vertices)
     {
         for (auto &v: vertices)
             _vertices.push_back(make_shared<Coord2D>(v));
     }
-
-    Polygon(const Color &color, list<shared_ptr<Coord2D>> vertices): Object2D(color), _vertices(vertices) {}
 
     // Vertices to use when drawing the lines.
     list<shared_ptr<Coord2D>> vertices() const override
@@ -376,9 +369,9 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
-        return make_shared<Polygon>(color, clipped_vertices);
+        return make_shared<Polygon>(clipped_vertices);
     }
 
     list<Coord2D *> controls() override
@@ -401,13 +394,7 @@ class ClippedPolyline: public Polyline2D
 {
 public:
 
-    ClippedPolyline(const Color &color, list<shared_ptr<Coord2D>> vertices): _color(color), _vertices(vertices) {}
-
-    // Color used to draw.
-    Color color() const override
-    {
-        return _color;
-    }
+    ClippedPolyline(list<shared_ptr<Coord2D>> vertices): _vertices(vertices) {}
 
     // Vertices to use when drawing the lines.
     list<shared_ptr<Coord2D>> vertices() const override
@@ -416,14 +403,13 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
-        return make_shared<ClippedPolyline>(color, clipped_vertices);
+        return make_shared<ClippedPolyline>(clipped_vertices);
     }
 
 private:
 
-    Color _color;
     list<shared_ptr<Coord2D>> _vertices;
 
 };
@@ -434,10 +420,7 @@ class BezierCurve: public Object2D, public Polyline2D
 public:
 
     BezierCurve(Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
-        : BezierCurve(BLACK, edge1, control1, edge2, control2) {}
-
-    BezierCurve(const Color &color, Coord2D edge1, Coord2D control1, Coord2D edge2, Coord2D control2)
-        : Object2D(color), _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
+        : _edge1(edge1), _control1(control1), _edge2(edge2), _control2(control2) {}
 
     // Type used in the name
     string type() const override
@@ -458,9 +441,9 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
-        return make_shared<ClippedPolyline>(color, clipped_vertices);
+        return make_shared<ClippedPolyline>(clipped_vertices);
     }
 
     list<Coord2D *> controls() override
@@ -480,9 +463,7 @@ class SplineCurve: public Object2D, public Polyline2D
 {
 public:
 
-    SplineCurve(initializer_list<Coord2D> controls): SplineCurve(BLACK, controls) {}
-
-    SplineCurve(const Color &color, initializer_list<Coord2D> controls): Object2D(color), _controls(controls) {}
+    SplineCurve(vector<Coord2D> controls): _controls(controls) {}
 
     // Type used in the name
     string type() const override
@@ -497,9 +478,9 @@ public:
     }
 
     // New drawable from clipped_vertices
-    shared_ptr<Drawable2D> clipped_drawable(const Color &color, list<shared_ptr<Coord2D>> clipped_vertices) const override
+    shared_ptr<Drawable2D> clipped_drawable(list<shared_ptr<Coord2D>> clipped_vertices) const override
     {
-        return make_shared<ClippedPolyline>(color, clipped_vertices);
+        return make_shared<ClippedPolyline>(clipped_vertices);
     }
 
     list<Coord2D *> controls() override

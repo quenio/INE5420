@@ -416,6 +416,13 @@ inline bool missing(const Container &container, const Item &item)
     return find(container.begin(), container.end(), item) == container.end();
 }
 
+// True if item is found in container
+template<class Container, class Item>
+inline bool found(const Container &container, const Item &item)
+{
+    return find(container.begin(), container.end(), item) != container.end();
+}
+
 // Center of all vertices
 template<class Coord>
 inline Coord center(const list<Coord *> &vertices)

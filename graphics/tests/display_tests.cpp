@@ -81,15 +81,17 @@ static const char * to_viewport()
     const double width = 100, height = 100;
     const Viewport viewport(width, height);
 
-    mu_assert(window.to_viewport(left_top, viewport) == VC(2.5, 2.5));
-    mu_assert(window.to_viewport(left_bottom, viewport) == VC(2.5, 97.5));
-    mu_assert(window.to_viewport(right_bottom, viewport) == VC(97.5, 97.5));
-    mu_assert(window.to_viewport(right_top, viewport) == VC(97.5, 2.5));
-    mu_assert(window.to_viewport(center, viewport) == VC(50, 50));
-    mu_assert(window.to_viewport(northwest, viewport) == VC(26.25, 26.25));
-    mu_assert(window.to_viewport(northeast, viewport) == VC(73.75, 26.25));
-    mu_assert(window.to_viewport(southeast, viewport) == VC(73.75, 73.75));
-    mu_assert(window.to_viewport(southwest, viewport) == VC(26.25, 73.75));
+    window.set_viewport(viewport);
+
+    mu_assert(window.to_viewport(left_top) == VC(2.5, 2.5));
+    mu_assert(window.to_viewport(left_bottom) == VC(2.5, 97.5));
+    mu_assert(window.to_viewport(right_bottom) == VC(97.5, 97.5));
+    mu_assert(window.to_viewport(right_top) == VC(97.5, 2.5));
+    mu_assert(window.to_viewport(center) == VC(50, 50));
+    mu_assert(window.to_viewport(northwest) == VC(26.25, 26.25));
+    mu_assert(window.to_viewport(northeast) == VC(73.75, 26.25));
+    mu_assert(window.to_viewport(southeast) == VC(73.75, 73.75));
+    mu_assert(window.to_viewport(southwest) == VC(26.25, 73.75));
 
     return nullptr;
 }
@@ -111,15 +113,17 @@ static const char * from_viewport()
     const double width = 100, height = 100;
     const Viewport viewport(width, height);
 
-    mu_assert(window.from_viewport(left_top, viewport) == PPC(-1, +1));
-    mu_assert(window.from_viewport(left_bottom, viewport) == PPC(-1, -1));
-    mu_assert(window.from_viewport(right_bottom, viewport) == PPC(+1, -1));
-    mu_assert(window.from_viewport(right_top, viewport) == PPC(+1, +1));
-    mu_assert(window.from_viewport(center, viewport) == PPC(0, 0));
-    mu_assert(window.from_viewport(northwest, viewport) == PPC(-0.5, +0.5));
-    mu_assert(window.from_viewport(northeast, viewport) == PPC(+0.5, +0.5));
-    mu_assert(window.from_viewport(southeast, viewport) == PPC(+0.5, -0.5));
-    mu_assert(window.from_viewport(southwest, viewport) == PPC(-0.5, -0.5));
+    window.set_viewport(viewport);
+
+    mu_assert(window.from_viewport(left_top, height) == PPC(-1, +1));
+    mu_assert(window.from_viewport(left_bottom, height) == PPC(-1, -1));
+    mu_assert(window.from_viewport(right_bottom, height) == PPC(+1, -1));
+    mu_assert(window.from_viewport(right_top, height) == PPC(+1, +1));
+    mu_assert(window.from_viewport(center, height) == PPC(0, 0));
+    mu_assert(window.from_viewport(northwest, height) == PPC(-0.5, +0.5));
+    mu_assert(window.from_viewport(northeast, height) == PPC(+0.5, +0.5));
+    mu_assert(window.from_viewport(southeast, height) == PPC(+0.5, -0.5));
+    mu_assert(window.from_viewport(southwest, height) == PPC(-0.5, -0.5));
 
     return nullptr;
 }
