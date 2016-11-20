@@ -414,18 +414,44 @@ class ProjectionCanvas: public Canvas<Coord>
 {
 public:
 
-    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas) {}
+    ProjectionCanvas(Canvas<Coord2D> &canvas): _canvas(canvas), _current(Coord2D(0, 0)) {}
 
-    // Move to destination.
+    // Move from current position to destination.
     void move(const Coord &destination) override
     {
-        _canvas.move(project(destination));
+        _current = project(destination);
+        _canvas.move(_current);
     }
 
-    // Draw line from current position to destination.
+    // Draw line from current position to destination, clipping if necessary.
     void draw_line(const Coord &destination) override
     {
-        _canvas.draw_line(project(destination));
+        ClippingArea *clipping_area = dynamic_cast<ClippingArea *>(&_canvas);
+        Coord2D projected_destination = project(destination);
+
+        switch (visibility(*clipping_area, _current, projected_destination))
+        {
+            case Visibility::FULL:
+            {
+                _canvas.draw_line(projected_destination);
+            }
+            break;
+
+            case Visibility::PARTIAL:
+            {
+                const pair<Coord2D, Coord2D> clipped_line = clip_line(*clipping_area, _current, projected_destination);
+
+                if (visibility(*clipping_area, clipped_line.first, clipped_line.second) == Visibility::FULL)
+                {
+                    _canvas.move(clipped_line.first);
+                    _canvas.draw_line(clipped_line.second);
+                }
+            }
+            break;
+
+            case Visibility::NONE:;
+                // Nothing to draw.
+        }
     }
 
     // Draw circle with the specified center, radius and color.
@@ -445,6 +471,7 @@ public:
 protected:
 
     Canvas<Coord2D> &_canvas;
+    Coord2D _current;
 
 };
 
