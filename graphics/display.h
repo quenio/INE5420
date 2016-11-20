@@ -429,28 +429,35 @@ public:
         ClippingArea *clipping_area = dynamic_cast<ClippingArea *>(&_canvas);
         Coord2D projected_destination = project(destination);
 
-        switch (visibility(*clipping_area, _current, projected_destination))
+        if (clipping_area == nullptr)
         {
-            case Visibility::FULL:
+            _canvas.draw_line(projected_destination);
+        }
+        else
+        {
+            switch (visibility(*clipping_area, _current, projected_destination))
             {
-                _canvas.draw_line(projected_destination);
-            }
-            break;
-
-            case Visibility::PARTIAL:
-            {
-                const pair<Coord2D, Coord2D> clipped_line = clip_line(*clipping_area, _current, projected_destination);
-
-                if (visibility(*clipping_area, clipped_line.first, clipped_line.second) == Visibility::FULL)
+                case Visibility::FULL:
                 {
-                    _canvas.move(clipped_line.first);
-                    _canvas.draw_line(clipped_line.second);
+                    _canvas.draw_line(projected_destination);
                 }
-            }
-            break;
+                break;
 
-            case Visibility::NONE:;
-                // Nothing to draw.
+                case Visibility::PARTIAL:
+                {
+                    const pair<Coord2D, Coord2D> clipped_line = clip_line(*clipping_area, _current, projected_destination);
+
+                    if (visibility(*clipping_area, clipped_line.first, clipped_line.second) == Visibility::FULL)
+                    {
+                        _canvas.move(clipped_line.first);
+                        _canvas.draw_line(clipped_line.second);
+                    }
+                }
+                break;
+
+                case Visibility::NONE:;
+                    // Nothing to draw.
+            }
         }
     }
 
