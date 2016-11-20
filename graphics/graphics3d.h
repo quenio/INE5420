@@ -1,6 +1,7 @@
 #pragma once
 
 #include "surfaces.h"
+#include "fd_surfaces.h"
 #include "graphics.h"
 
 // 3D coordinates
@@ -41,10 +42,10 @@ public:
     }
 
     // Draw line in canvas.
-    void draw(Canvas<Coord3D> &canvas, Color color)
+    void draw(Canvas<Coord3D> &canvas)
     {
         canvas.move(_a);
-        canvas.draw_line(_b, color);
+        canvas.draw_line(_b);
     }
 
 private:
@@ -59,6 +60,7 @@ class Object3D: public Object<Coord3D>
 public:
 
     Object3D(initializer_list<Segment3D> segments): _segments(segments) {}
+    Object3D(list<Segment3D> segments): _segments(segments) {}
 
     // Type used in the name
     string type() const override
@@ -71,7 +73,7 @@ public:
     {
         for (auto &s: _segments)
         {
-            s.draw(canvas, color());
+            s.draw(canvas);
         }
     }
 
@@ -108,7 +110,7 @@ public:
     // Vertices to use when drawing the lines.
     list<shared_ptr<Coord3D>> vertices() const override
     {
-        return surface_vertices(curve(), _controls);
+        return fd_surface_vertices(curve(), _controls);
     }
 
     // Control coords
@@ -166,6 +168,71 @@ public:
     {
         return spline;
     }
+
+};
+
+// Faces of a 3D group
+class Face3D: public Polyline<Coord3D>
+{
+public:
+
+    Face3D(list<shared_ptr<Coord3D>> vertices): _vertices(vertices) {}
+
+    // Initial vertex of the first line to be drawn.
+    shared_ptr<Coord3D> initial_vertex() const override
+    {
+        return _vertices.back();
+    }
+
+    // Vertices to use when drawing the lines.
+    list<shared_ptr<Coord3D>> vertices() const override
+    {
+        return _vertices;
+    }
+
+private:
+
+    list<shared_ptr<Coord3D>> _vertices;
+
+};
+
+// 3D groups of faces
+class Group3D: public Object<Coord3D>
+{
+public:
+
+    Group3D(vector<shared_ptr<Coord3D>> vertices, vector<shared_ptr<Face3D>> faces):
+        _vertices(vertices), _faces(faces) {}
+
+    // Type used in the name
+    string type() const override
+    {
+        return "Group3D";
+    }
+
+    // Draw the sequence of segments in canvas.
+    void draw(Canvas<Coord3D> &canvas) override
+    {
+        for (auto &f: _faces)
+        {
+            f->draw(canvas);
+        }
+    }
+
+    list<Coord3D *> controls() override
+    {
+        list<Coord3D *> controls;
+
+        for (auto &v: _vertices)
+            controls.push_back(v.get());
+
+        return controls;
+    }
+
+private:
+
+    vector<shared_ptr<Coord3D>> _vertices;
+    vector<shared_ptr<Face3D>> _faces;
 
 };
 

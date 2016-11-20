@@ -48,32 +48,38 @@ public:
     }
 
     // Move to destination.
-    virtual void move(const VC &destination)
+    void move(const VC &destination) override
     {
         cairo_move_to(cr, destination.x(), destination.y());
     }
 
     // Draw line from current position to destination.
-    virtual void draw_line(const VC &destination, const Color &color)
+    void draw_line(const VC &destination) override
     {
-        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
         cairo_line_to(cr, destination.x(), destination.y());
         cairo_stroke(cr);
     }
 
     // Draw circle with the specified center, radius and color.
-    virtual void draw_circle(const VC &center, const double radius, const Color &color)
+    void draw_circle(const VC &center, const double radius) override
     {
-        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
         cairo_set_line_width(cr, 1);
         cairo_arc(cr, center.x(), center.y(), radius, 0, 2 * PI);
         cairo_stroke_preserve(cr);
         cairo_fill(cr);
     }
 
+    // Set the color to be used when drawing.
+    void set_color(const Color &color) override
+    {
+        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
+    }
+
 private:
+
     cairo_t *cr;
+
 };
 
 static void refresh(GtkWidget *widget)
@@ -144,7 +150,7 @@ static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *eve
         const Viewport viewport(widget_width, widget_height);
 
         UserSelection &selection = *(UserSelection*)data;
-        selection.set_center_from_viewport(new_center, viewport);
+        selection.set_center_from_viewport(new_center, viewport.height());
 
         refresh_canvas(canvas, selection);
     }

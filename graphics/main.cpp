@@ -2,6 +2,11 @@
 #define WORLD_3D
 
 #include "ui.h"
+#include "file_conversions.h"
+#include "obj_samples.h"
+#include "timer.h"
+
+#include <fstream>
 
 using namespace std;
 
@@ -23,38 +28,74 @@ static World<Coord2D> world(
 #endif
 
 #ifdef WORLD_3D
+/*
+
+static ifstream teapot("/home/daniel/Workspaces/CG/graphics/obj/teapot.obj");
+static World<Coord3D> world(
+    make_shared<Window>(-5, -5, 5, 5), // window for teapot
+    DisplayFile<Coord3D>(
+        as_display_commands(as_group_3d(obj_file(teapot))) // fast - number of vertices matches the .obj file
+//        as_display_commands(as_object_3d(obj_file(teapot))) // slow - too many vertices
+    )
+);
+
+*/
+
+enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE };
+
+static SelectedWorld selected_world = SelectedWorld::CUBE;
+
 static World<Coord3D> world(
     make_shared<Window>(-20, -20, 120, 120),
-    DisplayFile<Coord3D>({
-         draw_cube(Coord3D(20, 20, 20), 50),
-         draw_bezier_surface({{
-             Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
-             Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
-             Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
-             Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
-         }}),
-         draw_spline_surface({
-            {
-                Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
-                Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
-                Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
-                Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
-            },
-            {
-                Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
-                Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
-                Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
-                Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
-            },
-            {
-                Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
-                Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
-                Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
-                Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
-            }
-         })
-    })
+    DisplayFile<Coord3D>({})
 );
+
+static World<Coord3D> update_world(SelectedWorld selected)
+{
+    world.clear_display_file();
+    switch (selected)
+    {
+        case CUBE:
+        {
+            world.add_object(draw_cube(Coord3D(20, 20, 20), 50));
+            return world;
+        }
+        case BEZIER_SURFACE:
+        {
+            world.add_object(draw_bezier_surface({{
+                Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
+                Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
+                Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
+                Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
+            }}));
+            return world;
+        }
+        case SPLINE_SURFACE:
+        {
+            world.add_object(draw_spline_surface({
+                {
+                    Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
+                    Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
+                    Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
+                    Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
+                },
+                {
+                    Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
+                    Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
+                    Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
+                    Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
+                },
+                {
+                    Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
+                    Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
+                    Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
+                    Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
+                }
+                }));
+            return world;
+        }
+    }
+}
 #endif
 
 static UserSelection selection(world);
@@ -144,6 +185,27 @@ static void select_parallel(GtkWidget UNUSED *menu_item, gpointer canvas)
 static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     projection_method = ProjectionMethod::PERSPECTIVE;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_cube_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::CUBE;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_bezier_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::BEZIER_SURFACE;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_spline_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::SPLINE_SURFACE;
+    update_world(selected_world);
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
@@ -246,12 +308,12 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             {
                 case GDK_KEY_Right:
                 case GDK_KEY_Down:
-                    selection.rotate(+1);
+                    selection.rotate(+10);
                     break;
 
                 case GDK_KEY_Left:
                 case GDK_KEY_Up:
-                    selection.rotate(-1);
+                    selection.rotate(-10);
                     break;
 
                 default:
@@ -299,20 +361,25 @@ static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_butto
 
 static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpointer canvas)
 {
-    selection.clear();
+    printf("Object selection: started\n");
+    const clock_t start = clock();
 
+    selection.clear();
     if (row != nullptr) {
         selection.select_object_at((size_t)gtk_list_box_row_get_index(row));
     }
-
     refresh_canvas(GTK_WIDGET(canvas), selection);
-
     select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+
+    const double time = elapsed_secs(start);
+    printf("Object selection: finished (t = %9.6lf)\n", time);
 }
 
 int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
+
+    update_world(selected_world);
 
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
@@ -331,6 +398,12 @@ int main(int argc, char *argv[])
     projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
     projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
     menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
+
+    list<pair<string, GCallback>> world_items;
+    world_items.push_back(make_pair("Cube", G_CALLBACK(select_cube_world)));
+    world_items.push_back(make_pair("Bézier Surface", G_CALLBACK(select_bezier_world)));
+    world_items.push_back(make_pair("Spline Surface", G_CALLBACK(select_spline_world)));
+    menu_bar_attach(menu_bar, canvas, "World", world_items);
 
     new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 

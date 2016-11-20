@@ -78,6 +78,14 @@ public:
         return sum;
     }
 
+    // Multiply this vector by scalar.
+    TVector operator * (const double scalar) const
+    {
+        TVector v;
+        for (size_t i = 0; i < count; i++) v._vector[i] = _vector[i] * scalar;
+        return v;
+    }
+
     TVector homogeneous() const
     {
         return TVector({
@@ -406,6 +414,13 @@ template<class Container, class Item>
 inline bool missing(const Container &container, const Item &item)
 {
     return find(container.begin(), container.end(), item) == container.end();
+}
+
+// True if item is found in container
+template<class Container, class Item>
+inline bool found(const Container &container, const Item &item)
+{
+    return find(container.begin(), container.end(), item) != container.end();
 }
 
 // Center of all vertices
