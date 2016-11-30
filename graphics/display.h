@@ -499,7 +499,7 @@ class PerspectiveProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
-    static constexpr double d = 100;
+    static constexpr double d = 500;
 
     PerspectiveProjection(Canvas<Coord2D> &canvas, Coord3D center) :
         ProjectionCanvas(canvas),
