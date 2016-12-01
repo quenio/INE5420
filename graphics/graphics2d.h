@@ -33,6 +33,13 @@ class PPC: public XYCoord<PPC>
 {
 public:
 
+    constexpr static double norm_left = -1;
+    constexpr static double norm_right = +1;
+    constexpr static double norm_bottom = -1;
+    constexpr static double norm_top = +1;
+    constexpr static double norm_width = 2;
+    constexpr static double norm_height = 2;
+
     PPC(double x, double y): XYCoord(x, y) {}
 
     PPC(const TVector &vector): XYCoord(vector) {}
@@ -265,7 +272,8 @@ public:
                 if (v == Visibility::PARTIAL)
                 {
                     return Visibility::PARTIAL;
-                } else
+                }
+                else
                 {
                     result = v;
                 }
@@ -302,13 +310,17 @@ public:
                     {
                         const pair<Coord2D, Coord2D> clipped_line = clip_line(area, *previous, *current);
 
-                        if (area.contains(clipped_line.first) && *new_vertices.back() != clipped_line.first)
+                        if (area.contains(clipped_line.first) && (new_vertices.back() == nullptr || *new_vertices.back() != clipped_line.first))
+                        {
                             new_vertices.push_back(make_shared<Coord2D>(clipped_line.first));
+                        }
 
-                        if (area.contains(clipped_line.second) && *new_vertices.back() != clipped_line.second)
+                        if (area.contains(clipped_line.second) && (new_vertices.back() == nullptr || *new_vertices.back() != clipped_line.second))
+                        {
                             new_vertices.push_back(make_shared<Coord2D>(clipped_line.second));
+                        }
                     }
-                        break;
+                    break;
 
                     case Visibility::NONE:
                     {
@@ -318,11 +330,11 @@ public:
                         if (region(window_a) != region(window_b))
                         {
                             // Determine closest corner
-                            const double x = min(window_a.x(), window_b.x()) < -1 ? -1 : +1;
-                            const double y = min(window_a.y(), window_b.y()) < -1 ? -1 : +1;
+                            const double x = min(window_a.x(), window_b.x()) < PPC::norm_left ? PPC::norm_left : PPC::norm_right;
+                            const double y = min(window_a.y(), window_b.y()) < PPC::norm_bottom ? PPC::norm_bottom : PPC::norm_top;
                             const Coord2D corner = area.window_to_world(PPC(x, y));
 
-                            if (area.contains(corner) && *new_vertices.back() != corner)
+                            if (area.contains(corner) && (new_vertices.back() == nullptr || *new_vertices.back() != corner))
                                 new_vertices.push_back(make_shared<Coord2D>(corner));
                         }
                     }
