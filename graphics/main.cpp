@@ -28,20 +28,11 @@ static World<Coord2D> world(
 #endif
 
 #ifdef WORLD_3D
-/*
 
-static ifstream teapot("/home/daniel/Workspaces/CG/graphics/obj/teapot.obj");
-static World<Coord3D> world(
-    make_shared<Window>(-5, -5, 5, 5), // window for teapot
-    DisplayFile<Coord3D>(
-        as_display_commands(as_group_3d(obj_file(teapot))) // fast - number of vertices matches the .obj file
-//        as_display_commands(as_object_3d(obj_file(teapot))) // slow - too many vertices
-    )
-);
+#define OBJ_DIR "/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/"
+//#define OBJ_DIR "/home/daniel/Workspaces/CG/graphics/obj/"
 
-*/
-
-enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE };
+enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE, TEAPOT, PYRAMID, TRUMPET, SHUTTLE, MAGNOLIA, LAMP };
 
 static SelectedWorld selected_world = SelectedWorld::CUBE;
 
@@ -50,49 +41,135 @@ static World<Coord3D> world(
     DisplayFile<Coord3D>({})
 );
 
-static World<Coord3D> update_world(SelectedWorld selected)
+static void update_world(SelectedWorld selected)
 {
-    world.clear_display_file();
     switch (selected)
     {
         case CUBE:
         {
-            world.add_object(draw_cube(Coord3D(20, 20, 20), 50));
-            return world;
+            world = World<Coord3D>(
+                make_shared<Window>(-20, -20, 120, 120),
+                DisplayFile<Coord3D>({ draw_cube(Coord3D(20, 20, 20), 50) })
+            );
         }
+        break;
+
         case BEZIER_SURFACE:
         {
-            world.add_object(draw_bezier_surface({{
-                Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
-                Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
-                Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
-                Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
-            }}));
-            return world;
+            world = World<Coord3D>(
+                make_shared<Window>(-20, -20, 120, 120),
+                DisplayFile<Coord3D>({
+                    draw_bezier_surface({{
+                        Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
+                        Coord3D(10, 10, 30), Coord3D(10, 90, 30), Coord3D(90, 10, 30), Coord3D(90, 90, 30),
+                        Coord3D(10, 10, 40), Coord3D(10, 60, 40), Coord3D(90, 40, 40), Coord3D(90, 90, 40),
+                        Coord3D(10, 10, 50), Coord3D(10, 90, 50), Coord3D(90, 10, 50), Coord3D(90, 90, 50)
+                    }})
+                })
+            );
         }
+        break;
+
         case SPLINE_SURFACE:
         {
-            world.add_object(draw_spline_surface({
-                {
-                    Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
-                    Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
-                    Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
-                    Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
-                },
-                {
-                    Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
-                    Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
-                    Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
-                    Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
-                },
-                {
-                    Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
-                    Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
-                    Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
-                    Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
-                }
-                }));
-            return world;
+            world = World<Coord3D>(
+                make_shared<Window>(-100, 0, +100, +200),
+                DisplayFile<Coord3D>({
+                    draw_spline_surface({
+                        {
+                            Coord3D(50, 10, 20), Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20),
+                            Coord3D(50, 10, 40), Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40),
+                            Coord3D(50, 10, 60), Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60),
+                            Coord3D(50, 10, 80), Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80)
+                        },
+                        {
+                            Coord3D(20, 30, 20), Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20),
+                            Coord3D(20, 30, 40), Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40),
+                            Coord3D(20, 30, 60), Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60),
+                            Coord3D(20, 30, 80), Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80)
+                        },
+                        {
+                            Coord3D(20, 70, 20), Coord3D(50, 90, 20), Coord3D(80, 70, 20), Coord3D(80, 30, 20),
+                            Coord3D(20, 70, 40), Coord3D(50, 90, 40), Coord3D(80, 70, 40), Coord3D(80, 30, 40),
+                            Coord3D(20, 70, 60), Coord3D(50, 90, 60), Coord3D(80, 70, 60), Coord3D(80, 30, 60),
+                            Coord3D(20, 70, 80), Coord3D(50, 90, 80), Coord3D(80, 70, 80), Coord3D(80, 30, 80),
+                        }
+                    })
+                })
+            );
+        }
+        break;
+
+        case TEAPOT:
+        {
+            ifstream teapot(OBJ_DIR "teapot.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-5, -5, 5, 5),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(teapot))) // fast - number of vertices matches the .obj file
+//        as_display_commands(as_object_3d(obj_file(teapot))) // slow - too many vertices
+                )
+            );
+        }
+        break;
+
+        case PYRAMID:
+        {
+            ifstream pyramid(OBJ_DIR "pyramid.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-2, -2, 2, 2),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(pyramid)))
+                )
+            );
+        }
+        break;
+
+        case TRUMPET:
+        {
+            ifstream trumpet(OBJ_DIR "trumpet.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-250, -1000, +250, 0),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(trumpet)))
+                )
+            );
+        }
+        break;
+
+        case SHUTTLE:
+        {
+            ifstream shuttle(OBJ_DIR "shuttle.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-10, -10, +10, +10),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(shuttle)))
+                )
+            );
+        }
+        break;
+
+        case MAGNOLIA:
+        {
+            ifstream magnolia(OBJ_DIR "magnolia.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-100, -100, +100, +100),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(magnolia)))
+                )
+            );
+        }
+        break;
+
+        case LAMP:
+        {
+            ifstream lamp(OBJ_DIR "lamp.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-10, -10, +10, +10),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(lamp)))
+                )
+            );
         }
     }
 }
@@ -205,6 +282,48 @@ static void select_bezier_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 static void select_spline_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     selected_world = SelectedWorld::SPLINE_SURFACE;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_teapot_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::TEAPOT;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_pyramid_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::PYRAMID;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_trumpet_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::TRUMPET;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_shuttle_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::SHUTTLE;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_magnolia_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::MAGNOLIA;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_lamp_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::LAMP;
     update_world(selected_world);
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
@@ -403,6 +522,12 @@ int main(int argc, char *argv[])
     world_items.push_back(make_pair("Cube", G_CALLBACK(select_cube_world)));
     world_items.push_back(make_pair("Bézier Surface", G_CALLBACK(select_bezier_world)));
     world_items.push_back(make_pair("Spline Surface", G_CALLBACK(select_spline_world)));
+    world_items.push_back(make_pair("Teapot", G_CALLBACK(select_teapot_world)));
+    world_items.push_back(make_pair("Pyramid", G_CALLBACK(select_pyramid_world)));
+    world_items.push_back(make_pair("Trumpet", G_CALLBACK(select_trumpet_world)));
+    world_items.push_back(make_pair("Shuttle", G_CALLBACK(select_shuttle_world)));
+    world_items.push_back(make_pair("Magnolia", G_CALLBACK(select_magnolia_world)));
+    world_items.push_back(make_pair("Lamp", G_CALLBACK(select_lamp_world)));
     menu_bar_attach(menu_bar, canvas, "World", world_items);
 
     new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
