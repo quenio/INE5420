@@ -265,6 +265,18 @@ static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
+static void select_regular_surface_method(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    surface_method = SurfaceMethod ::REGULAR;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_fd_surface_method(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    surface_method = SurfaceMethod ::FORWARD_DIFFERENCE;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
 static void select_cube_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     selected_world = SelectedWorld::CUBE;
@@ -517,6 +529,11 @@ int main(int argc, char *argv[])
     projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
     projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
     menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
+
+    list<pair<string, GCallback>> surface_method_items;
+    surface_method_items.push_back(make_pair("Forward-Difference", G_CALLBACK(select_fd_surface_method)));
+    surface_method_items.push_back(make_pair("Regular", G_CALLBACK(select_regular_surface_method)));
+    menu_bar_attach(menu_bar, canvas, "Surface", surface_method_items);
 
     list<pair<string, GCallback>> world_items;
     world_items.push_back(make_pair("Cube", G_CALLBACK(select_cube_world)));

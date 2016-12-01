@@ -94,6 +94,10 @@ private:
 
 };
 
+enum class SurfaceMethod { REGULAR, FORWARD_DIFFERENCE };
+
+static SurfaceMethod surface_method = SurfaceMethod::FORWARD_DIFFERENCE;
+
 // Surface defined by some type of curve
 class Surface: public Object<Coord3D>, public Polyline<Coord3D>
 {
@@ -110,7 +114,9 @@ public:
     // Vertices to use when drawing the lines.
     list<shared_ptr<Coord3D>> vertices() const override
     {
-        return fd_surface_vertices(curve(), _controls);
+        return surface_method == SurfaceMethod::REGULAR ?
+            surface_vertices(curve(), _controls) :
+            fd_surface_vertices(curve(), _controls);
     }
 
     // Control coords
