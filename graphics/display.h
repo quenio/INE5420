@@ -52,11 +52,6 @@ class Window: public Object2D, public ClippingArea
 {
 public:
 
-    constexpr static double norm_left = -1;
-    constexpr static double norm_bottom = -1;
-    constexpr static double norm_width = 2;
-    constexpr static double norm_height = 2;
-
     Window(double left, double bottom, double right, double top):
          _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
          _center(equidistant(_leftBottom, _rightTop)),
@@ -76,17 +71,17 @@ public:
     double width() const { return distance(leftBottom(), rightBottom()); }
     double height() const { return distance(leftBottom(), leftTop()); }
 
-    Coord2D window_ratios() const { return Coord2D(norm_width / width(), norm_height / height()); }
-    Coord2D world_ratios() const { return Coord2D(width() / norm_width, height() / norm_height); }
+    Coord2D window_ratios() const { return Coord2D(PPC::norm_width / width(), PPC::norm_height / height()); }
+    Coord2D world_ratios() const { return Coord2D(width() / PPC::norm_width, height() / PPC::norm_height); }
 
     Coord2D window_ratios_for_viewport() const
     {
-        return Coord2D(norm_width / _viewport_width, norm_height / _viewport_height);
+        return Coord2D(PPC::norm_width / _viewport_width, PPC::norm_height / _viewport_height);
     }
 
     Coord2D viewport_ratios() const
     {
-        return Coord2D(_viewport_width / norm_width, _viewport_height / norm_height);
+        return Coord2D(_viewport_width / PPC::norm_width, _viewport_height / PPC::norm_height);
     }
 
     // True if Window contains World coord.
@@ -94,8 +89,8 @@ public:
     {
         PPC wc = from_world(coord);
         double x = wc.x(), y = wc.y();
-        return ((x > -1 && x < +1) || equals(x, -1) || equals(x, +1)) &&
-               ((y > -1 && y < +1) || equals(y, -1) || equals(y, +1));
+        return ((x > PPC::norm_left && x < PPC::norm_right) || equals(x, PPC::norm_left) || equals(x, PPC::norm_right)) &&
+               ((y > PPC::norm_bottom && y < PPC::norm_top) || equals(y, PPC::norm_bottom) || equals(y, PPC::norm_top));
     }
 
     // Translate coord from World to Window, where left-bottom is (-1, -1) and right-top is (1, 1).
@@ -129,7 +124,7 @@ public:
 
     TMatrix to_world_matrix() const
     {
-        return z_rotation(-_up_angle) * scaling(world_ratios()) * translation(_center);
+        return scaling(world_ratios()) * z_rotation(-_up_angle) * translation(_center);
     }
 
     // Translate coord from Viewport to Window.
@@ -142,13 +137,13 @@ public:
     {
         return inverse_translation(_viewport_top_left) *
                scaling(window_ratios_for_viewport()) *
-               translation(Coord2D(norm_left, norm_bottom));
+               translation(Coord2D(PPC::norm_left, PPC::norm_bottom));
     }
 
     // Translate coord from Window to Viewport, leaving a margin.
     VC to_viewport(PPC coord) const
     {
-        return Coord2D(coord.x() - norm_left, norm_height - (coord.y() - norm_bottom)) * _to_viewport_matrix;
+        return Coord2D(coord.x() - PPC::norm_left, PPC::norm_height - (coord.y() - PPC::norm_bottom)) * _to_viewport_matrix;
     }
 
     TMatrix to_viewport_matrix() const
@@ -210,10 +205,8 @@ public:
     void transform(TMatrix matrix) override
     {
         Object::transform(matrix);
-
         _center = equidistant(_leftBottom, _rightTop);
-        _from_world_matrix = from_world_matrix();
-        _to_world_matrix = to_world_matrix();
+        adjust_aspect_ratio();
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -222,8 +215,8 @@ public:
         Object::rotate_x(-degrees, center);
 
         _up_angle += degrees;
-        _from_world_matrix = from_world_matrix();
-        _to_world_matrix = to_world_matrix();
+        _center = equidistant(_leftBottom, _rightTop);
+        adjust_aspect_ratio();
     }
 
     // Rotate on the y axis by degrees at center; counter-clockwise if degrees positive; clockwise if negative.
@@ -232,8 +225,8 @@ public:
         Object::rotate_y(-degrees, center);
 
         _up_angle += degrees;
-        _from_world_matrix = from_world_matrix();
-        _to_world_matrix = to_world_matrix();
+        _center = equidistant(_leftBottom, _rightTop);
+        adjust_aspect_ratio();
     }
 
     // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -242,8 +235,8 @@ public:
         Object::rotate_z(-degrees, center);
 
         _up_angle += degrees;
-        _from_world_matrix = from_world_matrix();
-        _to_world_matrix = to_world_matrix();
+        _center = equidistant(_leftBottom, _rightTop);
+        adjust_aspect_ratio();
     }
 
     // Window's center
@@ -295,13 +288,71 @@ public:
         _viewport_width = viewport.content_width();
         _viewport_height = viewport.content_height();
 
+        adjust_aspect_ratio();
+    }
+
+    void adjust_aspect_ratio()
+    {
+        if (_viewport_width > _viewport_height)
+        {
+            double height_ratio = _viewport_height / _viewport_width;
+
+            if (!equals(height() / width(), height_ratio))
+            {
+                double adjusted_height = width() * height_ratio;
+                double adjusted_bottom = _center.y() - (adjusted_height / 2);
+                double adjusted_top = _center.y() + (adjusted_height / 2);
+                double adjusted_left = _center.x() + (width() / 2);
+                double adjusted_right = _center.x() - (width() / 2);
+
+                _leftTop = { adjusted_left, adjusted_top };
+                _rightTop = { adjusted_right, adjusted_top };
+                _leftBottom = { adjusted_left, adjusted_bottom };
+                _rightBottom = { adjusted_right, adjusted_bottom };
+
+                adjust_angle();
+            }
+        }
+        else if (_viewport_height > _viewport_width)
+        {
+            double width_ratio = _viewport_width / _viewport_height;
+
+            if (!equals(width() / height(), width_ratio))
+            {
+                double adjusted_width = height() * width_ratio;
+                double adjusted_left = _center.x() - (adjusted_width / 2);
+                double adjusted_right = _center.x() + (adjusted_width / 2);
+                double adjusted_top = _center.y() + (height() / 2);
+                double adjusted_bottom = _center.y() - (height() / 2);
+
+                _leftBottom = { adjusted_left, adjusted_bottom };
+                _leftTop = { adjusted_left, adjusted_top };
+                _rightBottom = { adjusted_right, adjusted_bottom };
+                _rightTop = { adjusted_right, adjusted_top };
+
+                adjust_angle();
+            }
+        }
+
+        _from_world_matrix = from_world_matrix();
+        _to_world_matrix = to_world_matrix();
         _from_viewport_matrix = from_viewport_matrix();
         _to_viewport_matrix = to_viewport_matrix();
     }
 
+    void adjust_angle()
+    {
+        _leftTop.rotate_z(-_up_angle, center());
+        _rightTop.rotate_z(-_up_angle, center());
+        _leftBottom.rotate_z(-_up_angle, center());
+        _rightBottom.rotate_z(-_up_angle, center());
+    }
+
 private:
 
-    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom, _center, _viewport_top_left;
+    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom;
+    Coord2D _center;
+    Coord2D _viewport_top_left;
     double _up_angle; // degrees
     double _viewport_width, _viewport_height;
     TMatrix _from_world_matrix, _to_world_matrix, _from_viewport_matrix, _to_viewport_matrix;

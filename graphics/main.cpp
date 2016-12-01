@@ -277,6 +277,8 @@ static void select_fd_surface_method(GtkWidget UNUSED *menu_item, gpointer canva
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
+#ifdef WORLD_3D
+
 static void select_cube_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     selected_world = SelectedWorld::CUBE;
@@ -339,6 +341,8 @@ static void select_lamp_world(GtkWidget UNUSED *menu_item, gpointer canvas)
     update_world(selected_world);
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
+
+#endif
 
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
@@ -510,7 +514,9 @@ int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
 
+#ifdef WORLD_3D
     update_world(selected_world);
+#endif
 
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
@@ -535,6 +541,8 @@ int main(int argc, char *argv[])
     surface_method_items.push_back(make_pair("Regular", G_CALLBACK(select_regular_surface_method)));
     menu_bar_attach(menu_bar, canvas, "Surface", surface_method_items);
 
+#ifdef WORLD_3D
+
     list<pair<string, GCallback>> world_items;
     world_items.push_back(make_pair("Cube", G_CALLBACK(select_cube_world)));
     world_items.push_back(make_pair("Bézier Surface", G_CALLBACK(select_bezier_world)));
@@ -546,6 +554,8 @@ int main(int argc, char *argv[])
     world_items.push_back(make_pair("Magnolia", G_CALLBACK(select_magnolia_world)));
     world_items.push_back(make_pair("Lamp", G_CALLBACK(select_lamp_world)));
     menu_bar_attach(menu_bar, canvas, "World", world_items);
+
+#endif
 
     new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 
