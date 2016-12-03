@@ -32,7 +32,7 @@ static World<Coord2D> world(
 #define OBJ_DIR "/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/"
 //#define OBJ_DIR "/home/daniel/Workspaces/CG/graphics/obj/"
 
-enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE, TEAPOT, PYRAMID, TRUMPET, SHUTTLE, MAGNOLIA, LAMP };
+enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE, TEAPOT, PYRAMID, TRUMPET, SHUTTLE, MAGNOLIA, LAMP, HOUSE, SQUARE };
 
 static SelectedWorld selected_world = SelectedWorld::CUBE;
 
@@ -168,6 +168,30 @@ static void update_world(SelectedWorld selected)
                 make_shared<Window>(-10, -10, +10, +10),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(lamp)))
+                )
+            );
+        }
+        break;
+
+        case HOUSE:
+        {
+            ifstream house(OBJ_DIR "house.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-10, -10, +10, +10),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(house)))
+                )
+            );
+        }
+        break;
+
+        case SQUARE:
+        {
+            ifstream square_obj(OBJ_DIR "square.obj");
+            world = World<Coord3D>(
+                make_shared<Window>(-20, -20, +20, +20),
+                DisplayFile<Coord3D>(
+                    as_display_commands(as_group_3d(obj_file(square_obj)))
                 )
             );
         }
@@ -338,6 +362,20 @@ static void select_magnolia_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 static void select_lamp_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     selected_world = SelectedWorld::LAMP;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_house_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::HOUSE;
+    update_world(selected_world);
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+}
+
+static void select_square_world(GtkWidget UNUSED *menu_item, gpointer canvas)
+{
+    selected_world = SelectedWorld::SQUARE;
     update_world(selected_world);
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
@@ -553,6 +591,8 @@ int main(int argc, char *argv[])
     world_items.push_back(make_pair("Shuttle", G_CALLBACK(select_shuttle_world)));
     world_items.push_back(make_pair("Magnolia", G_CALLBACK(select_magnolia_world)));
     world_items.push_back(make_pair("Lamp", G_CALLBACK(select_lamp_world)));
+    world_items.push_back(make_pair("House", G_CALLBACK(select_house_world)));
+    world_items.push_back(make_pair("Square", G_CALLBACK(select_square_world)));
     menu_bar_attach(menu_bar, canvas, "World", world_items);
 
 #endif

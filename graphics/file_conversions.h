@@ -60,6 +60,8 @@ inline shared_ptr<Face3D> as_face(Obj::Face &face, const vector<shared_ptr<Coord
 
     for (size_t ref: face.references())
     {
+        assert(ref <= vertices.size());
+
         face_vertices.push_back(vertices[ref-1]);
     }
 
