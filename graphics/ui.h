@@ -196,7 +196,7 @@ static const int gtk_window__height = 480;
 static const gint pan_column__button = 8;
 static const gint pan_column__canvas = 8 * pan_column__button;
 static const gint pan_column__list_label = 2 * pan_column__button + 2;
-static const gint pan_column__list_box = pan_column__list_label;
+static const gint pan_column__list_box = pan_column__list_label - 1;
 static const gint pan_column__menu_bar = pan_column__canvas + pan_column__list_label;
 
 static const gint pan_row__menu_bar = 1;
