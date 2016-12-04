@@ -8,14 +8,14 @@ template<class Coord>
 void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &h_color, const Color &v_color)
 {
     // Horizontal bar
-    Draw2DCommand  h_bar(make_shared<Line>(
+    Draw2DCommand h_bar(make_shared<Line>(
         translated<Coord2D>(center, TVector(Coord2D(-radius, 0))),
         translated<Coord2D>(center, TVector(Coord2D(+radius, 0)))));
     canvas.set_color(h_color);
     h_bar.render(canvas);
 
     // Vertical bar
-    Draw2DCommand  v_bar(make_shared<Line>(
+    Draw2DCommand v_bar(make_shared<Line>(
         translated<Coord2D>(center, TVector(Coord2D(0, -radius))),
         translated<Coord2D>(center, TVector(Coord2D(0, +radius)))));
     canvas.set_color(v_color);
