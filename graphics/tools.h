@@ -5,24 +5,26 @@
 
 // Render a cross at center with radius, using color.
 template<class Coord>
-void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &color)
+void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &h_color, const Color &v_color)
 {
-    canvas.set_color(color);
-
     // Horizontal bar
+    canvas.set_color(h_color);
     canvas.move(translated<Coord>(center, TVector(Coord2D(-radius, 0))));
     canvas.draw_line(translated<Coord>(center, TVector(Coord2D(+radius, 0))));
 
     // Vertical bar
+    canvas.set_color(v_color);
     canvas.move(translated<Coord>(center, TVector(Coord2D(0, -radius))));
     canvas.draw_line(translated<Coord>(center, TVector(Coord2D(0, +radius))));
 }
 
 // Axis of rotation selected by the user
-enum RotationAxis
+enum TransformAxis
 {
-    X_AXIS, Y_AXIS, Z_AXIS
+    X_AXIS, Y_AXIS, Z_AXIS, Z_ALL
 };
+
+enum Tool { NONE, TRANSLATE, SCALE, ROTATE };
 
 // Selection of world objects that can be manipulated by UI tools
 template<class Coord>
@@ -46,6 +48,41 @@ public:
 
     shared_ptr<Window> window() { return _world.window(); }
 
+    Coord2D center() { return _center; }
+
+    // Tool used on selected objects.
+    Tool tool() { return _tool; }
+
+    // Select the tool to be used on selected objects.
+    void select_tool(Tool tool)
+    {
+        if (not_empty())
+        {
+            _tool = tool;
+        }
+        else
+        {
+            _tool = NONE;
+        }
+    }
+
+    // Select all objects if none selected, or unselect objects if any.
+    void toggle_full_selection()
+    {
+        if (not_empty())
+        {
+            clear();
+        }
+        else
+        {
+            const size_t size = _world.objects().size();
+            for (size_t i = 0; i < size; i++)
+            {
+                select_object_at(i);
+            }
+        }
+    }
+
     // Select the world object at index.
     void select_object_at(size_t index)
     {
@@ -59,6 +96,7 @@ public:
     // Remove all from the list of selected objects.
     void clear()
     {
+        _tool = NONE;
         _selected_group.removeAll();
         _center = Coord2D(0, 0);
     }
@@ -69,34 +107,47 @@ public:
         return _selected_group.not_empty();
     }
 
-    // Move the selected objects by delta.
-    void translate(Coord delta)
+    // Move the selected objects by delta x, y and z.
+    void translate(double delta_x, double delta_y, double delta_z)
     {
-        _selected_group.translate(delta);
+        switch(_transform_axis)
+        {
+            case X_AXIS: _selected_group.translate(TVector({ delta_x, 0, 0, 1 })); break;
+            case Y_AXIS: _selected_group.translate(TVector({ 0, delta_y, 0, 1 })); break;
+            case Z_AXIS: _selected_group.translate(TVector({ 0, 0, delta_z, 1 })); break;
+            case Z_ALL: _selected_group.translate(TVector({ delta_x, delta_y, delta_z, 1 })); break;
+        }
         _center = TVector(_selected_group.center());
     }
 
     // Scale the selected objects by factor.
     void scale(double factor)
     {
-        _selected_group.scale(factor, TVector(_center));
+        switch(_transform_axis)
+        {
+            case X_AXIS: _selected_group.scale_x(factor, TVector(_center)); break;
+            case Y_AXIS: _selected_group.scale_y(factor, TVector(_center)); break;
+            case Z_AXIS: _selected_group.scale_z(factor, TVector(_center)); break;
+            case Z_ALL: _selected_group.scale(factor, TVector(_center)); break;
+        }
     }
 
     // Rotate the selected objects by degrees at world center; clockwise if degrees positive; counter-clockwise if negative.
     void rotate(double degrees)
     {
-        switch(_rotation_axis)
+        switch(_transform_axis)
         {
             case X_AXIS: _selected_group.rotate_x(degrees, TVector(_center)); break;
             case Y_AXIS: _selected_group.rotate_y(degrees, TVector(_center)); break;
             case Z_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
+            case Z_ALL: break;
         }
     }
 
-    // Select the rotation according to axis.
-    void select_rotation_axis(RotationAxis axis)
+    // Select the axis to be transformed.
+    void select_transform_axis(TransformAxis axis)
     {
-        _rotation_axis = axis;
+        _transform_axis = axis;
     }
 
     // Set the new center from viewport coordinates
@@ -113,7 +164,7 @@ public:
 
         for (auto control: _selected_group.controls())
         {
-            render_cross(canvas, *control, radius, CONTROL);
+            render_cross(canvas, *control, radius, CONTROL, CONTROL);
         }
     }
 
@@ -122,12 +173,13 @@ public:
     {
         const int radius = 2;
 
-        render_cross(canvas, _center, radius, GREEN);
+        canvas.set_color(ORANGE);
+        canvas.draw_circle(_center, radius);
     }
 
     void beforeRendering(const Command &command, Canvas &canvas) override
     {
-        canvas.set_color(_selected_group.contains(command.object()) ? RED : BLACK);
+        canvas.set_color(_selected_group.contains(command.object()) ? (_tool == NONE ? ORANGE : WHITE) : BLACK);
     }
 
 private:
@@ -135,7 +187,8 @@ private:
     World &_world;
     Group _selected_group;
     Coord2D _center;
-    RotationAxis _rotation_axis = Z_AXIS;
+    TransformAxis _transform_axis = Z_ALL;
+    Tool _tool = NONE;
 
 };
 
@@ -182,8 +235,9 @@ public:
 
 #ifdef WORLD_2D
         selection.render_controls(*projection_canvas);
-        selection.render_center(*this);
 #endif
+
+        selection.render_center(*this);
 
         _window->draw(*this);
     }
@@ -238,7 +292,7 @@ private:
         const Coord2D center = Coord2D(0, 0);
         const int radius = 10000;
 
-        render_cross(*this, center, radius, GREEN);
+        render_cross(*this, center, radius, RED, GREEN);
     }
 
     shared_ptr<Window> _window;

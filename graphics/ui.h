@@ -41,10 +41,22 @@ public:
     }
 
     // Paint the whole canvas with the white color.
-    void clear(const Color &color)
+    void clear(double width, double height)
     {
-        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
+        const Color border_color = LIGHT_GRAY;
+        cairo_set_source_rgb(cr, border_color.red(), border_color.green(), border_color.blue());
         cairo_paint(cr);
+
+        const Color background_color = DARK_GRAY;
+        cairo_set_source_rgb(cr, background_color.red(), background_color.green(), background_color.blue());
+
+        const double margin = width * Viewport::margin_percentage;
+        cairo_rectangle(
+            cr,
+            margin, margin,
+            width - 2 * margin, height - 2 * margin);
+        cairo_stroke_preserve(cr);
+        cairo_fill(cr);
     }
 
     // Move to destination.
@@ -105,7 +117,7 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
                                                 widget_width, widget_height);
 
     SurfaceCanvas canvas(surface);
-    canvas.clear(Color(1, 1, 1));
+    canvas.clear(widget_width, widget_height);
 
     UserSelection &selection = *(UserSelection*)data;
     UserViewport viewport(widget_width, widget_height, selection.window(), canvas);
@@ -121,39 +133,48 @@ static void refresh_canvas(GtkWidget *canvas, UserSelection &selection)
     refresh_surface(GTK_WIDGET(canvas), nullptr, &selection);
 }
 
-constexpr double PADDING = 5;
-
 static gboolean draw_canvas(GtkWidget *widget, cairo_t *cr, gpointer UNUSED data)
 {
     cairo_set_source_surface(cr, surface, 0, 0);
     cairo_paint(cr);
 
     if (gtk_widget_has_focus(widget))
+    {
+        const int widget_width = gtk_widget_get_allocated_width(widget);
+        const int widget_height = gtk_widget_get_allocated_height(widget);
+        const double padding = Viewport::margin_percentage * widget_width - 10;
         gtk_render_focus(
             gtk_widget_get_style_context(widget),
             cr,
-            PADDING, PADDING,
-            gtk_widget_get_allocated_width(widget) - 2 * PADDING,
-            gtk_widget_get_allocated_height(widget) - 2 * PADDING);
+            padding, padding,
+            widget_width - 2 * padding,
+            widget_height - 2 * padding);
+    }
 
     return false;
 }
 
 static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *event, gpointer data)
 {
-    if (event->button == 1) {
-        gtk_widget_grab_focus(canvas);
+    gtk_widget_grab_focus(canvas);
 
+    UserSelection &selection = *(UserSelection*)data;
+
+    if ((event->button == 1) && (selection.tool() == ROTATE))
+    {
         const VC new_center = { event->x, event->y };
         const int widget_width = gtk_widget_get_allocated_width(canvas);
         const int widget_height = gtk_widget_get_allocated_height(canvas);
         const Viewport viewport(widget_width, widget_height);
 
-        UserSelection &selection = *(UserSelection*)data;
         selection.set_center_from_viewport(new_center, viewport.height());
-
-        refresh_canvas(canvas, selection);
     }
+    else
+    {
+        selection.select_tool(NONE);
+    }
+
+    refresh_canvas(canvas, selection);
 
     return true;
 }
@@ -215,7 +236,8 @@ static GtkWidget * new_grid(GtkWidget *gtk_window)
     return grid;
 }
 
-static GtkWidget * new_canvas(GtkWidget *grid, UserSelection &selection, GCallback on_key_press)
+static GtkWidget * new_canvas(
+    GtkWidget *grid, UserSelection &selection, GCallback on_key_press, GCallback on_scroll, GCallback on_motion)
 {
     GtkWidget *canvas = gtk_drawing_area_new();
 
@@ -226,22 +248,30 @@ static GtkWidget * new_canvas(GtkWidget *grid, UserSelection &selection, GCallba
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
     g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &selection);
     g_signal_connect(canvas, "key-press-event", on_key_press, nullptr);
+    g_signal_connect(canvas, "scroll-event", G_CALLBACK(on_scroll), nullptr);
+    g_signal_connect(canvas, "motion-notify-event", G_CALLBACK(on_motion), nullptr);
 
-    gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
+    gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_SCROLL_MASK);
     gtk_widget_set_can_focus(canvas, true);
 
     return canvas;
 }
 
-static void new_list_box(GtkWidget *grid, GtkWidget *canvas, UserSelection &selection, GCallback select_object)
+static GtkListBox * new_list_box(GtkWidget *grid, GtkWidget *canvas, UserSelection &selection, GCallback select_object)
 {
-    GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box), selection.world().objects());
-    gtk_grid_attach(GTK_GRID(grid), list_box,
+    GtkListBox *list_box = GTK_LIST_BOX(gtk_list_box_new());
+    GdkRGBA light_gray = { LIGHT_GRAY.red(), LIGHT_GRAY.green(), LIGHT_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(GTK_WIDGET(list_box), GTK_STATE_FLAG_NORMAL, &light_gray);
+    add_objects_to_list_box(list_box, selection.world().objects());
+    gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(list_box),
                     column__list_box, row__list_box,
                     pan_column__list_box, pan_row__list_box);
 
-    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", select_object, canvas);
+    g_signal_connect(list_box, "row-selected", select_object, canvas);
+
+    gtk_list_box_set_selection_mode(list_box, GTK_SELECTION_MULTIPLE);
+
+    return list_box;
 }
 
 static GtkWidget * new_button(
