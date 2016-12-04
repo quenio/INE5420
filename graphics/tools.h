@@ -171,11 +171,14 @@ public:
     // Render the center as a little cross.
     void render_center(::Canvas<Coord2D> &canvas)
     {
-        const int radius = 2;
+        if (not_empty())
+        {
+            const int radius = 2;
 
-        canvas.move(_center);
-        canvas.set_color(ORANGE);
-        canvas.draw_circle(_center, radius);
+            canvas.move(_center);
+            canvas.set_color(ORANGE);
+            canvas.draw_circle(_center, radius);
+        }
     }
 
     void beforeRendering(const Command &command, Canvas &canvas) override
