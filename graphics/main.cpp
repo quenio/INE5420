@@ -816,17 +816,6 @@ int main(int argc, char *argv[])
 
     GtkWidget *menu_bar = new_menu_bar(grid);
 
-    list<pair<string, GCallback>> clipping_items;
-    clipping_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
-    clipping_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
-    clipping_items.push_back(make_pair("None", G_CALLBACK(select_none)));
-    menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
-
-    list<pair<string, GCallback>> surface_method_items;
-    surface_method_items.push_back(make_pair("Forward-Difference", G_CALLBACK(select_fd_surface_method)));
-    surface_method_items.push_back(make_pair("Regular", G_CALLBACK(select_regular_surface_method)));
-    menu_bar_attach(menu_bar, canvas, "Surface", surface_method_items);
-
 #ifdef WORLD_3D
 
     list<pair<string, GCallback>> world_items;
@@ -843,7 +832,18 @@ int main(int argc, char *argv[])
     world_items.push_back(make_pair("Square", G_CALLBACK(select_square_world)));
     menu_bar_attach(menu_bar, canvas, "World", world_items);
 
+    list<pair<string, GCallback>> surface_method_items;
+    surface_method_items.push_back(make_pair("Forward-Difference", G_CALLBACK(select_fd_surface_method)));
+    surface_method_items.push_back(make_pair("Regular", G_CALLBACK(select_regular_surface_method)));
+    menu_bar_attach(menu_bar, canvas, "Surface", surface_method_items);
+
 #endif
+
+    list<pair<string, GCallback>> clipping_items;
+    clipping_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
+    clipping_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
+    clipping_items.push_back(make_pair("None", G_CALLBACK(select_none)));
+    menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
 
     new_list_label(grid, "Object List:");
     list_box = new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
