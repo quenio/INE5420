@@ -447,8 +447,8 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             {
                 gtk_list_box_unselect_all(list_box);
             }
-            break;
 #endif
+            break;
 
         case GDK_KEY_G:
         case GDK_KEY_g:
