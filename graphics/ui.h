@@ -183,10 +183,17 @@ static const double step = 0.1; // 10 percent
 
 template<class Coord>
 static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object<Coord>>> objects) {
+    GList *children, *iter;
+    children = gtk_container_get_children(GTK_CONTAINER(list_box));
+    for(iter = children; iter != NULL; iter = g_list_next(iter))
+        gtk_widget_destroy(GTK_WIDGET(iter->data));
+    g_list_free(children);
+
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
 
         gtk_container_add(GTK_CONTAINER(list_box), label);
+        gtk_widget_show(label);
     }
 }
 

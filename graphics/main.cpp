@@ -41,6 +41,8 @@ static World<Coord3D> world(
     DisplayFile<Coord3D>({})
 );
 
+static GtkListBox *list_box;
+
 static void update_world(SelectedWorld selected)
 {
     switch (selected)
@@ -196,6 +198,8 @@ static void update_world(SelectedWorld selected)
             );
         }
     }
+
+    add_objects_to_list_box(list_box, world.objects());
 }
 #endif
 
@@ -407,7 +411,6 @@ static void select_square_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 
 #endif
 
-static GtkListBox *list_box;
 static GtkWidget *button_move;
 static GtkWidget *button_scale;
 static GtkWidget *button_rotate;

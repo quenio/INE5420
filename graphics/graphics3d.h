@@ -68,6 +68,14 @@ public:
         return "Object3D";
     }
 
+    // Name displayed on the UI
+    string name() const override
+    {
+        stringstream ss;
+        ss << Object<Coord3D>::name() << "(segs=" << _segments.size() << ")";
+        return ss.str();
+    }
+
     // Draw the sequence of segments in canvas.
     void draw(Canvas<Coord3D> &canvas) override
     {
@@ -107,6 +115,17 @@ public:
     {
         for (auto &c: controls)
             assert(c.size() >= surface_geometry_matrix_size);
+    }
+
+    // Name displayed on the UI
+    string name() const override
+    {
+        size_t count = 0;
+        for (auto &v: _controls) count += v.size();
+
+        stringstream ss;
+        ss << Object<Coord3D>::name() << "(ctrls=" << count << ")";
+        return ss.str();
     }
 
     virtual TMatrix & curve() const = 0;
@@ -214,6 +233,14 @@ public:
     string type() const override
     {
         return "Group3D";
+    }
+
+    // Name displayed on the UI
+    string name() const override
+    {
+        stringstream ss;
+        ss << Object<Coord3D>::name() << "(v=" << _vertices.size() << ", f=" << _faces.size() << ")";
+        return ss.str();
     }
 
     // Draw the sequence of segments in canvas.
