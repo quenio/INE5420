@@ -25,7 +25,7 @@ void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, con
 // Axis of rotation selected by the user
 enum TransformAxis
 {
-    X_AXIS, Y_AXIS, Z_AXIS, Z_ALL
+    X_AXIS, Y_AXIS, Z_AXIS, ALL_AXIS
 };
 
 enum Tool { NONE, TRANSLATE, SCALE, ROTATE };
@@ -68,6 +68,12 @@ public:
         {
             _tool = NONE;
         }
+    }
+
+    // Axis to be transformed by tool.
+    TransformAxis transform_axis()
+    {
+        return _transform_axis;
     }
 
     // Select all objects if none selected, or unselect objects if any.
@@ -119,7 +125,7 @@ public:
             case X_AXIS: _selected_group.translate(TVector({ delta_x, 0, 0, 1 })); break;
             case Y_AXIS: _selected_group.translate(TVector({ 0, delta_y, 0, 1 })); break;
             case Z_AXIS: _selected_group.translate(TVector({ 0, 0, delta_z, 1 })); break;
-            case Z_ALL: _selected_group.translate(TVector({ delta_x, delta_y, delta_z, 1 })); break;
+            case ALL_AXIS: _selected_group.translate(TVector({ delta_x, delta_y, delta_z, 1 })); break;
         }
         _center = TVector(_selected_group.center());
     }
@@ -132,7 +138,7 @@ public:
             case X_AXIS: _selected_group.scale_x(factor, TVector(_center)); break;
             case Y_AXIS: _selected_group.scale_y(factor, TVector(_center)); break;
             case Z_AXIS: _selected_group.scale_z(factor, TVector(_center)); break;
-            case Z_ALL: _selected_group.scale(factor, TVector(_center)); break;
+            case ALL_AXIS: _selected_group.scale(factor, TVector(_center)); break;
         }
     }
 
@@ -144,7 +150,7 @@ public:
             case X_AXIS: _selected_group.rotate_x(degrees, TVector(_center)); break;
             case Y_AXIS: _selected_group.rotate_y(degrees, TVector(_center)); break;
             case Z_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
-            case Z_ALL: break;
+            case ALL_AXIS: break;
         }
     }
 
@@ -195,7 +201,7 @@ private:
     World &_world;
     Group _selected_group;
     Coord2D _center;
-    TransformAxis _transform_axis = Z_ALL;
+    TransformAxis _transform_axis = ALL_AXIS;
     Tool _tool = NONE;
 
 };

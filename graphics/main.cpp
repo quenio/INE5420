@@ -397,7 +397,8 @@ static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_butto
                 const string label(button_label);
                 if (label.find("[") == 0)
                 {
-                    gtk_button_set_label(GTK_BUTTON(button), label.substr(1, label.length()-2).c_str());
+                    const size_t suffix_size = (selection.transform_axis() == ALL_AXIS ? 2 : 4);
+                    gtk_button_set_label(GTK_BUTTON(button), label.substr(1, label.length() - suffix_size).c_str());
                 }
             }
         }
@@ -409,6 +410,7 @@ static void select_tool_translate()
     selection.select_tool(TRANSLATE);
     gtk_button_set_label(GTK_BUTTON(button_move), "[Grab]");
     gtk_widget_set_sensitive(GTK_WIDGET(button_move), false);
+    select_or_hide_tool_buttons({ button_scale, button_rotate });
 }
 
 static void select_tool_scale()
@@ -416,6 +418,7 @@ static void select_tool_scale()
     selection.select_tool(SCALE);
     gtk_button_set_label(GTK_BUTTON(button_scale), "[Scale]");
     gtk_widget_set_sensitive(GTK_WIDGET(button_scale), false);
+    select_or_hide_tool_buttons({ button_move, button_rotate });
 }
 
 static void select_tool_rotate()
@@ -423,6 +426,50 @@ static void select_tool_rotate()
     selection.select_tool(ROTATE);
     gtk_button_set_label(GTK_BUTTON(button_rotate), "[Rotate]");
     gtk_widget_set_sensitive(GTK_WIDGET(button_rotate), false);
+    select_or_hide_tool_buttons({ button_move, button_scale });
+}
+
+static GtkButton * selected_tool_button()
+{
+    switch (selection.tool())
+    {
+        case NONE: return nullptr;
+        case TRANSLATE: return GTK_BUTTON(button_move);
+        case SCALE: return GTK_BUTTON(button_scale);
+        case ROTATE: return GTK_BUTTON(button_rotate);
+    }
+}
+
+static string tool_name()
+{
+    switch (selection.tool())
+    {
+        case NONE: return "";
+        case TRANSLATE: return "Grab";
+        case SCALE: return "Scale";
+        case ROTATE: return "Rotate";
+    }
+}
+
+static string axis_name()
+{
+    switch (selection.transform_axis())
+    {
+        case ALL_AXIS: return "";
+        case X_AXIS: return " X";
+        case Y_AXIS: return " Y";
+        case Z_AXIS: return " Z";
+    }
+}
+
+static void update_button_label_with_axis()
+{
+    GtkButton *button = selected_tool_button();
+    if (button)
+    {
+        string label = "[" + tool_name() + axis_name() + "]";
+        gtk_button_set_label(button, label.c_str());
+    }
 }
 
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
@@ -515,16 +562,19 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
         case GDK_KEY_X:
         case GDK_KEY_x:
             selection.select_transform_axis(X_AXIS);
+            update_button_label_with_axis();
             break;
 
         case GDK_KEY_Y:
         case GDK_KEY_y:
             selection.select_transform_axis(Y_AXIS);
+            update_button_label_with_axis();
             break;
 
         case GDK_KEY_Z:
         case GDK_KEY_z:
             selection.select_transform_axis(Z_AXIS);
+            update_button_label_with_axis();
             break;
 
         default:
