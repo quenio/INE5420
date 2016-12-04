@@ -193,25 +193,29 @@ static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Obje
 static const int gtk_window__width = 600;
 static const int gtk_window__height = 480;
 
-static const gint pan_column__menu_bar = 7;
-static const gint pan_column__canvas = 7;
-static const gint pan_column__list_box = 2;
-static const gint pan_column__button = 1;
+static const gint pan_column__button = 8;
+static const gint pan_column__canvas = 8 * pan_column__button;
+static const gint pan_column__list_label = 2 * pan_column__button + 2;
+static const gint pan_column__list_box = pan_column__list_label;
+static const gint pan_column__menu_bar = pan_column__canvas + pan_column__list_label;
 
 static const gint pan_row__menu_bar = 1;
-static const gint pan_row__canvas = 20;
-static const gint pan_row__list_box = pan_row__canvas;
+static const gint pan_row__canvas = 18;
+static const gint pan_row__list_label = 1;
+static const gint pan_row__list_box = pan_row__canvas - 1;
 static const gint pan_row__button = 1;
 
 static const gint column__menu_bar = 0;
 static const gint column__tool_bar = column__menu_bar;
-static const gint column__list_box = column__menu_bar;
-static const gint column__canvas = column__list_box + pan_column__list_box;
+static const gint column__canvas = column__menu_bar;
+static const gint column__list_label = column__menu_bar + pan_column__canvas;
+static const gint column__list_box = column__list_label;
 
 static const gint row__menu_bar = 0;
-static const gint row__tool_bar = row__menu_bar + pan_row__menu_bar;
-static const gint row__list_box = row__tool_bar + pan_row__button;
-static const gint row__canvas = row__list_box;
+static const gint row__canvas = row__menu_bar + pan_row__menu_bar;
+static const gint row__list_label = row__canvas;
+static const gint row__list_box = row__list_label + pan_row__list_label;
+static const gint row__tool_bar = row__list_box + pan_row__list_box;
 
 static GtkWidget * new_gtk_window(const gchar *title)
 {
@@ -232,6 +236,9 @@ static GtkWidget * new_grid(GtkWidget *gtk_window)
     gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
     gtk_container_add(GTK_CONTAINER(gtk_window), grid);
+
+    GdkRGBA light_gray = { LIGHT_GRAY.red(), LIGHT_GRAY.green(), LIGHT_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(grid, GTK_STATE_FLAG_NORMAL, &light_gray);
 
     return grid;
 }
@@ -275,22 +282,27 @@ static GtkListBox * new_list_box(GtkWidget *grid, GtkWidget *canvas, UserSelecti
 }
 
 static GtkWidget * new_button(
-    GtkWidget *grid, GtkWidget *canvas, const gchar *label, bool enabled, GCallback callback, string tooltip)
+    GtkWidget *grid, GtkWidget *canvas, const gchar *label, bool enabled, GCallback callback, string tooltip,
+    bool separator, bool small)
 {
-    static gint button_count = 0;
+    static gint current_button_column_pan = 0;
 
     GtkWidget *button_with_label = gtk_button_new_with_label(label);
     gtk_widget_set_sensitive(GTK_WIDGET(button_with_label), enabled);
     gtk_widget_set_tooltip_text(GTK_WIDGET(button_with_label), tooltip.c_str());
     g_signal_connect(button_with_label, "clicked", G_CALLBACK(callback), canvas);
     gtk_grid_attach(GTK_GRID(grid), button_with_label,
-                    column__tool_bar + (button_count++), row__tool_bar,
-                    pan_column__button, pan_row__button);
+                    column__tool_bar + current_button_column_pan, row__tool_bar,
+                    pan_column__button - (small ? 3 : 0), pan_row__button);
+
+    current_button_column_pan += pan_column__button - (small ? 3 : 0);
+
+    if (separator) current_button_column_pan += 2;
 
     return button_with_label;
 }
 
-static GtkWidget* new_menu_item(const GtkWidget *menu, const gchar *label, GCallback callback, GtkWidget *canvas, GSList* gsList)
+static GtkWidget * new_menu_item(const GtkWidget *menu, const gchar *label, GCallback callback, GtkWidget *canvas, GSList* gsList)
 {
     GtkWidget *menu_item = gtk_radio_menu_item_new_with_label(gsList, label);
 
@@ -322,13 +334,32 @@ static void menu_bar_attach(GtkWidget* menu_bar, GtkWidget* canvas, string menu_
     gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), top_item);
 }
 
-static GtkWidget* new_menu_bar(GtkWidget *grid)
+static GtkWidget * new_menu_bar(GtkWidget *grid)
 {
     GtkWidget *menu_bar = gtk_menu_bar_new();
+
+    GdkRGBA lighter_gray = { LIGHTER_GRAY.red(), LIGHTER_GRAY.green(), LIGHTER_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(menu_bar, GTK_STATE_FLAG_NORMAL, &lighter_gray);
 
     gtk_grid_attach(GTK_GRID(grid), menu_bar,
                     column__menu_bar, row__menu_bar,
                     pan_column__menu_bar, pan_row__menu_bar);
 
     return menu_bar;
+}
+
+static GtkWidget * new_list_label(GtkWidget *grid, const gchar *label)
+{
+    GtkWidget *widget = gtk_label_new(label);
+
+    GdkRGBA light_gray = { LIGHT_GRAY.red(), LIGHT_GRAY.green(), LIGHT_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, &light_gray);
+
+    gtk_label_set_xalign(GTK_LABEL(widget), 0.0);
+
+    gtk_grid_attach(GTK_GRID(grid), widget,
+                    column__list_label, row__list_label,
+                    pan_column__list_label, pan_row__list_label);
+
+    return widget;
 }

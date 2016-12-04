@@ -25,6 +25,7 @@ const Color WHITE = Color(1, 1, 1);
 const Color RED = Color(1, 0, 0);
 const Color DARK_GRAY = Color(0.30, 0.30, 0.30);
 const Color LIGHT_GRAY = Color(0.75, 0.75, 0.75);
+const Color LIGHTER_GRAY = Color(0.85, 0.85, 0.85);
 const Color ORANGE = Color(1, 0.5, 0);
 const Color GREEN = Color(0, 1, 0);
 const Color BLUE = Color(0, 0, 1);

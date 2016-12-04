@@ -273,16 +273,45 @@ static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
-static void select_parallel(GtkWidget UNUSED *menu_item, gpointer canvas)
+static GtkWidget *button_orthogonal;
+static GtkWidget *button_perspective;
+
+static void update_projection_buttons()
 {
-    projection_method = ProjectionMethod::PARALLEL;
-    refresh_canvas(GTK_WIDGET(canvas), selection);
+    switch (projection_method)
+    {
+        case ORTHOGONAL:
+        {
+            gtk_button_set_label(GTK_BUTTON(button_orthogonal), "[Orthogonal]");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_orthogonal), false);
+            gtk_button_set_label(GTK_BUTTON(button_perspective), "Perspective");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_perspective), true);
+        }
+        break;
+
+        case PERSPECTIVE:
+        {
+            gtk_button_set_label(GTK_BUTTON(button_orthogonal), "Orthogonal");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_orthogonal), true);
+            gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective]");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_perspective), false);
+        }
+        break;
+    }
 }
 
-static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
+static void select_orthogonal(GtkWidget UNUSED *widget, gpointer canvas)
+{
+    projection_method = ProjectionMethod::ORTHOGONAL;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+    update_projection_buttons();
+}
+
+static void select_perspective(GtkWidget UNUSED *widget, gpointer canvas)
 {
     projection_method = ProjectionMethod::PERSPECTIVE;
     refresh_canvas(GTK_WIDGET(canvas), selection);
+    update_projection_buttons();
 }
 
 static void select_regular_surface_method(GtkWidget UNUSED *menu_item, gpointer canvas)
@@ -526,6 +555,17 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
         case GDK_KEY_Return:
             selection.select_tool(NONE);
             select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+            break;
+
+        case GDK_KEY_5:
+            if (projection_method == ORTHOGONAL)
+            {
+                select_perspective(nullptr, canvas);
+            }
+            else
+            {
+                select_orthogonal(nullptr, canvas);
+            }
             break;
 
         case GDK_KEY_A:
@@ -782,11 +822,6 @@ int main(int argc, char *argv[])
     clipping_items.push_back(make_pair("None", G_CALLBACK(select_none)));
     menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
 
-    list<pair<string, GCallback>> projection_items;
-    projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
-    projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
-    menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
-
     list<pair<string, GCallback>> surface_method_items;
     surface_method_items.push_back(make_pair("Forward-Difference", G_CALLBACK(select_fd_surface_method)));
     surface_method_items.push_back(make_pair("Regular", G_CALLBACK(select_regular_surface_method)));
@@ -810,36 +845,47 @@ int main(int argc, char *argv[])
 
 #endif
 
+    new_list_label(grid, "Object List:");
     list_box = new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 
-    new_button(
-        grid, canvas, "Zoom In", true, G_CALLBACK(zoom_in_clicked),
-        "Press to zoom into the world.");
-    new_button(
-        grid, canvas, "Zoom Out", true, G_CALLBACK(zoom_out_clicked),
-        "Press to zoom out of the world.");
-    new_button(
-        grid, canvas, " < ", true, G_CALLBACK(pan_left_clicked),
-        "Press to move the world's window to the left.");
-    new_button(
-        grid, canvas, " > ", true, G_CALLBACK(pan_right_clicked),
-        "Press to move the world's window to the right.");
-    new_button(
-        grid, canvas, "Up", true, G_CALLBACK(pan_up_clicked),
-        "Press to move up the world's window.");
-    new_button(
-        grid, canvas, "Down", true, G_CALLBACK(pan_down_clicked),
-        "Press to move down the world's window.");
+    button_orthogonal = new_button(
+        grid, canvas, "Orthogonal", true, G_CALLBACK(select_orthogonal),
+        "Switch to Orthogonal projection.", false, false);
+    button_perspective = new_button(
+        grid, canvas, "Perspective", true, G_CALLBACK(select_perspective),
+        "Switch to Perspective projection.", true, false);
 
     button_move = new_button(
         grid, canvas, "Grab", false, G_CALLBACK(tool_translate_clicked),
-        "Press and use arrow keys to move selected objects.");
+        "Press and use arrow keys to move selected objects.", false, false);
     button_scale = new_button(
         grid, canvas, "Scale", false, G_CALLBACK(tool_scale_clicked),
-        "Press and use arrow keys to shrink/enlarge selected objects.");
+        "Press and use arrow keys to shrink/enlarge selected objects.", false, false);
     button_rotate = new_button(
         grid, canvas, "Rotate", false, G_CALLBACK(tool_rotate_clicked),
-        "Press and use arrow keys to rotate selected objects. Use x, y, z keys to change rotation axis.");
+        "Press and use arrow keys to rotate selected objects. Use x, y, z keys to change rotation axis.", true, false);
+
+    new_button(
+        grid, canvas, "Zoom In", true, G_CALLBACK(zoom_in_clicked),
+        "Press to zoom into the world.", false, false);
+    new_button(
+        grid, canvas, "Zoom Out", true, G_CALLBACK(zoom_out_clicked),
+        "Press to zoom out of the world.", true, false);
+
+    new_button(
+        grid, canvas, " < ", true, G_CALLBACK(pan_left_clicked),
+        "Press to move the world's window to the left.", false, true);
+    new_button(
+        grid, canvas, " > ", true, G_CALLBACK(pan_right_clicked),
+        "Press to move the world's window to the right.", false, true);
+    new_button(
+        grid, canvas, "Up", true, G_CALLBACK(pan_up_clicked),
+        "Press to move up the world's window.", false, true);
+    new_button(
+        grid, canvas, "Down", true, G_CALLBACK(pan_down_clicked),
+        "Press to move down the world's window.", false, true);
+
+    update_projection_buttons();
 
     gtk_widget_show_all(gtk_window);
     gtk_main();

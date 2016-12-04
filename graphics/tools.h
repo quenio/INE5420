@@ -228,7 +228,7 @@ public:
 
 #ifdef WORLD_3D
         shared_ptr<ProjectionCanvas<Coord3D>> projection_canvas;
-        if (projection_method == ProjectionMethod::PARALLEL)
+        if (projection_method == ProjectionMethod::ORTHOGONAL)
         {
             projection_canvas = make_shared<ParallelProjection>(*this);
         }
