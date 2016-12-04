@@ -173,6 +173,7 @@ public:
     {
         const int radius = 2;
 
+        canvas.move(_center);
         canvas.set_color(ORANGE);
         canvas.draw_circle(_center, radius);
     }

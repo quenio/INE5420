@@ -593,7 +593,7 @@ static gboolean canvas_on_motion(GtkWidget *canvas, GdkEventMotion *event)
         {
             if (!equals(delta_x, 0) || !equals(delta_y, 0))
             {
-                selection.translate(delta_x, delta_y, 0);
+                selection.translate(delta_x, delta_y, delta_x);
                 refresh_canvas(GTK_WIDGET(canvas), selection);
             }
         }
