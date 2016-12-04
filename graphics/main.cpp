@@ -438,6 +438,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
         case GDK_KEY_A:
         case GDK_KEY_a:
             selection.toggle_full_selection();
+#ifndef _GRAPHICS_BUILD
             if (selection.not_empty())
             {
                 gtk_list_box_select_all(list_box);
@@ -447,6 +448,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
                 gtk_list_box_unselect_all(list_box);
             }
             break;
+#endif
 
         case GDK_KEY_G:
         case GDK_KEY_g:
