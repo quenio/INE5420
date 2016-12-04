@@ -201,7 +201,7 @@ static const gint pan_column__button = 1;
 static const gint pan_row__menu_bar = 1;
 static const gint pan_row__canvas = 20;
 static const gint pan_row__list_box = pan_row__canvas;
-static const gint pan_row__button = 2;
+static const gint pan_row__button = 1;
 
 static const gint column__menu_bar = 0;
 static const gint column__tool_bar = column__menu_bar;

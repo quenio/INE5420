@@ -379,6 +379,51 @@ static void select_square_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 #endif
 
 static GtkListBox *list_box;
+static GtkWidget *button_move;
+static GtkWidget *button_scale;
+static GtkWidget *button_rotate;
+
+static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_buttons)
+{
+    for (GtkWidget *button: tool_buttons)
+    {
+        if (button)
+        {
+            gtk_widget_set_sensitive(GTK_WIDGET(button), selection.not_empty());
+
+            const gchar *button_label = gtk_button_get_label(GTK_BUTTON(button));
+            if (button_label)
+            {
+                const string label(button_label);
+                if (label.find("[") == 0)
+                {
+                    gtk_button_set_label(GTK_BUTTON(button), label.substr(1, label.length()-2).c_str());
+                }
+            }
+        }
+    }
+}
+
+static void select_tool_translate()
+{
+    selection.select_tool(TRANSLATE);
+    gtk_button_set_label(GTK_BUTTON(button_move), "[Grab]");
+    gtk_widget_set_sensitive(GTK_WIDGET(button_move), false);
+}
+
+static void select_tool_scale()
+{
+    selection.select_tool(SCALE);
+    gtk_button_set_label(GTK_BUTTON(button_scale), "[Scale]");
+    gtk_widget_set_sensitive(GTK_WIDGET(button_scale), false);
+}
+
+static void select_tool_rotate()
+{
+    selection.select_tool(ROTATE);
+    gtk_button_set_label(GTK_BUTTON(button_rotate), "[Rotate]");
+    gtk_widget_set_sensitive(GTK_WIDGET(button_rotate), false);
+}
 
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
@@ -433,6 +478,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
     {
         case GDK_KEY_Return:
             selection.select_tool(NONE);
+            select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
             break;
 
         case GDK_KEY_A:
@@ -448,21 +494,22 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
                 gtk_list_box_unselect_all(list_box);
             }
 #endif
+            select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
             break;
 
         case GDK_KEY_G:
         case GDK_KEY_g:
-            selection.select_tool(TRANSLATE);
+            select_tool_translate();
             break;
 
         case GDK_KEY_S:
         case GDK_KEY_s:
-            selection.select_tool(SCALE);
+            select_tool_scale();
             break;
 
         case GDK_KEY_R:
         case GDK_KEY_r:
-            selection.select_tool(ROTATE);
+            select_tool_rotate();
             break;
 
         case GDK_KEY_X:
@@ -646,17 +693,6 @@ static gboolean canvas_on_motion(GtkWidget *canvas, GdkEventMotion *event)
     return true;
 }
 
-static GtkWidget * button_move;
-static GtkWidget * button_scale;
-static GtkWidget * button_rotate;
-
-static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_buttons)
-{
-    for (GtkWidget *button: tool_buttons)
-        if (button_move)
-            gtk_widget_set_sensitive(GTK_WIDGET(button), selection.not_empty());
-}
-
 static void select_object(UNUSED GtkListBox *lb, GtkListBoxRow *row, gpointer canvas)
 {
     printf("Object selection: started\n");
@@ -746,8 +782,8 @@ int main(int argc, char *argv[])
         "Press to move down the world's window.");
 
     button_move = new_button(
-        grid, canvas, "Translate", false, G_CALLBACK(tool_translate_clicked),
-        "Press and use arrow keys to translate selected objects.");
+        grid, canvas, "Grab", false, G_CALLBACK(tool_translate_clicked),
+        "Press and use arrow keys to move selected objects.");
     button_scale = new_button(
         grid, canvas, "Scale", false, G_CALLBACK(tool_scale_clicked),
         "Press and use arrow keys to shrink/enlarge selected objects.");
