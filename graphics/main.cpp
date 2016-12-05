@@ -41,6 +41,8 @@ static World<Coord3D> world(
     DisplayFile<Coord3D>({})
 );
 
+static GtkListBox *list_box;
+
 static void update_world(SelectedWorld selected)
 {
     switch (selected)
@@ -196,6 +198,8 @@ static void update_world(SelectedWorld selected)
             );
         }
     }
+
+    add_objects_to_list_box(list_box, world.objects());
 }
 #endif
 
@@ -237,25 +241,21 @@ static void pan_down_clicked(GtkWidget UNUSED *widget, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
-enum Tool { TRANSLATE, SCALE, ROTATE };
-
-static Tool selected_tool = TRANSLATE;
-
 static void tool_translate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    selected_tool = TRANSLATE;
+    selection.select_tool(TRANSLATE);
     gtk_widget_grab_focus(GTK_WIDGET(canvas));
 }
 
 static void tool_scale_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    selected_tool = SCALE;
+    selection.select_tool(SCALE);
     gtk_widget_grab_focus(GTK_WIDGET(canvas));
 }
 
 static void tool_rotate_clicked(GtkWidget UNUSED *widget, gpointer canvas)
 {
-    selected_tool = ROTATE;
+    selection.select_tool(ROTATE);
     gtk_widget_grab_focus(GTK_WIDGET(canvas));
 }
 
@@ -277,16 +277,45 @@ static void select_none(GtkWidget UNUSED *menu_item, gpointer canvas)
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
 
-static void select_parallel(GtkWidget UNUSED *menu_item, gpointer canvas)
+static GtkWidget *button_orthogonal;
+static GtkWidget *button_perspective;
+
+static void update_projection_buttons()
 {
-    projection_method = ProjectionMethod::PARALLEL;
-    refresh_canvas(GTK_WIDGET(canvas), selection);
+    switch (projection_method)
+    {
+        case ORTHOGONAL:
+        {
+            gtk_button_set_label(GTK_BUTTON(button_orthogonal), "[Orthogonal]");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_orthogonal), false);
+            gtk_button_set_label(GTK_BUTTON(button_perspective), "Perspective");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_perspective), true);
+        }
+        break;
+
+        case PERSPECTIVE:
+        {
+            gtk_button_set_label(GTK_BUTTON(button_orthogonal), "Orthogonal");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_orthogonal), true);
+            gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective]");
+            gtk_widget_set_sensitive(GTK_WIDGET(button_perspective), false);
+        }
+        break;
+    }
 }
 
-static void select_perspective(GtkWidget UNUSED *menu_item, gpointer canvas)
+static void select_orthogonal(GtkWidget UNUSED *widget, gpointer canvas)
+{
+    projection_method = ProjectionMethod::ORTHOGONAL;
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+    update_projection_buttons();
+}
+
+static void select_perspective(GtkWidget UNUSED *widget, gpointer canvas)
 {
     projection_method = ProjectionMethod::PERSPECTIVE;
     refresh_canvas(GTK_WIDGET(canvas), selection);
+    update_projection_buttons();
 }
 
 static void select_regular_surface_method(GtkWidget UNUSED *menu_item, gpointer canvas)
@@ -382,80 +411,109 @@ static void select_square_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 
 #endif
 
+static GtkWidget *button_move;
+static GtkWidget *button_scale;
+static GtkWidget *button_rotate;
+
+static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_buttons)
+{
+    for (GtkWidget *button: tool_buttons)
+    {
+        if (button)
+        {
+            gtk_widget_set_sensitive(GTK_WIDGET(button), selection.not_empty());
+
+            const gchar *button_label = gtk_button_get_label(GTK_BUTTON(button));
+            if (button_label)
+            {
+                const string label(button_label);
+                if (label.find("[") == 0)
+                {
+                    const size_t suffix_size = (selection.transform_axis() == ALL_AXIS ? 2 : 4);
+                    gtk_button_set_label(GTK_BUTTON(button), label.substr(1, label.length() - suffix_size).c_str());
+                }
+            }
+        }
+    }
+}
+
+static void select_tool_translate()
+{
+    selection.select_tool(TRANSLATE);
+    gtk_button_set_label(GTK_BUTTON(button_move), "[Grab]");
+    gtk_widget_set_sensitive(GTK_WIDGET(button_move), false);
+    select_or_hide_tool_buttons({ button_scale, button_rotate });
+}
+
+static void select_tool_scale()
+{
+    selection.select_tool(SCALE);
+    gtk_button_set_label(GTK_BUTTON(button_scale), "[Scale]");
+    gtk_widget_set_sensitive(GTK_WIDGET(button_scale), false);
+    select_or_hide_tool_buttons({ button_move, button_rotate });
+}
+
+static void select_tool_rotate()
+{
+    selection.select_tool(ROTATE);
+    gtk_button_set_label(GTK_BUTTON(button_rotate), "[Rotate]");
+    gtk_widget_set_sensitive(GTK_WIDGET(button_rotate), false);
+    select_or_hide_tool_buttons({ button_move, button_scale });
+}
+
+static GtkButton * selected_tool_button()
+{
+    switch (selection.tool())
+    {
+        case NONE: return nullptr;
+        case TRANSLATE: return GTK_BUTTON(button_move);
+        case SCALE: return GTK_BUTTON(button_scale);
+        case ROTATE: return GTK_BUTTON(button_rotate);
+    }
+}
+
+static string tool_name()
+{
+    switch (selection.tool())
+    {
+        case NONE: return "";
+        case TRANSLATE: return "Grab";
+        case SCALE: return "Scale";
+        case ROTATE: return "Rotate";
+    }
+}
+
+static string axis_name()
+{
+    switch (selection.transform_axis())
+    {
+        case ALL_AXIS: return "";
+        case X_AXIS: return " X";
+        case Y_AXIS: return " Y";
+        case Z_AXIS: return " Z";
+    }
+}
+
+static void update_button_label_with_axis()
+{
+    GtkButton *button = selected_tool_button();
+    if (button)
+    {
+        string label = "[" + tool_name() + axis_name() + "]";
+        gtk_button_set_label(button, label.c_str());
+    }
+}
+
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
-    switch (selected_tool)
+    switch (selection.tool())
     {
+        case NONE:
+            printf("no-op\n");
+            break;
+
         case TRANSLATE:
-            switch (event->keyval)
-            {
-                case GDK_KEY_Left:
-#ifdef WORLD_2D
-                    selection.translate(Coord2D(-1, 0));
-#endif
-#ifdef WORLD_3D
-                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
-                    {
-                        selection.translate(Coord3D(0, 0, -1));
-                    }
-                    else
-                    {
-                        selection.translate(Coord3D(-1, 0, 0));
-                    }
-#endif
-                    break;
-
-                case GDK_KEY_Right:
-#ifdef WORLD_2D
-                    selection.translate(Coord2D(+1, 0));
-#endif
-#ifdef WORLD_3D
-                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
-                    {
-                        selection.translate(Coord3D(0, 0, +1));
-                    }
-                    else
-                    {
-                        selection.translate(Coord3D(+1, 0, 0));
-                    }
-#endif
-                    break;
-
-                case GDK_KEY_Down:
-#ifdef WORLD_2D
-                    selection.translate(Coord2D(0, -1));
-#endif
-#ifdef WORLD_3D
-                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
-                    {
-                        selection.translate(Coord3D(0, 0, -1));
-                    }
-                    else
-                    {
-                        selection.translate(Coord3D(0, -1, 0));
-                    }
-#endif
-                    break;
-
-                case GDK_KEY_Up:
-#ifdef WORLD_2D
-                    selection.translate(Coord2D(0, +1));
-#endif
-#ifdef WORLD_3D
-                    if (event->state & GDK_SHIFT_MASK && projection_method == PERSPECTIVE)
-                    {
-                        selection.translate(Coord3D(0, 0, +1));
-                    }
-                    else
-                    {
-                        selection.translate(Coord3D(0, +1, 0));
-                    }
-#endif
-                    break;
-
-                default:
-                    break;
-            }
+            printf("no-op\n");
             break;
 
         case SCALE:
@@ -497,19 +555,69 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
 
     switch (event->keyval)
     {
+        case GDK_KEY_Return:
+            selection.select_tool(NONE);
+            select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+            break;
+
+        case GDK_KEY_5:
+            if (projection_method == ORTHOGONAL)
+            {
+                select_perspective(nullptr, canvas);
+            }
+            else
+            {
+                select_orthogonal(nullptr, canvas);
+            }
+            break;
+
+        case GDK_KEY_A:
+        case GDK_KEY_a:
+            selection.toggle_full_selection();
+#ifndef _GRAPHICS_BUILD
+            if (selection.not_empty())
+            {
+                gtk_list_box_select_all(list_box);
+            }
+            else
+            {
+                gtk_list_box_unselect_all(list_box);
+            }
+#endif
+            select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+            break;
+
+        case GDK_KEY_G:
+        case GDK_KEY_g:
+            select_tool_translate();
+            break;
+
+        case GDK_KEY_S:
+        case GDK_KEY_s:
+            select_tool_scale();
+            break;
+
+        case GDK_KEY_R:
+        case GDK_KEY_r:
+            select_tool_rotate();
+            break;
+
         case GDK_KEY_X:
         case GDK_KEY_x:
-            selection.select_rotation_axis(X_AXIS);
+            selection.select_transform_axis(X_AXIS);
+            update_button_label_with_axis();
             break;
 
         case GDK_KEY_Y:
         case GDK_KEY_y:
-            selection.select_rotation_axis(Y_AXIS);
+            selection.select_transform_axis(Y_AXIS);
+            update_button_label_with_axis();
             break;
 
         case GDK_KEY_Z:
         case GDK_KEY_z:
-            selection.select_rotation_axis(Z_AXIS);
+            selection.select_transform_axis(Z_AXIS);
+            update_button_label_with_axis();
             break;
 
         default:
@@ -521,18 +629,164 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
     return true;
 }
 
-static GtkWidget * button_move;
-static GtkWidget * button_scale;
-static GtkWidget * button_rotate;
-
-static void select_or_hide_tool_buttons(initializer_list<GtkWidget *> tool_buttons)
+static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
 {
-    for (GtkWidget *button: tool_buttons)
-        if (button_move)
-            gtk_widget_set_sensitive(GTK_WIDGET(button), selection.not_empty());
+    if (selection.tool() != NONE) return true;
+
+    switch(event->direction)
+    {
+        case GDK_SCROLL_UP:
+        {
+            if (event->state & GDK_SHIFT_MASK)
+            {
+                world.window()->pan_up(step);
+            }
+            else if (event->state & GDK_CONTROL_MASK)
+            {
+                world.window()->zoom_out(step);
+            }
+            else
+            {
+//                world.window()->rotate_x(-10, world.window()->center());
+            }
+        }
+        break;
+
+        case GDK_SCROLL_DOWN:
+        {
+            if (event->state & GDK_SHIFT_MASK)
+            {
+                world.window()->pan_down(step);
+            }
+            else if (event->state & GDK_CONTROL_MASK)
+            {
+                world.window()->zoom_in(step);
+            }
+            else
+            {
+//                world.window()->rotate_x(+10, world.window()->center());
+            }
+        }
+        break;
+
+        case GDK_SCROLL_LEFT:
+        {
+            if (event->state & GDK_SHIFT_MASK)
+            {
+                world.window()->pan_left(step);
+            }
+            else if (event->state & GDK_CONTROL_MASK)
+            {
+                world.window()->zoom_in(step);
+            }
+            else
+            {
+//                world.window()->rotate_y(-10, world.window()->center());
+            }
+        }
+        break;
+
+        case GDK_SCROLL_RIGHT:
+        {
+            if (event->state & GDK_SHIFT_MASK)
+            {
+                world.window()->pan_right(step);
+            }
+            else if (event->state & GDK_CONTROL_MASK)
+            {
+                world.window()->zoom_out(step);
+            }
+            else
+            {
+//                world.window()->rotate_y(+10, world.window()->center());
+            }
+        }
+        break;
+
+        case GDK_SCROLL_SMOOTH:
+            printf("WARNING: Unexpected scroll event: %d", event->direction);
+    }
+
+    refresh_canvas(GTK_WIDGET(canvas), selection);
+
+    return true;
 }
 
-static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpointer canvas)
+static gboolean canvas_on_motion(GtkWidget *canvas, GdkEventMotion *event)
+{
+    const Coord2D location = selection.window()->window_to_world(
+        selection.window()->from_viewport(
+            { event->x, event->y },
+            gtk_widget_get_allocated_height(canvas)));
+    static Coord2D previous_location = location;
+
+    const double delta_x = location.x() - previous_location.x();
+    const double delta_y = location.y() - previous_location.y();
+    const double distance_to_center = distance(location, selection.center());
+    const double distance_to_previous = distance(location, previous_location);
+    const double factor = distance_to_previous / distance_to_center;
+
+    printf("dx = %f; dy = %f\n", delta_x, delta_y);
+    printf("factor = %f\n", factor);
+
+    switch (selection.tool())
+    {
+        case TRANSLATE:
+        {
+            if (!equals(delta_x, 0) || !equals(delta_y, 0))
+            {
+                selection.translate(delta_x, delta_y, delta_x);
+                refresh_canvas(GTK_WIDGET(canvas), selection);
+            }
+        }
+        break;
+
+        case SCALE:
+        {
+            if (distance_to_center > distance(previous_location, selection.center()))
+            {
+                selection.scale(1.0 + factor);
+            }
+            else
+            {
+                selection.scale(1.0 - factor);
+            }
+
+            refresh_canvas(GTK_WIDGET(canvas), selection);
+        }
+        break;
+
+        case ROTATE:
+        {
+            const double ang_location = angular_coefficient(location, selection.center(), 1, 0);
+            const double ang_previous = angular_coefficient(previous_location, selection.center(), 1, 0);
+
+            if (ang_location > ang_previous)
+            {
+                selection.rotate(-(180 * factor));
+            }
+            else
+            {
+                selection.rotate(+(180 * factor));
+            }
+
+            refresh_canvas(GTK_WIDGET(canvas), selection);
+        }
+        break;
+
+        case NONE:
+        {
+            printf("no-op\n");
+        }
+        break;
+    }
+
+    previous_location = location;
+
+    return true;
+}
+
+static void select_object(UNUSED GtkListBox *lb, GtkListBoxRow *row, gpointer canvas)
 {
     printf("Object selection: started\n");
     const clock_t start = clock();
@@ -543,6 +797,7 @@ static void select_object(UNUSED GtkListBox *list_box, GtkListBoxRow *row, gpoin
     }
     refresh_canvas(GTK_WIDGET(canvas), selection);
     select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+    gtk_widget_grab_focus(GTK_WIDGET(canvas));
 
     const double time = elapsed_secs(start);
     printf("Object selection: finished (t = %9.6lf)\n", time);
@@ -559,25 +814,10 @@ int main(int argc, char *argv[])
     GtkWidget *gtk_window = new_gtk_window("Graphics");
     GtkWidget *grid = new_grid(gtk_window);
 
-    GtkWidget *canvas = new_canvas(grid, selection, G_CALLBACK(canvas_on_key_press));
+    GtkWidget *canvas = new_canvas(
+        grid, selection, G_CALLBACK(canvas_on_key_press), G_CALLBACK(canvas_on_scroll), G_CALLBACK(canvas_on_motion));
 
     GtkWidget *menu_bar = new_menu_bar(grid);
-
-    list<pair<string, GCallback>> clipping_items;
-    clipping_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
-    clipping_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
-    clipping_items.push_back(make_pair("None", G_CALLBACK(select_none)));
-    menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
-
-    list<pair<string, GCallback>> projection_items;
-    projection_items.push_back(make_pair("Perspective", G_CALLBACK(select_perspective)));
-    projection_items.push_back(make_pair("Parallel", G_CALLBACK(select_parallel)));
-    menu_bar_attach(menu_bar, canvas, "Projection", projection_items);
-
-    list<pair<string, GCallback>> surface_method_items;
-    surface_method_items.push_back(make_pair("Forward-Difference", G_CALLBACK(select_fd_surface_method)));
-    surface_method_items.push_back(make_pair("Regular", G_CALLBACK(select_regular_surface_method)));
-    menu_bar_attach(menu_bar, canvas, "Surface", surface_method_items);
 
 #ifdef WORLD_3D
 
@@ -595,38 +835,60 @@ int main(int argc, char *argv[])
     world_items.push_back(make_pair("Square", G_CALLBACK(select_square_world)));
     menu_bar_attach(menu_bar, canvas, "World", world_items);
 
+    list<pair<string, GCallback>> surface_method_items;
+    surface_method_items.push_back(make_pair("Forward-Difference", G_CALLBACK(select_fd_surface_method)));
+    surface_method_items.push_back(make_pair("Regular", G_CALLBACK(select_regular_surface_method)));
+    menu_bar_attach(menu_bar, canvas, "Surface", surface_method_items);
+
 #endif
 
-    new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
+    list<pair<string, GCallback>> clipping_items;
+    clipping_items.push_back(make_pair("Cohen-Sutherland", G_CALLBACK(select_cs)));
+    clipping_items.push_back(make_pair("Liang-Barsky", G_CALLBACK(select_lb)));
+    clipping_items.push_back(make_pair("None", G_CALLBACK(select_none)));
+    menu_bar_attach(menu_bar, canvas, "Clipping", clipping_items);
+
+    new_list_label(grid, "Object List:");
+    list_box = new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
+
+    button_orthogonal = new_button(
+        grid, canvas, "Orthogonal", true, G_CALLBACK(select_orthogonal),
+        "Switch to Orthogonal projection.", false, false);
+    button_perspective = new_button(
+        grid, canvas, "Perspective", true, G_CALLBACK(select_perspective),
+        "Switch to Perspective projection.", true, false);
+
+    button_move = new_button(
+        grid, canvas, "Grab", false, G_CALLBACK(tool_translate_clicked),
+        "Press and use arrow keys to move selected objects.", false, false);
+    button_scale = new_button(
+        grid, canvas, "Scale", false, G_CALLBACK(tool_scale_clicked),
+        "Press and use arrow keys to shrink/enlarge selected objects.", false, false);
+    button_rotate = new_button(
+        grid, canvas, "Rotate", false, G_CALLBACK(tool_rotate_clicked),
+        "Press and use arrow keys to rotate selected objects. Use x, y, z keys to change rotation axis.", true, false);
 
     new_button(
         grid, canvas, "Zoom In", true, G_CALLBACK(zoom_in_clicked),
-        "Press to zoom into the world.");
+        "Press to zoom into the world.", false, false);
     new_button(
         grid, canvas, "Zoom Out", true, G_CALLBACK(zoom_out_clicked),
-        "Press to zoom out of the world.");
+        "Press to zoom out of the world.", true, false);
+
     new_button(
         grid, canvas, " < ", true, G_CALLBACK(pan_left_clicked),
-        "Press to move the world's window to the left.");
+        "Press to move the world's window to the left.", false, true);
     new_button(
         grid, canvas, " > ", true, G_CALLBACK(pan_right_clicked),
-        "Press to move the world's window to the right.");
+        "Press to move the world's window to the right.", false, true);
     new_button(
         grid, canvas, "Up", true, G_CALLBACK(pan_up_clicked),
-        "Press to move up the world's window.");
+        "Press to move up the world's window.", false, true);
     new_button(
         grid, canvas, "Down", true, G_CALLBACK(pan_down_clicked),
-        "Press to move down the world's window.");
+        "Press to move down the world's window.", false, true);
 
-    button_move = new_button(
-        grid, canvas, "Translate", false, G_CALLBACK(tool_translate_clicked),
-        "Press and use arrow keys to translate selected objects.");
-    button_scale = new_button(
-        grid, canvas, "Scale", false, G_CALLBACK(tool_scale_clicked),
-        "Press and use arrow keys to shrink/enlarge selected objects.");
-    button_rotate = new_button(
-        grid, canvas, "Rotate", false, G_CALLBACK(tool_rotate_clicked),
-        "Press and use arrow keys to rotate selected objects. Use x, y, z keys to change rotation axis.");
+    update_projection_buttons();
 
     gtk_widget_show_all(gtk_window);
     gtk_main();

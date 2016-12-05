@@ -281,6 +281,24 @@ inline TMatrix scaling(double factor, TVector center)
     return inverse_translation(center) * scaling(factor, factor, factor) * translation(center);
 }
 
+// Scaling matrix by sx from center.
+inline TMatrix scaling_x(double sx, TVector center)
+{
+    return inverse_translation(center) * scaling(sx, 1, 1) * translation(center);
+}
+
+// Scaling matrix by sy from center.
+inline TMatrix scaling_y(double sy, TVector center)
+{
+    return inverse_translation(center) * scaling(1, sy, 1) * translation(center);
+}
+
+// Scaling matrix by sz from center.
+inline TMatrix scaling_z(double sz, TVector center)
+{
+    return inverse_translation(center) * scaling(1, 1, sz) * translation(center);
+}
+
 constexpr double PI = 3.14159265;
 
 // Rotation matrix on x axis: rotate by degrees; clockwise if angle positive; counter-clockwise if negative.
@@ -480,6 +498,24 @@ public:
     virtual void scale(double factor, Coord center)
     {
         transform(::scaling(factor, center));
+    }
+
+    // Scale x by sx from center.
+    virtual void scale_x(double sx, Coord center)
+    {
+        transform(::scaling_x(sx, center));
+    }
+
+    // Scale y by sy from center.
+    virtual void scale_y(double sy, Coord center)
+    {
+        transform(::scaling_y(sy, center));
+    }
+
+    // Scale z by sz from center.
+    virtual void scale_z(double sz, Coord center)
+    {
+        transform(::scaling(sz, center));
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.

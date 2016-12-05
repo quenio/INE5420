@@ -157,16 +157,16 @@ public:
         return to_viewport(from_world(coord));
     }
 
-    // Zoom out by factor
-    void zoom_out(double factor)
-    {
-        scale(1.0 + factor, center());
-    }
-
     // Zoom in by factor
     void zoom_in(double factor)
     {
         scale(1.0 - factor, center());
+    }
+
+    // Zoom out by factor
+    void zoom_out(double factor)
+    {
+        scale(1.0 + factor, center());
     }
 
     // Pan left by factor
@@ -456,9 +456,9 @@ private:
 };
 
 // Projections
-enum ProjectionMethod { PARALLEL, PERSPECTIVE };
+enum ProjectionMethod { ORTHOGONAL, PERSPECTIVE };
 
-static ProjectionMethod projection_method = PERSPECTIVE;
+static ProjectionMethod projection_method = ORTHOGONAL;
 
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>

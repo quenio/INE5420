@@ -21,7 +21,12 @@ private:
 };
 
 const Color BLACK = Color(0, 0, 0);
+const Color WHITE = Color(1, 1, 1);
 const Color RED = Color(1, 0, 0);
+const Color DARK_GRAY = Color(0.30, 0.30, 0.30);
+const Color LIGHT_GRAY = Color(0.75, 0.75, 0.75);
+const Color LIGHTER_GRAY = Color(0.85, 0.85, 0.85);
+const Color ORANGE = Color(1, 0.5, 0);
 const Color GREEN = Color(0, 1, 0);
 const Color BLUE = Color(0, 0, 1);
 const Color CONTROL = Color(1, 0, 1);
@@ -206,6 +211,27 @@ public:
     {
         for (auto s: _objects)
             s->scale(factor, center);
+    }
+
+    // Scale x by sx from center.
+    void scale_x(double sx, Coord center) override
+    {
+        for (auto s: _objects)
+            s->scale_x(sx, center);
+    }
+
+    // Scale y by sy from center.
+    void scale_y(double sy, Coord center) override
+    {
+        for (auto s: _objects)
+            s->scale_y(sy, center);
+    }
+
+    // Scale z by sz from center.
+    void scale_z(double sz, Coord center) override
+    {
+        for (auto s: _objects)
+            s->scale_z(sz, center);
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.

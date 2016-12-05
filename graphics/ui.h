@@ -41,10 +41,22 @@ public:
     }
 
     // Paint the whole canvas with the white color.
-    void clear(const Color &color)
+    void clear(double width, double height)
     {
-        cairo_set_source_rgb(cr, color.red(), color.green(), color.blue());
+        const Color border_color = LIGHT_GRAY;
+        cairo_set_source_rgb(cr, border_color.red(), border_color.green(), border_color.blue());
         cairo_paint(cr);
+
+        const Color background_color = DARK_GRAY;
+        cairo_set_source_rgb(cr, background_color.red(), background_color.green(), background_color.blue());
+
+        const double margin = width * Viewport::margin_percentage;
+        cairo_rectangle(
+            cr,
+            margin, margin,
+            width - 2 * margin, height - 2 * margin);
+        cairo_stroke_preserve(cr);
+        cairo_fill(cr);
     }
 
     // Move to destination.
@@ -105,7 +117,7 @@ static gboolean refresh_surface(GtkWidget *widget, GdkEventConfigure UNUSED *eve
                                                 widget_width, widget_height);
 
     SurfaceCanvas canvas(surface);
-    canvas.clear(Color(1, 1, 1));
+    canvas.clear(widget_width, widget_height);
 
     UserSelection &selection = *(UserSelection*)data;
     UserViewport viewport(widget_width, widget_height, selection.window(), canvas);
@@ -121,39 +133,48 @@ static void refresh_canvas(GtkWidget *canvas, UserSelection &selection)
     refresh_surface(GTK_WIDGET(canvas), nullptr, &selection);
 }
 
-constexpr double PADDING = 5;
-
 static gboolean draw_canvas(GtkWidget *widget, cairo_t *cr, gpointer UNUSED data)
 {
     cairo_set_source_surface(cr, surface, 0, 0);
     cairo_paint(cr);
 
     if (gtk_widget_has_focus(widget))
+    {
+        const int widget_width = gtk_widget_get_allocated_width(widget);
+        const int widget_height = gtk_widget_get_allocated_height(widget);
+        const double padding = Viewport::margin_percentage * widget_width - 10;
         gtk_render_focus(
             gtk_widget_get_style_context(widget),
             cr,
-            PADDING, PADDING,
-            gtk_widget_get_allocated_width(widget) - 2 * PADDING,
-            gtk_widget_get_allocated_height(widget) - 2 * PADDING);
+            padding, padding,
+            widget_width - 2 * padding,
+            widget_height - 2 * padding);
+    }
 
     return false;
 }
 
 static gboolean canvas_button_press_event(GtkWidget *canvas, GdkEventButton *event, gpointer data)
 {
-    if (event->button == 1) {
-        gtk_widget_grab_focus(canvas);
+    gtk_widget_grab_focus(canvas);
 
+    UserSelection &selection = *(UserSelection*)data;
+
+    if ((event->button == 1) && (selection.tool() == ROTATE))
+    {
         const VC new_center = { event->x, event->y };
         const int widget_width = gtk_widget_get_allocated_width(canvas);
         const int widget_height = gtk_widget_get_allocated_height(canvas);
         const Viewport viewport(widget_width, widget_height);
 
-        UserSelection &selection = *(UserSelection*)data;
         selection.set_center_from_viewport(new_center, viewport.height());
-
-        refresh_canvas(canvas, selection);
     }
+    else
+    {
+        selection.select_tool(NONE);
+    }
+
+    refresh_canvas(canvas, selection);
 
     return true;
 }
@@ -162,35 +183,46 @@ static const double step = 0.1; // 10 percent
 
 template<class Coord>
 static void add_objects_to_list_box(GtkListBox *list_box, vector<shared_ptr<Object<Coord>>> objects) {
+    GList *children, *iter;
+    children = gtk_container_get_children(GTK_CONTAINER(list_box));
+    for(iter = children; iter != NULL; iter = g_list_next(iter))
+        gtk_widget_destroy(GTK_WIDGET(iter->data));
+    g_list_free(children);
+
     for (auto &object: objects) {
         GtkWidget *label = gtk_label_new(object->name().c_str());
 
         gtk_container_add(GTK_CONTAINER(list_box), label);
+        gtk_widget_show(label);
     }
 }
 
 static const int gtk_window__width = 600;
 static const int gtk_window__height = 480;
 
-static const gint pan_column__menu_bar = 7;
-static const gint pan_column__canvas = 7;
-static const gint pan_column__list_box = 2;
-static const gint pan_column__button = 1;
+static const gint pan_column__button = 8;
+static const gint pan_column__canvas = 8 * pan_column__button;
+static const gint pan_column__list_label = 2 * pan_column__button + 2;
+static const gint pan_column__list_box = pan_column__list_label - 1;
+static const gint pan_column__menu_bar = pan_column__canvas + pan_column__list_label;
 
 static const gint pan_row__menu_bar = 1;
-static const gint pan_row__canvas = 20;
-static const gint pan_row__list_box = pan_row__canvas;
-static const gint pan_row__button = 2;
+static const gint pan_row__canvas = 18;
+static const gint pan_row__list_label = 1;
+static const gint pan_row__list_box = pan_row__canvas - 1;
+static const gint pan_row__button = 1;
 
 static const gint column__menu_bar = 0;
 static const gint column__tool_bar = column__menu_bar;
-static const gint column__list_box = column__menu_bar;
-static const gint column__canvas = column__list_box + pan_column__list_box;
+static const gint column__canvas = column__menu_bar;
+static const gint column__list_label = column__menu_bar + pan_column__canvas;
+static const gint column__list_box = column__list_label;
 
 static const gint row__menu_bar = 0;
-static const gint row__tool_bar = row__menu_bar + pan_row__menu_bar;
-static const gint row__list_box = row__tool_bar + pan_row__button;
-static const gint row__canvas = row__list_box;
+static const gint row__canvas = row__menu_bar + pan_row__menu_bar;
+static const gint row__list_label = row__canvas;
+static const gint row__list_box = row__list_label + pan_row__list_label;
+static const gint row__tool_bar = row__list_box + pan_row__list_box;
 
 static GtkWidget * new_gtk_window(const gchar *title)
 {
@@ -212,10 +244,14 @@ static GtkWidget * new_grid(GtkWidget *gtk_window)
     gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
     gtk_container_add(GTK_CONTAINER(gtk_window), grid);
 
+    GdkRGBA light_gray = { LIGHT_GRAY.red(), LIGHT_GRAY.green(), LIGHT_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(grid, GTK_STATE_FLAG_NORMAL, &light_gray);
+
     return grid;
 }
 
-static GtkWidget * new_canvas(GtkWidget *grid, UserSelection &selection, GCallback on_key_press)
+static GtkWidget * new_canvas(
+    GtkWidget *grid, UserSelection &selection, GCallback on_key_press, GCallback on_scroll, GCallback on_motion)
 {
     GtkWidget *canvas = gtk_drawing_area_new();
 
@@ -226,41 +262,54 @@ static GtkWidget * new_canvas(GtkWidget *grid, UserSelection &selection, GCallba
     g_signal_connect(canvas, "draw", G_CALLBACK(draw_canvas), nullptr);
     g_signal_connect(canvas, "button-press-event", G_CALLBACK(canvas_button_press_event), &selection);
     g_signal_connect(canvas, "key-press-event", on_key_press, nullptr);
+    g_signal_connect(canvas, "scroll-event", G_CALLBACK(on_scroll), nullptr);
+    g_signal_connect(canvas, "motion-notify-event", G_CALLBACK(on_motion), nullptr);
 
-    gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK);
+    gtk_widget_set_events(canvas, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_SCROLL_MASK);
     gtk_widget_set_can_focus(canvas, true);
 
     return canvas;
 }
 
-static void new_list_box(GtkWidget *grid, GtkWidget *canvas, UserSelection &selection, GCallback select_object)
+static GtkListBox * new_list_box(GtkWidget *grid, GtkWidget *canvas, UserSelection &selection, GCallback select_object)
 {
-    GtkWidget *list_box = gtk_list_box_new();
-    add_objects_to_list_box(GTK_LIST_BOX(list_box), selection.world().objects());
-    gtk_grid_attach(GTK_GRID(grid), list_box,
+    GtkListBox *list_box = GTK_LIST_BOX(gtk_list_box_new());
+    GdkRGBA light_gray = { LIGHT_GRAY.red(), LIGHT_GRAY.green(), LIGHT_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(GTK_WIDGET(list_box), GTK_STATE_FLAG_NORMAL, &light_gray);
+    add_objects_to_list_box(list_box, selection.world().objects());
+    gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(list_box),
                     column__list_box, row__list_box,
                     pan_column__list_box, pan_row__list_box);
 
-    g_signal_connect(GTK_LIST_BOX(list_box), "row-selected", select_object, canvas);
+    g_signal_connect(list_box, "row-selected", select_object, canvas);
+
+    gtk_list_box_set_selection_mode(list_box, GTK_SELECTION_MULTIPLE);
+
+    return list_box;
 }
 
 static GtkWidget * new_button(
-    GtkWidget *grid, GtkWidget *canvas, const gchar *label, bool enabled, GCallback callback, string tooltip)
+    GtkWidget *grid, GtkWidget *canvas, const gchar *label, bool enabled, GCallback callback, string tooltip,
+    bool separator, bool small)
 {
-    static gint button_count = 0;
+    static gint current_button_column_pan = 0;
 
     GtkWidget *button_with_label = gtk_button_new_with_label(label);
     gtk_widget_set_sensitive(GTK_WIDGET(button_with_label), enabled);
     gtk_widget_set_tooltip_text(GTK_WIDGET(button_with_label), tooltip.c_str());
     g_signal_connect(button_with_label, "clicked", G_CALLBACK(callback), canvas);
     gtk_grid_attach(GTK_GRID(grid), button_with_label,
-                    column__tool_bar + (button_count++), row__tool_bar,
-                    pan_column__button, pan_row__button);
+                    column__tool_bar + current_button_column_pan, row__tool_bar,
+                    pan_column__button - (small ? 3 : 0), pan_row__button);
+
+    current_button_column_pan += pan_column__button - (small ? 3 : 0);
+
+    if (separator) current_button_column_pan += 2;
 
     return button_with_label;
 }
 
-static GtkWidget* new_menu_item(const GtkWidget *menu, const gchar *label, GCallback callback, GtkWidget *canvas, GSList* gsList)
+static GtkWidget * new_menu_item(const GtkWidget *menu, const gchar *label, GCallback callback, GtkWidget *canvas, GSList* gsList)
 {
     GtkWidget *menu_item = gtk_radio_menu_item_new_with_label(gsList, label);
 
@@ -292,13 +341,34 @@ static void menu_bar_attach(GtkWidget* menu_bar, GtkWidget* canvas, string menu_
     gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), top_item);
 }
 
-static GtkWidget* new_menu_bar(GtkWidget *grid)
+static GtkWidget * new_menu_bar(GtkWidget *grid)
 {
     GtkWidget *menu_bar = gtk_menu_bar_new();
+
+    GdkRGBA lighter_gray = { LIGHTER_GRAY.red(), LIGHTER_GRAY.green(), LIGHTER_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(menu_bar, GTK_STATE_FLAG_NORMAL, &lighter_gray);
 
     gtk_grid_attach(GTK_GRID(grid), menu_bar,
                     column__menu_bar, row__menu_bar,
                     pan_column__menu_bar, pan_row__menu_bar);
 
     return menu_bar;
+}
+
+static GtkWidget * new_list_label(GtkWidget *grid, const gchar *label)
+{
+    GtkWidget *widget = gtk_label_new(label);
+
+    GdkRGBA light_gray = { LIGHT_GRAY.red(), LIGHT_GRAY.green(), LIGHT_GRAY.blue(), 1 };
+    gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, &light_gray);
+
+#ifndef _GRAPHICS_BUILD
+    gtk_label_set_xalign(GTK_LABEL(widget), 0.0);
+#endif
+
+    gtk_grid_attach(GTK_GRID(grid), widget,
+                    column__list_label, row__list_label,
+                    pan_column__list_label, pan_row__list_label);
+
+    return widget;
 }
