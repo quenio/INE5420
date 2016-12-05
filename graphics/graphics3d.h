@@ -9,6 +9,8 @@ class Coord3D: public XYZCoord<Coord3D>
 {
 public:
 
+    Coord3D(): Coord3D(0, 0, 0) {}
+
     Coord3D(double x, double y, double z): XYZCoord(x, y, z) {}
 
     Coord3D(const TVector &vector): XYZCoord(vector) {}

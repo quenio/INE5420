@@ -173,6 +173,12 @@ public:
     constexpr static size_t row_count = TVector::count;
     constexpr static size_t cell_count = column_count * row_count;
 
+    TMatrix(): TMatrix(
+        { 1, 0, 0, 0 },
+        { 0, 1, 0, 0 },
+        { 0, 0, 1, 0 },
+        { 0, 0, 0, 1 }) {}
+
     TMatrix(
         initializer_list<double> column1,
         initializer_list<double> column2,
@@ -577,6 +583,15 @@ Object rotated(const Object &object, double degrees, Coord center)
     new_object.rotate(degrees, center);
 
     return new_object;
+}
+
+// Translate by dx horizontally, dy vertically.
+template<class Coord>
+Coord xy_translated(const Coord &coord, double dx, double dy)
+{
+    Coord new_coord = coord;
+    new_coord *= ::translation(dx, dy, 0);
+    return new_coord;
 }
 
 // (x, y) coordinates
