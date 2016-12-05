@@ -47,6 +47,8 @@ private:
 
 };
 
+enum ProjectionView { FRONT, BACK };
+
 // Visible area of the world
 template<class Coord>
 class Window: public Object<Coord>, public virtual Drawable<Coord>, public ClippingArea
@@ -60,10 +62,10 @@ public:
         _center(center),
         _viewport_top_left(0, 0),
         _up_angle(0),
-        _viewport_width(1), _viewport_height(1)
+        _viewport_width(1), _viewport_height(1),
+        _projection_distance(abs(_center.z()))
     {
         adjust_bounds(width, height);
-        refresh_matrices();
     }
 
     Coord leftBottom() const { return _leftBottom; }
@@ -210,7 +212,6 @@ public:
         Object::transform(matrix);
         _center = equidistant(_leftBottom, _rightTop);
         adjust_aspect_ratio();
-        refresh_matrices();
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -218,10 +219,12 @@ public:
     {
         Object::rotate_x(-degrees, center);
 
+#ifdef WORLD_2D
         _up_angle += degrees;
+#endif
+
         _center = equidistant(_leftBottom, _rightTop);
         adjust_aspect_ratio();
-        refresh_matrices();
     }
 
     // Rotate on the y axis by degrees at center; counter-clockwise if degrees positive; clockwise if negative.
@@ -229,10 +232,8 @@ public:
     {
         Object::rotate_y(-degrees, center);
 
-        _up_angle += degrees;
         _center = equidistant(_leftBottom, _rightTop);
         adjust_aspect_ratio();
-        refresh_matrices();
     }
 
     // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
@@ -240,10 +241,13 @@ public:
     {
         Object::rotate_z(-degrees, center);
 
+#ifdef WORLD_3D
+        if (_projection_view == BACK) degrees = -degrees;
         _up_angle += degrees;
+#endif
+
         _center = equidistant(_leftBottom, _rightTop);
         adjust_aspect_ratio();
-        refresh_matrices();
     }
 
     // Window's center
@@ -265,6 +269,45 @@ public:
         ss << type();
         return ss.str();
     }
+
+#ifdef WORLD_3D
+
+    ProjectionView projection_view()
+    {
+        return _projection_view;
+    }
+
+    double projection_distance()
+    {
+        return _projection_distance;
+    }
+
+    double projection_rotation()
+    {
+        return _projection_rotation;
+    }
+
+    void front_projection()
+    {
+        _projection_view = FRONT;
+        _projection_distance = abs(_projection_distance);
+        _projection_rotation = 0;
+        _up_angle = 0;
+        _center = Coord3D(_center.x(), _center.y(), -_projection_distance);
+        adjust_aspect_ratio();
+    }
+
+    void back_projection()
+    {
+        _projection_view = BACK;
+        _projection_distance = -abs(_projection_distance);
+        _projection_rotation = 180;
+        _up_angle = 0;
+        _center = Coord3D(_center.x(), _center.y(), -_projection_distance);
+        adjust_aspect_ratio();
+    }
+
+#endif
 
     // Draw a square in canvas.
     void draw(Canvas &canvas) override
@@ -296,7 +339,6 @@ public:
         _viewport_height = viewport.content_height();
 
         adjust_aspect_ratio();
-        refresh_matrices();
     }
 
     void adjust_aspect_ratio()
@@ -305,22 +347,34 @@ public:
         {
             double height_ratio = _viewport_height / _viewport_width;
 
-            if (!equals(height() / width(), height_ratio))
+            if (equals(height() / width(), height_ratio))
+            {
+                adjust_bounds(width(), height());
+            }
+            else
             {
                 adjust_bounds(width(), width() * height_ratio);
-                adjust_angle();
             }
         }
         else if (_viewport_height > _viewport_width)
         {
             double width_ratio = _viewport_width / _viewport_height;
 
-            if (!equals(width() / height(), width_ratio))
+            if (equals(width() / height(), width_ratio))
+            {
+                adjust_bounds(width(), height());
+            }
+            else
             {
                 adjust_bounds(height() * width_ratio, height());
-                adjust_angle();
             }
         }
+        else
+        {
+            adjust_bounds(width(), height());
+        }
+
+        refresh_matrices();
     }
 
     void adjust_bounds(double width, double height)
@@ -332,14 +386,22 @@ public:
         _rightTop = xy_translated(_center, +dx, +dy);
         _leftBottom = xy_translated(_center, -dx, -dy);
         _rightBottom = xy_translated(_center, +dx, -dy);
+
+        adjust_angle();
     }
 
     void adjust_angle()
     {
-        _leftTop.rotate_z(-_up_angle, center());
-        _rightTop.rotate_z(-_up_angle, center());
-        _leftBottom.rotate_z(-_up_angle, center());
-        _rightBottom.rotate_z(-_up_angle, center());
+        if (equals(_up_angle, 0)) return;
+
+        double degrees = _up_angle;
+
+        if (_projection_view == FRONT) degrees = -degrees;
+
+        _leftTop.rotate_z(degrees, center());
+        _rightTop.rotate_z(degrees, center());
+        _leftBottom.rotate_z(degrees, center());
+        _rightBottom.rotate_z(degrees, center());
     }
 
     void refresh_matrices()
@@ -358,6 +420,14 @@ private:
     double _up_angle; // degrees
     double _viewport_width, _viewport_height;
     TMatrix _from_world_matrix, _to_world_matrix, _from_viewport_matrix, _to_viewport_matrix;
+
+#ifdef WORLD_3D
+
+    ProjectionView _projection_view;
+    double _projection_distance;
+    double _projection_rotation;
+
+#endif
 
 };
 
@@ -462,6 +532,8 @@ enum ProjectionMethod { ORTHOGONAL, PERSPECTIVE };
 
 static ProjectionMethod projection_method = ORTHOGONAL;
 
+#ifdef WORLD_3D
+
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>
 {
@@ -552,17 +624,21 @@ class PerspectiveProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
-    PerspectiveProjection(Canvas<Coord2D> &canvas, Coord3D center) :
+    PerspectiveProjection(Canvas<Coord2D> &canvas, Window<Coord3D> &window) :
         ProjectionCanvas(canvas),
-        _projection(inverse_translation(center) * perspective_matrix(abs(center.z())) * translation(center))
+        _projection(
+            inverse_translation(window.center()) *
+            perspective_matrix(window.projection_distance()) *
+            y_rotation(window.projection_rotation()) *
+            translation(window.center()))
     {
     }
 
     Coord2D project(Coord3D coord) const override
     {
-        const TVector projected = coord * _projection;
+        const Coord3D projected = (coord * _projection).homogeneous();
 
-        return Coord2D(projected.homogeneous());
+        return Coord2D(projected.x(), projected.y());
     }
 
 private:
@@ -580,6 +656,8 @@ private:
     TMatrix _projection;
 
 };
+
+#endif
 
 
 template<class Coord>

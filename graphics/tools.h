@@ -262,7 +262,7 @@ public:
         else
         {
             printf("projection created\n");
-            projection_canvas = make_shared<PerspectiveProjection>(*this, _window->center());
+            projection_canvas = make_shared<PerspectiveProjection>(*this, *_window);
         }
 #endif
 

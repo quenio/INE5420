@@ -79,7 +79,7 @@ static void update_world(SelectedWorld selected)
         case SPLINE_SURFACE:
         {
             world = World<Coord3D>(
-                make_shared<Window<Coord3D>>(Coord3D(0, 100, -100), 200, 200),
+                make_shared<Window<Coord3D>>(Coord3D(0, 100, -300), 200, 200),
                 DisplayFile<Coord3D>({
                     draw_spline_surface({
                         {
@@ -190,7 +190,7 @@ static void update_world(SelectedWorld selected)
         {
             ifstream house(OBJ_DIR "house.obj");
             world = World<Coord3D>(
-                make_shared<Window<Coord3D>>(Coord3D(0, 0, -20), 20, 20),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -40), 20, 20),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(house)))
                 )
@@ -203,7 +203,7 @@ static void update_world(SelectedWorld selected)
         {
             ifstream square_obj(OBJ_DIR "square.obj");
             world = World<Coord3D>(
-                make_shared<Window<Coord3D>>(Coord3D(0, 0, -20), 20, 20),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -40), 20, 20),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(square_obj)))
                 )
@@ -310,7 +310,7 @@ static void update_projection_buttons()
         {
             gtk_button_set_label(GTK_BUTTON(button_orthogonal), "Orthogonal");
             gtk_widget_set_sensitive(GTK_WIDGET(button_orthogonal), true);
-            gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective]");
+            gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective F]");
             gtk_widget_set_sensitive(GTK_WIDGET(button_perspective), false);
         }
         break;
@@ -571,6 +571,22 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
         case GDK_KEY_Return:
             selection.select_tool(NONE);
             select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+            break;
+
+        case GDK_KEY_1:
+            if (projection_method == PERSPECTIVE)
+            {
+                if (event->state & GDK_CONTROL_MASK)
+                {
+                    selection.window()->back_projection();
+                    gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective B]");
+                }
+                else
+                {
+                    selection.window()->front_projection();
+                    gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective F]");
+                }
+            }
             break;
 
         case GDK_KEY_5:
