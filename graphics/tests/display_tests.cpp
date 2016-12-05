@@ -10,7 +10,7 @@ static const char * to_world()
 {
     const double left = -20, bottom = -20, right = 120, top = 120;
 
-    Window window(left, bottom, right, top);
+    Window<Coord2D> window(Coord2D(50, 50), 140, 140);
 
     Coord2D left_top(left, top);
     Coord2D left_bottom(left, bottom);
@@ -39,7 +39,7 @@ static const char * from_world()
 {
     const double left = -20, bottom = -20, right = 120, top = 120;
 
-    Window window(left, bottom, right, top);
+    Window<Coord2D> window(Coord2D(50, 50), 140, 140);
 
     Coord2D left_top(left, top);
     Coord2D left_bottom(left, bottom);
@@ -76,7 +76,7 @@ static const char * to_viewport()
     PPC southeast(+0.5, -0.5);
     PPC southwest(-0.5, -0.5);
 
-    Window window(0, 0, 200, 200); // world coord not used for the window-to-viewport transform
+    Window<Coord2D> window(Coord2D(100, 100), 200, 200); // world coord not used for the window-to-viewport transform
 
     const double width = 100, height = 100;
     const Viewport viewport(width, height);
@@ -108,9 +108,10 @@ static const char * from_viewport()
     VC southeast(73.75, 73.75);
     VC southwest(26.25, 73.75);
 
-    Window window(0, 0, 200, 200); // world coord not used for the window-to-viewport transform
-
     const double width = 100, height = 100;
+
+    Window<Coord2D> window(Coord2D(100, 100), 2 * width, 2 * height); // world coord not used for the window-to-viewport transform
+
     const Viewport viewport(width, height);
 
     window.set_viewport(viewport);

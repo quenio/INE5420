@@ -14,6 +14,8 @@ class Coord2D: public XYCoord<Coord2D>
 {
 public:
 
+    Coord2D(): Coord2D(0, 0) {}
+
     Coord2D(double x, double y): XYCoord(x, y) {}
 
     Coord2D(const TVector &vector): XYCoord(vector) {}
