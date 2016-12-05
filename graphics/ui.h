@@ -362,7 +362,9 @@ static GtkWidget * new_list_label(GtkWidget *grid, const gchar *label)
     GdkRGBA light_gray = { LIGHT_GRAY.red(), LIGHT_GRAY.green(), LIGHT_GRAY.blue(), 1 };
     gtk_widget_override_background_color(widget, GTK_STATE_FLAG_NORMAL, &light_gray);
 
+#ifndef _GRAPHICS_BUILD
     gtk_label_set_xalign(GTK_LABEL(widget), 0.0);
+#endif
 
     gtk_grid_attach(GTK_GRID(grid), widget,
                     column__list_label, row__list_label,
