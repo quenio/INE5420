@@ -667,7 +667,7 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
             }
             else
             {
-//                world.window()->rotate_x(-10, world.window()->center());
+                world.window()->rotate_z(-1, world.window()->center());
             }
         }
         break;
@@ -686,7 +686,7 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
             }
             else
             {
-//                world.window()->rotate_x(+10, world.window()->center());
+                world.window()->rotate_z(+1, world.window()->center());
             }
         }
         break;
@@ -705,7 +705,7 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
             }
             else
             {
-//                world.window()->rotate_y(-10, world.window()->center());
+                world.window()->rotate_z(-1, world.window()->center());
             }
         }
         break;
@@ -724,7 +724,7 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
             }
             else
             {
-//                world.window()->rotate_y(+10, world.window()->center());
+                world.window()->rotate_z(+1, world.window()->center());
             }
         }
         break;
