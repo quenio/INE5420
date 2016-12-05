@@ -633,17 +633,19 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
 {
     if (selection.tool() != NONE) return true;
 
+    const double scroll_step = 0.01;
+
     switch(event->direction)
     {
         case GDK_SCROLL_UP:
         {
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_up(step);
+                world.window()->pan_up(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_out(step);
+                world.window()->zoom_out(scroll_step);
             }
             else
             {
@@ -656,11 +658,11 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
         {
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_down(step);
+                world.window()->pan_down(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_in(step);
+                world.window()->zoom_in(scroll_step);
             }
             else
             {
@@ -673,11 +675,11 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
         {
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_left(step);
+                world.window()->pan_left(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_in(step);
+                world.window()->zoom_in(scroll_step);
             }
             else
             {
@@ -690,11 +692,11 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
         {
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_right(step);
+                world.window()->pan_right(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_out(step);
+                world.window()->zoom_out(scroll_step);
             }
             else
             {
