@@ -4,8 +4,7 @@
 #include "timer.h"
 
 // Render a cross at center with radius, using color.
-template<class Coord>
-void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, const Color &h_color, const Color &v_color)
+inline void render_cross(Canvas<Coord2D> &canvas, const Coord2D &center, double radius, const Color &h_color, const Color &v_color)
 {
     // Horizontal bar
     Draw2DCommand h_bar(make_shared<Line>(
@@ -20,6 +19,34 @@ void render_cross(Canvas<Coord> &canvas, const Coord &center, double radius, con
         translated<Coord2D>(center, TVector(Coord2D(0, +radius)))));
     canvas.set_color(v_color);
     v_bar.render(canvas);
+}
+
+// Render a cross at center with radius, using color.
+inline void render_cross(Canvas<Coord3D> &canvas, const Coord3D &center, double radius, const Color &h_color, const Color &v_color)
+{
+    // Horizontal bar
+    Segment3D h_bar(
+        translated<Coord3D>(center, TVector(Coord3D(-radius, 0, 0))),
+        translated<Coord3D>(center, TVector(Coord3D(+radius, 0, 0))));
+    canvas.set_color(h_color);
+    h_bar.draw(canvas);
+
+    // Vertical bar
+    Segment3D v_bar(
+        translated<Coord3D>(center, TVector(Coord3D(0, -radius, 0))),
+        translated<Coord3D>(center, TVector(Coord3D(0, +radius, 0))));
+    canvas.set_color(v_color);
+    v_bar.draw(canvas);
+}
+
+// Render the x axis and y axis.
+template<class Coord>
+void render_axis(Canvas<Coord> &canvas)
+{
+    const Coord origin;
+    const int radius = 10000;
+
+    render_cross(canvas, origin, radius, RED, GREEN);
 }
 
 // Axis of rotation selected by the user
@@ -39,12 +66,12 @@ public:
     using Object = ::Object<Coord>;
     using Group = ::Group<Coord>;
     using World = ::World<Coord>;
+    using Window = ::Window<Coord>;
     using DisplayFile = ::DisplayFile<Coord>;
     using Command = ::DisplayCommand<Coord>;
     using Canvas = ::Canvas<Coord>;
 
-    Selection(World &world)
-    : _world(world), _center(0, 0) {}
+    Selection(World &world): _world(world)  {}
 
     World & world() { return _world; }
 
@@ -52,7 +79,7 @@ public:
 
     shared_ptr<Window> window() { return _world.window(); }
 
-    Coord2D center() { return _center; }
+    Coord center() { return _center; }
 
     // Tool used on selected objects.
     Tool tool() { return _tool; }
@@ -108,7 +135,7 @@ public:
     {
         _tool = NONE;
         _selected_group.removeAll();
-        _center = Coord2D(0, 0);
+        _center = Coord();
     }
 
     // True if any objects are selected.
@@ -150,7 +177,12 @@ public:
             case X_AXIS: _selected_group.rotate_x(degrees, TVector(_center)); break;
             case Y_AXIS: _selected_group.rotate_y(degrees, TVector(_center)); break;
             case Z_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
+#ifdef WORLD_2D
+            case ALL_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
+#endif
+#ifdef WORLD_3D
             case ALL_AXIS: break;
+#endif
         }
     }
 
@@ -179,7 +211,7 @@ public:
     }
 
     // Render the center as a little cross.
-    void render_center(::Canvas<Coord2D> &canvas)
+    void render_center(::Canvas<Coord> &canvas)
     {
         if (not_empty())
         {
@@ -200,7 +232,7 @@ private:
 
     World &_world;
     Group _selected_group;
-    Coord2D _center;
+    Coord _center;
     TransformAxis _transform_axis = ALL_AXIS;
     Tool _tool = NONE;
 
@@ -212,6 +244,8 @@ class ViewportCanvas: public Canvas<Coord2D>, public Viewport, public ClippingAr
 {
 public:
 
+    using Window = ::Window<Coord>;
+
     ViewportCanvas(double width, double height, shared_ptr<Window> window, Canvas<VC> &canvas)
         : Viewport(width, height), _window(window), _canvas(canvas) {}
 
@@ -219,8 +253,6 @@ public:
     void render(DisplayFile<Coord> &display_file, Selection<Coord> &selection)
     {
         _window->set_viewport(*this);
-
-        render_axis();
 
 #ifdef WORLD_2D
         Canvas<Coord2D> *projection_canvas = this;
@@ -234,12 +266,12 @@ public:
         }
         else
         {
-            projection_canvas = make_shared<PerspectiveProjection>(
-                *this,
-                Coord3D(_window->center().x(), _window->center().y(), 0)
-            );
+            printf("projection created\n");
+            projection_canvas = make_shared<PerspectiveProjection>(*this, *_window);
         }
 #endif
+
+        render_axis(*projection_canvas);
 
         printf("Render display file: started\n");
         const clock_t start = clock();
@@ -251,9 +283,9 @@ public:
         selection.render_controls(*projection_canvas);
 #endif
 
-        selection.render_center(*this);
+        selection.render_center(*projection_canvas);
 
-        _window->draw(*this);
+        _window->draw(*projection_canvas);
     }
 
     // True if area contains world coord.
@@ -299,15 +331,6 @@ public:
     }
 
 private:
-
-    // Render the x axis and y axis.
-    void render_axis()
-    {
-        const Coord2D center = Coord2D(0, 0);
-        const int radius = 10000;
-
-        render_cross(*this, center, radius, RED, GREEN);
-    }
 
     shared_ptr<Window> _window;
     Canvas<VC> &_canvas;

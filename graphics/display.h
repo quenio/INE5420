@@ -47,26 +47,37 @@ private:
 
 };
 
+enum ProjectionView { FRONT, BACK };
+
 // Visible area of the world
-class Window: public Object2D, public ClippingArea
+template<class Coord>
+class Window: public Object<Coord>, public virtual Drawable<Coord>, public ClippingArea
 {
 public:
 
-    Window(double left, double bottom, double right, double top):
-         _leftBottom(left, bottom), _leftTop(left, top), _rightTop(right, top), _rightBottom(right, bottom),
-         _center(equidistant(_leftBottom, _rightTop)),
-         _viewport_top_left(0, 0),
-         _up_angle(0),
-         _viewport_width(1), _viewport_height(1),
-         _from_world_matrix(from_world_matrix()),
-         _to_world_matrix(to_world_matrix()),
-         _from_viewport_matrix(from_viewport_matrix()),
-         _to_viewport_matrix(to_viewport_matrix()) {}
+    using Object = ::Object<Coord>;
+    using Canvas = ::Canvas<Coord>;
 
-    Coord2D leftBottom() const { return _leftBottom; }
-    Coord2D leftTop() const { return _leftTop; }
-    Coord2D rightTop() const { return _rightTop; }
-    Coord2D rightBottom() const { return _rightBottom; }
+    Window(Coord center, double width, double height):
+        _center(center),
+        _viewport_top_left(0, 0),
+        _up_angle(0),
+#ifdef WORLD_2D
+        _viewport_width(1), _viewport_height(1)
+#endif
+#ifdef WORLD_3D
+        _viewport_width(1), _viewport_height(1),
+        _projection_distance(abs(_center.z()))
+#endif
+    {
+        adjust_bounds(width, height);
+        refresh_matrices();
+    }
+
+    Coord leftBottom() const { return _leftBottom; }
+    Coord leftTop() const { return _leftTop; }
+    Coord rightTop() const { return _rightTop; }
+    Coord rightBottom() const { return _rightBottom; }
 
     double width() const { return distance(leftBottom(), rightBottom()); }
     double height() const { return distance(leftBottom(), leftTop()); }
@@ -160,13 +171,13 @@ public:
     // Zoom in by factor
     void zoom_in(double factor)
     {
-        scale(1.0 - factor, center());
+        Object::scale(1.0 - factor, center());
     }
 
     // Zoom out by factor
     void zoom_out(double factor)
     {
-        scale(1.0 + factor, center());
+        Object::scale(1.0 + factor, center());
     }
 
     // Pan left by factor
@@ -174,7 +185,7 @@ public:
     {
         double tx = width() * factor;
 
-        translate(Coord2D(-tx, 0));
+        transform(::translation(TVector({ -tx, 0, 0, 1 })));
     }
 
     // Pan right by factor
@@ -182,7 +193,7 @@ public:
     {
         double tx = width() * factor;
 
-        translate(Coord2D(+tx, 0));
+        transform(::translation(TVector({ +tx, 0, 0, 1 })));
     }
 
     // Pan up by factor
@@ -190,7 +201,7 @@ public:
     {
         double ty = height() * factor;
 
-        translate(Coord2D(0, +ty));
+        transform(::translation(TVector({ 0, +ty, 0, 1 })));
     }
 
     // Pan down by factor
@@ -198,7 +209,7 @@ public:
     {
         double ty = height() * factor;
 
-        translate(Coord2D(0, -ty));
+        transform(::translation(TVector({ 0, -ty, 0, 1 })));
     }
 
     // Transform according to the matrix.
@@ -210,37 +221,43 @@ public:
     }
 
     // Rotate on the x axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate_x(double degrees, Coord2D center) override
+    void rotate_x(double degrees, Coord center) override
     {
         Object::rotate_x(-degrees, center);
 
+#ifdef WORLD_2D
         _up_angle += degrees;
+#endif
+
         _center = equidistant(_leftBottom, _rightTop);
         adjust_aspect_ratio();
     }
 
     // Rotate on the y axis by degrees at center; counter-clockwise if degrees positive; clockwise if negative.
-    void rotate_y(double degrees, Coord2D center) override
+    void rotate_y(double degrees, Coord center) override
     {
         Object::rotate_y(-degrees, center);
 
-        _up_angle += degrees;
         _center = equidistant(_leftBottom, _rightTop);
         adjust_aspect_ratio();
     }
 
     // Rotate on the z axis by degrees at center; clockwise if degrees positive; counter-clockwise if negative.
-    void rotate_z(double degrees, Coord2D center) override
+    void rotate_z(double degrees, Coord center) override
     {
         Object::rotate_z(-degrees, center);
 
+#ifdef WORLD_3D
+        if (_projection_view == BACK) degrees = -degrees;
         _up_angle += degrees;
+#endif
+
         _center = equidistant(_leftBottom, _rightTop);
         adjust_aspect_ratio();
     }
 
     // Window's center
-    Coord2D center() override
+    Coord center() override
     {
         return _center;
     }
@@ -259,8 +276,47 @@ public:
         return ss.str();
     }
 
+#ifdef WORLD_3D
+
+    ProjectionView projection_view()
+    {
+        return _projection_view;
+    }
+
+    double projection_distance()
+    {
+        return _projection_distance;
+    }
+
+    double projection_rotation()
+    {
+        return _projection_rotation;
+    }
+
+    void front_projection()
+    {
+        _projection_view = FRONT;
+        _projection_distance = abs(_projection_distance);
+        _projection_rotation = 0;
+        _up_angle = 0;
+        _center = Coord3D(_center.x(), _center.y(), -_projection_distance);
+        adjust_aspect_ratio();
+    }
+
+    void back_projection()
+    {
+        _projection_view = BACK;
+        _projection_distance = -abs(_projection_distance);
+        _projection_rotation = 180;
+        _up_angle = 0;
+        _center = Coord3D(_center.x(), _center.y(), -_projection_distance);
+        adjust_aspect_ratio();
+    }
+
+#endif
+
     // Draw a square in canvas.
-    void draw(Canvas<Coord2D> &canvas) override
+    void draw(Canvas &canvas) override
     {
         canvas.set_color(BLUE);
 
@@ -277,7 +333,7 @@ public:
         canvas.draw_line(leftBottom());
     }
 
-    list<Coord2D *> controls() override
+    list<Coord *> controls() override
     {
         return { &_leftBottom, &_leftTop, &_rightTop, &_rightBottom };
     }
@@ -297,65 +353,92 @@ public:
         {
             double height_ratio = _viewport_height / _viewport_width;
 
-            if (!equals(height() / width(), height_ratio))
+            if (equals(height() / width(), height_ratio))
             {
-                double adjusted_height = width() * height_ratio;
-                double adjusted_bottom = _center.y() - (adjusted_height / 2);
-                double adjusted_top = _center.y() + (adjusted_height / 2);
-                double adjusted_left = _center.x() + (width() / 2);
-                double adjusted_right = _center.x() - (width() / 2);
-
-                _leftTop = { adjusted_left, adjusted_top };
-                _rightTop = { adjusted_right, adjusted_top };
-                _leftBottom = { adjusted_left, adjusted_bottom };
-                _rightBottom = { adjusted_right, adjusted_bottom };
-
-                adjust_angle();
+                adjust_bounds(width(), height());
+            }
+            else
+            {
+                adjust_bounds(width(), width() * height_ratio);
             }
         }
         else if (_viewport_height > _viewport_width)
         {
             double width_ratio = _viewport_width / _viewport_height;
 
-            if (!equals(width() / height(), width_ratio))
+            if (equals(width() / height(), width_ratio))
             {
-                double adjusted_width = height() * width_ratio;
-                double adjusted_left = _center.x() - (adjusted_width / 2);
-                double adjusted_right = _center.x() + (adjusted_width / 2);
-                double adjusted_top = _center.y() + (height() / 2);
-                double adjusted_bottom = _center.y() - (height() / 2);
-
-                _leftBottom = { adjusted_left, adjusted_bottom };
-                _leftTop = { adjusted_left, adjusted_top };
-                _rightBottom = { adjusted_right, adjusted_bottom };
-                _rightTop = { adjusted_right, adjusted_top };
-
-                adjust_angle();
+                adjust_bounds(width(), height());
+            }
+            else
+            {
+                adjust_bounds(height() * width_ratio, height());
             }
         }
+        else
+        {
+            adjust_bounds(width(), height());
+        }
 
+        refresh_matrices();
+    }
+
+    void adjust_bounds(double width, double height)
+    {
+        const double dx = width / 2;
+        const double dy = height / 2;
+
+        _leftTop = xy_translated(_center, -dx, +dy);
+        _rightTop = xy_translated(_center, +dx, +dy);
+        _leftBottom = xy_translated(_center, -dx, -dy);
+        _rightBottom = xy_translated(_center, +dx, -dy);
+
+        adjust_angle();
+    }
+
+    void adjust_angle()
+    {
+        if (equals(_up_angle, 0)) return;
+
+#ifdef WORLD_3D
+        double degrees = _up_angle;
+
+        if (_projection_view == FRONT) degrees = -degrees;
+#endif
+#ifdef WORLD_2D
+        double degrees = -_up_angle;
+#endif
+
+        _leftTop.rotate_z(degrees, center());
+        _rightTop.rotate_z(degrees, center());
+        _leftBottom.rotate_z(degrees, center());
+        _rightBottom.rotate_z(degrees, center());
+    }
+
+    void refresh_matrices()
+    {
         _from_world_matrix = from_world_matrix();
         _to_world_matrix = to_world_matrix();
         _from_viewport_matrix = from_viewport_matrix();
         _to_viewport_matrix = to_viewport_matrix();
     }
 
-    void adjust_angle()
-    {
-        _leftTop.rotate_z(-_up_angle, center());
-        _rightTop.rotate_z(-_up_angle, center());
-        _leftBottom.rotate_z(-_up_angle, center());
-        _rightBottom.rotate_z(-_up_angle, center());
-    }
-
 private:
 
-    Coord2D _leftBottom, _leftTop, _rightTop, _rightBottom;
-    Coord2D _center;
+    Coord _leftBottom, _leftTop, _rightTop, _rightBottom;
+    Coord _center;
     Coord2D _viewport_top_left;
     double _up_angle; // degrees
     double _viewport_width, _viewport_height;
     TMatrix _from_world_matrix, _to_world_matrix, _from_viewport_matrix, _to_viewport_matrix;
+
+#ifdef WORLD_3D
+
+    ProjectionView _projection_view;
+    double _projection_distance;
+    double _projection_rotation;
+
+#endif
 
 };
 
@@ -460,6 +543,8 @@ enum ProjectionMethod { ORTHOGONAL, PERSPECTIVE };
 
 static ProjectionMethod projection_method = ORTHOGONAL;
 
+#ifdef WORLD_3D
+
 template<class Coord>
 class ProjectionCanvas: public Canvas<Coord>
 {
@@ -550,24 +635,26 @@ class PerspectiveProjection: public ProjectionCanvas<Coord3D>
 {
 public:
 
-    static constexpr double d = 500;
-
-    PerspectiveProjection(Canvas<Coord2D> &canvas, Coord3D center) :
+    PerspectiveProjection(Canvas<Coord2D> &canvas, Window<Coord3D> &window) :
         ProjectionCanvas(canvas),
-        _projection(inverse_translation(center) * perspective_matrix() * translation(center))
+        _projection(
+            inverse_translation(window.center()) *
+            perspective_matrix(window.projection_distance()) *
+            y_rotation(window.projection_rotation()) *
+            translation(window.center()))
     {
     }
 
     Coord2D project(Coord3D coord) const override
     {
-        const TVector projected = coord * _projection;
+        const Coord3D projected = (coord * _projection).homogeneous();
 
-        return Coord2D(projected.homogeneous());
+        return Coord2D(projected.x(), projected.y());
     }
 
 private:
 
-    inline TMatrix perspective_matrix() const
+    inline TMatrix perspective_matrix(double d) const
     {
         return TMatrix(
             { 1.0, 0.0,   0.0, 0.0 },
@@ -581,6 +668,8 @@ private:
 
 };
 
+#endif
+
 
 template<class Coord>
 class World
@@ -589,6 +678,7 @@ public:
 
     using DisplayFile = ::DisplayFile<Coord>;
     using Object = ::Object<Coord>;
+    using Window = ::Window<Coord>;
 
     World(shared_ptr<Window> window, DisplayFile display_file)
         : _window(window), _display_file(display_file) {}
@@ -598,12 +688,9 @@ public:
     DisplayFile & display_file() { return _display_file; }
 
     // Objects from command list
-    vector<shared_ptr<Object>> objects() {
+    vector<shared_ptr<Object>> objects()
+    {
         vector<shared_ptr<Object>> vector;
-
-#ifdef WORLD_2D
-        vector.push_back(_window);
-#endif
 
         for (auto &command: _display_file.commands())
         {

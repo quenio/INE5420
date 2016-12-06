@@ -1,4 +1,3 @@
-//#define WORLD_2D
 #define WORLD_3D
 
 #include "ui.h"
@@ -12,7 +11,7 @@ using namespace std;
 
 #ifdef WORLD_2D
 static World<Coord2D> world(
-    make_shared<Window>(-20, -20, 120, 120),
+    make_shared<Window<Coord2D>>(Coord2D(50, 50), 140, 140),
     DisplayFile<Coord2D>({
          draw_point(Coord2D(25, 50)),
          draw_point(Coord2D(75, 50)),
@@ -27,6 +26,10 @@ static World<Coord2D> world(
 );
 #endif
 
+static GtkListBox *list_box;
+
+static double scroll_step = 0.02;
+
 #ifdef WORLD_3D
 
 #define OBJ_DIR "/Users/Quenio/Projects/UFSC/INE5420/graphics/obj/"
@@ -37,11 +40,9 @@ enum SelectedWorld { CUBE, BEZIER_SURFACE, SPLINE_SURFACE, TEAPOT, PYRAMID, TRUM
 static SelectedWorld selected_world = SelectedWorld::CUBE;
 
 static World<Coord3D> world(
-    make_shared<Window>(-20, -20, 120, 120),
+    make_shared<Window<Coord3D>>(Coord3D(50, 50, -100), 140, 140),
     DisplayFile<Coord3D>({})
 );
-
-static GtkListBox *list_box;
 
 static void update_world(SelectedWorld selected)
 {
@@ -50,16 +51,17 @@ static void update_world(SelectedWorld selected)
         case CUBE:
         {
             world = World<Coord3D>(
-                make_shared<Window>(-20, -20, 120, 120),
+                make_shared<Window<Coord3D>>(Coord3D(50, 50, -200), 140, 140),
                 DisplayFile<Coord3D>({ draw_cube(Coord3D(20, 20, 20), 50) })
             );
+            scroll_step = 0.01;
         }
         break;
 
         case BEZIER_SURFACE:
         {
             world = World<Coord3D>(
-                make_shared<Window>(-20, -20, 120, 120),
+                make_shared<Window<Coord3D>>(Coord3D(50, 50, -100), 140, 140),
                 DisplayFile<Coord3D>({
                     draw_bezier_surface({{
                         Coord3D(10, 10, 20), Coord3D(10, 90, 20), Coord3D(90, 10, 20), Coord3D(90, 90, 20),
@@ -69,13 +71,14 @@ static void update_world(SelectedWorld selected)
                     }})
                 })
             );
+            scroll_step = 0.05;
         }
         break;
 
         case SPLINE_SURFACE:
         {
             world = World<Coord3D>(
-                make_shared<Window>(-100, 0, +100, +200),
+                make_shared<Window<Coord3D>>(Coord3D(0, 100, -300), 200, 200),
                 DisplayFile<Coord3D>({
                     draw_spline_surface({
                         {
@@ -99,6 +102,7 @@ static void update_world(SelectedWorld selected)
                     })
                 })
             );
+            scroll_step = 0.05;
         }
         break;
 
@@ -106,12 +110,13 @@ static void update_world(SelectedWorld selected)
         {
             ifstream teapot(OBJ_DIR "teapot.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-5, -5, 5, 5),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -10), 10, 10),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(teapot))) // fast - number of vertices matches the .obj file
 //        as_display_commands(as_object_3d(obj_file(teapot))) // slow - too many vertices
                 )
             );
+            scroll_step = 0.1;
         }
         break;
 
@@ -119,11 +124,12 @@ static void update_world(SelectedWorld selected)
         {
             ifstream pyramid(OBJ_DIR "pyramid.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-2, -2, 2, 2),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -8), 4, 4),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(pyramid)))
                 )
             );
+            scroll_step = 0.01;
         }
         break;
 
@@ -131,11 +137,12 @@ static void update_world(SelectedWorld selected)
         {
             ifstream trumpet(OBJ_DIR "trumpet.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-250, -1000, +250, 0),
+                make_shared<Window<Coord3D>>(Coord3D(0, -500, -1000), 500, 500),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(trumpet)))
                 )
             );
+            scroll_step = 0.1;
         }
         break;
 
@@ -143,11 +150,12 @@ static void update_world(SelectedWorld selected)
         {
             ifstream shuttle(OBJ_DIR "shuttle.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-10, -10, +10, +10),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -20), 20, 20),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(shuttle)))
                 )
             );
+            scroll_step = 0.02;
         }
         break;
 
@@ -155,11 +163,12 @@ static void update_world(SelectedWorld selected)
         {
             ifstream magnolia(OBJ_DIR "magnolia.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-100, -100, +100, +100),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -200), 200, 200),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(magnolia)))
                 )
             );
+            scroll_step = 0.03;
         }
         break;
 
@@ -167,11 +176,12 @@ static void update_world(SelectedWorld selected)
         {
             ifstream lamp(OBJ_DIR "lamp.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-10, -10, +10, +10),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -20), 20, 20),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(lamp)))
                 )
             );
+            scroll_step = 0.05;
         }
         break;
 
@@ -179,11 +189,12 @@ static void update_world(SelectedWorld selected)
         {
             ifstream house(OBJ_DIR "house.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-10, -10, +10, +10),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -40), 20, 20),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(house)))
                 )
             );
+            scroll_step = 0.1;
         }
         break;
 
@@ -191,11 +202,12 @@ static void update_world(SelectedWorld selected)
         {
             ifstream square_obj(OBJ_DIR "square.obj");
             world = World<Coord3D>(
-                make_shared<Window>(-20, -20, +20, +20),
+                make_shared<Window<Coord3D>>(Coord3D(0, 0, -40), 20, 20),
                 DisplayFile<Coord3D>(
                     as_display_commands(as_group_3d(obj_file(square_obj)))
                 )
             );
+            scroll_step = 0.2;
         }
     }
 
@@ -297,7 +309,7 @@ static void update_projection_buttons()
         {
             gtk_button_set_label(GTK_BUTTON(button_orthogonal), "Orthogonal");
             gtk_widget_set_sensitive(GTK_WIDGET(button_orthogonal), true);
-            gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective]");
+            gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective F]");
             gtk_widget_set_sensitive(GTK_WIDGET(button_perspective), false);
         }
         break;
@@ -318,6 +330,8 @@ static void select_perspective(GtkWidget UNUSED *widget, gpointer canvas)
     update_projection_buttons();
 }
 
+#ifdef WORLD_3D
+
 static void select_regular_surface_method(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     surface_method = SurfaceMethod ::REGULAR;
@@ -329,8 +343,6 @@ static void select_fd_surface_method(GtkWidget UNUSED *menu_item, gpointer canva
     surface_method = SurfaceMethod ::FORWARD_DIFFERENCE;
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
-
-#ifdef WORLD_3D
 
 static void select_cube_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
@@ -461,6 +473,8 @@ static void select_tool_rotate()
     select_or_hide_tool_buttons({ button_move, button_scale });
 }
 
+#ifdef WORLD_3D
+
 static GtkButton * selected_tool_button()
 {
     switch (selection.tool())
@@ -503,6 +517,7 @@ static void update_button_label_with_axis()
         gtk_button_set_label(button, label.c_str());
     }
 }
+#endif
 
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
@@ -560,6 +575,24 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
             break;
 
+#ifdef WORLD_3D
+        case GDK_KEY_1:
+            if (projection_method == PERSPECTIVE)
+            {
+                if (event->state & GDK_CONTROL_MASK)
+                {
+                    selection.window()->back_projection();
+                    gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective B]");
+                }
+                else
+                {
+                    selection.window()->front_projection();
+                    gtk_button_set_label(GTK_BUTTON(button_perspective), "[Perspective F]");
+                }
+            }
+            break;
+#endif
+
         case GDK_KEY_5:
             if (projection_method == ORTHOGONAL)
             {
@@ -602,6 +635,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             select_tool_rotate();
             break;
 
+#ifdef WORLD_3D
         case GDK_KEY_X:
         case GDK_KEY_x:
             selection.select_transform_axis(X_AXIS);
@@ -619,6 +653,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             selection.select_transform_axis(Z_AXIS);
             update_button_label_with_axis();
             break;
+#endif
 
         default:
             break;
@@ -633,72 +668,93 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
 {
     if (selection.tool() != NONE) return true;
 
+    const Coord2D delta = selection.window()->window_to_world(
+        selection.window()->from_viewport(
+            { event->delta_x, event->delta_y },
+            gtk_widget_get_allocated_height(canvas)));
+
     switch(event->direction)
     {
         case GDK_SCROLL_UP:
         {
+            if ((abs(delta.y()) / world.window()->height()) < scroll_step) return true;
+
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
+
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_up(step);
+                world.window()->pan_up(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_out(step);
+                world.window()->zoom_out(scroll_step);
             }
             else
             {
-//                world.window()->rotate_x(-10, world.window()->center());
+                world.window()->rotate_z(-1, world.window()->center());
             }
         }
         break;
 
         case GDK_SCROLL_DOWN:
         {
+            if ((abs(delta.y()) / world.window()->height()) < scroll_step) return true;
+
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
+
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_down(step);
+                world.window()->pan_down(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_in(step);
+                world.window()->zoom_in(scroll_step);
             }
             else
             {
-//                world.window()->rotate_x(+10, world.window()->center());
+                world.window()->rotate_z(+1, world.window()->center());
             }
         }
         break;
 
         case GDK_SCROLL_LEFT:
         {
+            if ((abs(delta.x()) / world.window()->width()) < scroll_step) return true;
+
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
+
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_left(step);
+                world.window()->pan_left(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_in(step);
+                world.window()->zoom_in(scroll_step);
             }
             else
             {
-//                world.window()->rotate_y(-10, world.window()->center());
+                world.window()->rotate_z(-1, world.window()->center());
             }
         }
         break;
 
         case GDK_SCROLL_RIGHT:
         {
+            if ((abs(delta.x()) / world.window()->width()) < scroll_step) return true;
+
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
+
             if (event->state & GDK_SHIFT_MASK)
             {
-                world.window()->pan_right(step);
+                world.window()->pan_right(scroll_step);
             }
             else if (event->state & GDK_CONTROL_MASK)
             {
-                world.window()->zoom_out(step);
+                world.window()->zoom_out(scroll_step);
             }
             else
             {
-//                world.window()->rotate_y(+10, world.window()->center());
+                world.window()->rotate_z(+1, world.window()->center());
             }
         }
         break;
@@ -851,12 +907,14 @@ int main(int argc, char *argv[])
     new_list_label(grid, "Object List:");
     list_box = new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 
+#ifdef WORLD_3D
     button_orthogonal = new_button(
         grid, canvas, "Orthogonal", true, G_CALLBACK(select_orthogonal),
         "Switch to Orthogonal projection.", false, false);
     button_perspective = new_button(
         grid, canvas, "Perspective", true, G_CALLBACK(select_perspective),
         "Switch to Perspective projection.", true, false);
+#endif
 
     button_move = new_button(
         grid, canvas, "Grab", false, G_CALLBACK(tool_translate_clicked),

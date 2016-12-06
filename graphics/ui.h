@@ -20,7 +20,8 @@
 #ifdef WORLD_2D
 using UserSelection = Selection<Coord2D>;
 using UserViewport = ViewportCanvas<Coord2D>;
-#else
+#endif
+#ifdef WORLD_3D
 using UserSelection = Selection<Coord3D>;
 using UserViewport = ViewportCanvas<Coord3D>;
 #endif
