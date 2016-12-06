@@ -71,6 +71,7 @@ public:
 #endif
     {
         adjust_bounds(width, height);
+        refresh_matrices();
     }
 
     Coord leftBottom() const { return _leftBottom; }

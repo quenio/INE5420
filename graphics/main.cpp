@@ -1,3 +1,5 @@
+#define WORLD_3D
+
 #include "ui.h"
 #include "file_conversions.h"
 #include "obj_samples.h"

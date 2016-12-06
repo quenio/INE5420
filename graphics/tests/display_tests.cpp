@@ -1,3 +1,5 @@
+#define WORLD_2D
+
 #include "min_unit.h"
 #include "../display.h"
 
@@ -21,6 +23,8 @@ static const char * to_world()
     Coord2D northeast = equidistant(right_top, center);
     Coord2D southeast = equidistant(right_bottom, center);
     Coord2D southwest = equidistant(left_bottom, center);
+
+    printf("%f, %f", window.to_world(PPC(-1, +1)).x(), window.to_world(PPC(-1, +1)).y());
 
     mu_assert(window.to_world(PPC(-1, +1)) == left_top);
     mu_assert(window.to_world(PPC(-1, -1)) == left_bottom);
