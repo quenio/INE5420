@@ -64,7 +64,8 @@ public:
         _up_angle(0),
 #ifdef WORLD_2D
         _viewport_width(1), _viewport_height(1)
-#else
+#endif
+#ifdef WORLD_3D
         _viewport_width(1), _viewport_height(1),
         _projection_distance(abs(_center.z()))
 #endif
@@ -402,7 +403,8 @@ public:
         double degrees = _up_angle;
 
         if (_projection_view == FRONT) degrees = -degrees;
-#else
+#endif
+#ifdef WORLD_2D
         double degrees = -_up_angle;
 #endif
 

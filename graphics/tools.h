@@ -179,7 +179,8 @@ public:
             case Z_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
 #ifdef WORLD_2D
             case ALL_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
-#else
+#endif
+#ifdef WORLD_3D
             case ALL_AXIS: break;
 #endif
         }
