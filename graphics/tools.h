@@ -177,7 +177,11 @@ public:
             case X_AXIS: _selected_group.rotate_x(degrees, TVector(_center)); break;
             case Y_AXIS: _selected_group.rotate_y(degrees, TVector(_center)); break;
             case Z_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
+#ifdef WORLD_2D
+            case ALL_AXIS: _selected_group.rotate_z(degrees, TVector(_center)); break;
+#else
             case ALL_AXIS: break;
+#endif
         }
     }
 

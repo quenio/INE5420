@@ -12,7 +12,7 @@ using namespace std;
 
 #ifdef WORLD_2D
 static World<Coord2D> world(
-    make_shared<Window<Coord2D>>(-20, -20, 120, 120),
+    make_shared<Window<Coord2D>>(Coord2D(50, 50), 140, 140),
     DisplayFile<Coord2D>({
          draw_point(Coord2D(25, 50)),
          draw_point(Coord2D(75, 50)),
@@ -26,6 +26,10 @@ static World<Coord2D> world(
     })
 );
 #endif
+
+static GtkListBox *list_box;
+
+static double scroll_step = 0.02;
 
 #ifdef WORLD_3D
 
@@ -41,10 +45,6 @@ static World<Coord3D> world(
     DisplayFile<Coord3D>({})
 );
 
-static GtkListBox *list_box;
-
-static double scroll_step = 0.1;
-
 static void update_world(SelectedWorld selected)
 {
     switch (selected)
@@ -52,7 +52,7 @@ static void update_world(SelectedWorld selected)
         case CUBE:
         {
             world = World<Coord3D>(
-                make_shared<Window<Coord3D>>(Coord3D(50, 50, -100), 140, 140),
+                make_shared<Window<Coord3D>>(Coord3D(50, 50, -200), 140, 140),
                 DisplayFile<Coord3D>({ draw_cube(Coord3D(20, 20, 20), 50) })
             );
             scroll_step = 0.01;
@@ -331,6 +331,8 @@ static void select_perspective(GtkWidget UNUSED *widget, gpointer canvas)
     update_projection_buttons();
 }
 
+#ifdef WORLD_3D
+
 static void select_regular_surface_method(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
     surface_method = SurfaceMethod ::REGULAR;
@@ -342,8 +344,6 @@ static void select_fd_surface_method(GtkWidget UNUSED *menu_item, gpointer canva
     surface_method = SurfaceMethod ::FORWARD_DIFFERENCE;
     refresh_canvas(GTK_WIDGET(canvas), selection);
 }
-
-#ifdef WORLD_3D
 
 static void select_cube_world(GtkWidget UNUSED *menu_item, gpointer canvas)
 {
@@ -474,6 +474,8 @@ static void select_tool_rotate()
     select_or_hide_tool_buttons({ button_move, button_scale });
 }
 
+#ifdef WORLD_3D
+
 static GtkButton * selected_tool_button()
 {
     switch (selection.tool())
@@ -516,6 +518,7 @@ static void update_button_label_with_axis()
         gtk_button_set_label(button, label.c_str());
     }
 }
+#endif
 
 static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpointer UNUSED data)
 {
@@ -573,6 +576,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
             break;
 
+#ifdef WORLD_3D
         case GDK_KEY_1:
             if (projection_method == PERSPECTIVE)
             {
@@ -588,6 +592,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
                 }
             }
             break;
+#endif
 
         case GDK_KEY_5:
             if (projection_method == ORTHOGONAL)
@@ -631,6 +636,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             select_tool_rotate();
             break;
 
+#ifdef WORLD_3D
         case GDK_KEY_X:
         case GDK_KEY_x:
             selection.select_transform_axis(X_AXIS);
@@ -648,6 +654,7 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
             selection.select_transform_axis(Z_AXIS);
             update_button_label_with_axis();
             break;
+#endif
 
         default:
             break;
@@ -673,6 +680,8 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
         {
             if ((abs(delta.y()) / world.window()->height()) < scroll_step) return true;
 
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
+
             if (event->state & GDK_SHIFT_MASK)
             {
                 world.window()->pan_up(scroll_step);
@@ -691,6 +700,8 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
         case GDK_SCROLL_DOWN:
         {
             if ((abs(delta.y()) / world.window()->height()) < scroll_step) return true;
+
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
 
             if (event->state & GDK_SHIFT_MASK)
             {
@@ -711,6 +722,8 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
         {
             if ((abs(delta.x()) / world.window()->width()) < scroll_step) return true;
 
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
+
             if (event->state & GDK_SHIFT_MASK)
             {
                 world.window()->pan_left(scroll_step);
@@ -729,6 +742,8 @@ static gboolean canvas_on_scroll(GtkWidget *canvas, GdkEventScroll *event)
         case GDK_SCROLL_RIGHT:
         {
             if ((abs(delta.x()) / world.window()->width()) < scroll_step) return true;
+
+            printf("dx = %f; dy = %f\n", delta.x(), delta.y());
 
             if (event->state & GDK_SHIFT_MASK)
             {
@@ -893,12 +908,14 @@ int main(int argc, char *argv[])
     new_list_label(grid, "Object List:");
     list_box = new_list_box(grid, canvas, selection, G_CALLBACK(select_object));
 
+#ifdef WORLD_3D
     button_orthogonal = new_button(
         grid, canvas, "Orthogonal", true, G_CALLBACK(select_orthogonal),
         "Switch to Orthogonal projection.", false, false);
     button_perspective = new_button(
         grid, canvas, "Perspective", true, G_CALLBACK(select_perspective),
         "Switch to Perspective projection.", true, false);
+#endif
 
     button_move = new_button(
         grid, canvas, "Grab", false, G_CALLBACK(tool_translate_clicked),

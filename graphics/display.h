@@ -62,8 +62,12 @@ public:
         _center(center),
         _viewport_top_left(0, 0),
         _up_angle(0),
+#ifdef WORLD_2D
+        _viewport_width(1), _viewport_height(1)
+#else
         _viewport_width(1), _viewport_height(1),
         _projection_distance(abs(_center.z()))
+#endif
     {
         adjust_bounds(width, height);
     }
@@ -394,9 +398,13 @@ public:
     {
         if (equals(_up_angle, 0)) return;
 
+#ifdef WORLD_3D
         double degrees = _up_angle;
 
         if (_projection_view == FRONT) degrees = -degrees;
+#else
+        double degrees = -_up_angle;
+#endif
 
         _leftTop.rotate_z(degrees, center());
         _rightTop.rotate_z(degrees, center());
@@ -677,12 +685,9 @@ public:
     DisplayFile & display_file() { return _display_file; }
 
     // Objects from command list
-    vector<shared_ptr<Object>> objects() {
+    vector<shared_ptr<Object>> objects()
+    {
         vector<shared_ptr<Object>> vector;
-
-#ifdef WORLD_2D
-        vector.push_back(_window);
-#endif
 
         for (auto &command: _display_file.commands())
         {
