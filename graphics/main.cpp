@@ -1,3 +1,4 @@
+//#define WORLD_2D
 #define WORLD_3D
 
 #include "ui.h"
@@ -573,6 +574,8 @@ static gboolean canvas_on_key_press(GtkWidget *canvas, GdkEventKey *event, gpoin
         case GDK_KEY_Return:
             selection.select_tool(NONE);
             select_or_hide_tool_buttons({ button_move, button_scale, button_rotate });
+            selection.select_transform_axis(ALL_AXIS);
+            update_button_label_with_axis();
             break;
 
 #ifdef WORLD_3D
